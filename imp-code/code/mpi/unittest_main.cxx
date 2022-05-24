@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-8
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -15,7 +15,7 @@
 #include <stdlib.h>
 
 #define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 #include "fmt/format.h"
 
 #define STATIC_VARS_HERE

@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** imp_base.cxx: Implementations of the base classes
  ****
@@ -143,14 +143,14 @@ string protocol_as_string(protocol_type p) {
 
 //! Base case for architecture summary.
 string architecture::summary() { fmt::memory_buffer w;
-  format_to(w,get_name());
-  format_to(w,", protocol: {}",protocol_as_string(protocol));
-  format_to(w,", collectives: {}",strategy_as_string());
-  if (get_split_execution()) format_to(w,", split execution");
-  if (has_random_sourcing()) format_to(w,", source randomization");
-  if (get_can_embed_in_beta()) format_to(w,", object embedding");
-  if (get_can_message_overlap()) format_to(w,", messages post early");
-  if (algorithm::do_optimize) format_to(w,", task graph optimized");
+  format_to(w.end(),get_name());
+  format_to(w.end(),", protocol: {}",protocol_as_string(protocol));
+  format_to(w.end(),", collectives: {}",strategy_as_string());
+  if (get_split_execution()) format_to(w.end(),", split execution");
+  if (has_random_sourcing()) format_to(w.end(),", source randomization");
+  if (get_can_embed_in_beta()) format_to(w.end(),", object embedding");
+  if (get_can_message_overlap()) format_to(w.end(),", messages post early");
+  if (algorithm::do_optimize) format_to(w.end(),", task graph optimized");
   return to_string(w);
 };
 
@@ -332,18 +332,18 @@ result_tuple *environment::local_summarize_entities() {
  */
 string environment::summary_as_string( result_tuple *results ) {
   fmt::memory_buffer w;
-  format_to(w,"Summary: ");
-  format_to(w,"#objects: {}",std::get<RESULT_OBJECT>(*results));
-  format_to(w,", #kernels: {}",std::get<RESULT_KERNEL>(*results));
-  format_to(w,", #tasks: {}",std::get<RESULT_TASK>(*results));
-  format_to(w,", |space|={}",(float)std::get<RESULT_ALLOCATED>(*results));
-  format_to(w,", analysis time={}",std::get<RESULT_ANALYSIS>(*results));
-  format_to(w,", runtime={}",std::get<RESULT_DURATION>(*results));
-  // format_to(w,", analysis time={:9.5e}",std::get<RESULT_ANALYSIS>(*results));
-  // format_to(w,", runtime={:9.5e}",std::get<RESULT_DURATION>(*results));
-  format_to(w,", #msg={}",std::get<RESULT_MESSAGE>(*results));
-  format_to(w,", #words sent={:7.2e}",std::get<RESULT_WORDSENT>(*results));
-  format_to(w,", flops={:7.2e}",std::get<RESULT_FLOPS>(*results));
+  format_to(w.end(),"Summary: ");
+  format_to(w.end(),"#objects: {}",std::get<RESULT_OBJECT>(*results));
+  format_to(w.end(),", #kernels: {}",std::get<RESULT_KERNEL>(*results));
+  format_to(w.end(),", #tasks: {}",std::get<RESULT_TASK>(*results));
+  format_to(w.end(),", |space|={}",(float)std::get<RESULT_ALLOCATED>(*results));
+  format_to(w.end(),", analysis time={}",std::get<RESULT_ANALYSIS>(*results));
+  format_to(w.end(),", runtime={}",std::get<RESULT_DURATION>(*results));
+  // format_to(w.end(),", analysis time={:9.5e}",std::get<RESULT_ANALYSIS>(*results));
+  // format_to(w.end(),", runtime={:9.5e}",std::get<RESULT_DURATION>(*results));
+  format_to(w.end(),", #msg={}",std::get<RESULT_MESSAGE>(*results));
+  format_to(w.end(),", #words sent={:7.2e}",std::get<RESULT_WORDSENT>(*results));
+  format_to(w.end(),", flops={:7.2e}",std::get<RESULT_FLOPS>(*results));
   return to_string(w);
 };
 
@@ -354,15 +354,15 @@ int environment::nmessages_sent( result_tuple *results ) {
 void environment::print_summary() {
   if (has_argument("summary")) {
     fmt::memory_buffer w;
-    format_to(w,"Summary:\n");
+    format_to(w.end(),"Summary:\n");
 
     // summary architecture and settings
-    format_to(w,"\n{}",arch.summary());
+    format_to(w.end(),"\n{}",arch.summary());
 
     // summary of entities
     auto summary = mode_summarize_entities();
     string summary_string = summary_as_string(summary);
-    format_to(w,"\n{}",summary_string);
+    format_to(w.end(),"\n{}",summary_string);
 
     if (get_is_printing_environment())
       fmt::print("{}\n",summary_string);
@@ -386,14 +386,14 @@ void environment::kernels_to_dot_file() {
   \todo the way we get the algorithm name is not very elegant. may algorithm_as_dot_string, then call this?
  */
 string environment::kernels_as_dot_string() { fmt::memory_buffer w;
-  format_to(w,"digraph G {}\n",'{');
+  format_to(w.end(),"digraph G {}\n",'{');
   for ( auto e : list_of_all_entities ) {
     entity_cookie c = e->get_cookie();
     if (c==entity_cookie::QUEUE) {
       algorithm *a = dynamic_cast<algorithm*>(e);
       if (a!=nullptr) {
-	format_to(w,"  label=\"{}\";\n",a->get_name());
-	format_to(w,"  labelloc=t;\n");
+	format_to(w.end(),"  label=\"{}\";\n",a->get_name());
+	format_to(w.end(),"  labelloc=t;\n");
       }
     }
   }
@@ -403,16 +403,16 @@ string environment::kernels_as_dot_string() { fmt::memory_buffer w;
     if (c==entity_cookie::KERNEL) {
       auto k = dynamic_cast<kernel*>(ent);
       string outname = k->get_out_object()->get_name();
-      //format_to(w,"  \"{}\" -> \"{}\";\n",k->get_name(),outname);
+      //format_to(w.end(),"  \"{}\" -> \"{}\";\n",k->get_name(),outname);
       auto deps = k->get_dependencies();
       for ( auto d : deps ) {
-    	format_to(w,"  \"{}\" -> \"{}\";\n",
+    	format_to(w.end(),"  \"{}\" -> \"{}\";\n",
     		d.get_in_object()->get_name(),outname
     		);
       }
     }
   }
-  format_to(w,"{}\n",'}');
+  format_to(w.end(),"{}\n",'}');
   return to_string(w);
 };
 
@@ -421,10 +421,10 @@ string environment::kernels_as_dot_string() { fmt::memory_buffer w;
 void environment::tasks_to_dot_file() {
   fmt::memory_buffer w;
   {
-    format_to(w,"digraph G {}\n",'{');
+    format_to(w.end(),"digraph G {}\n",'{');
     string s = tasks_as_dot_string();
-    format_to(w,"{}\n",s.data());
-    format_to(w,"{}\n",'}');
+    format_to(w.end(),"{}\n",s.data());
+    format_to(w.end(),"{}\n",'}');
   }
   FILE *dotfile; 
   dotfile = fopen(format("{}-tasks.dot",get_name()).data(),"w");
@@ -440,7 +440,7 @@ string environment::tasks_as_dot_string() { fmt::memory_buffer w;
       auto k = dynamic_cast<kernel*>(ent);
       task *t = dynamic_cast<task*>(k);
       for ( auto d : t->get_predecessor_coordinates() ) { //=deps->begin(); d!=deps->end(); ++d) {
-    	format_to(w,"  \"{}-{}\" -> \"{}-{}\";\n",
+    	format_to(w.end(),"  \"{}-{}\" -> \"{}-{}\";\n",
     		d->get_step(),d->get_domain().as_string(),
     		t->get_step(),t->get_domain().as_string()
     		);
@@ -493,7 +493,7 @@ void environment::set_ir_outputfile( const char *nam ) {
   if (!get_is_printing_environment()) return;
   if (ir_outputfile!=nullptr) fclose(ir_outputfile);
   fmt::memory_buffer w;
-  format_to(w,"{}.ir",nam);
+  format_to(w.end(),"{}.ir",nam);
   ir_outputfilename = to_string(w);
   ir_outputfile = fopen(ir_outputfilename.data(),"w");
 };
@@ -1616,26 +1616,26 @@ string parallel_structure::header_as_string() const {
 string parallel_indexstruct::as_string() const {
   memory_buffer w;
   for (int p=0; p<pidx_domains_volume(); p++)
-    format_to(w," {}:{}",
+    format_to(w.end()," {}:{}",
 	    p,get_processor_structure(p)->as_string());
-  format_to(w," ]");
+  format_to(w.end()," ]");
   return to_string(w);
 };
 
 string parallel_structure::as_string() const {
   try {
     memory_buffer w;
-    format_to(w,"{}: [",header_as_string() );
+    format_to(w.end(),"{}: [",header_as_string() );
     if (get_is_converted()) {
-      format_to(w,"converted, #P={} : ",multi_structures.size());
+      format_to(w.end(),"converted, #P={} : ",multi_structures.size());
       for (int is=0; is<multi_structures.size(); is++)
-      	format_to(w,"<<p={}: {}>>,",is,multi_structures[is]->as_string());
+      	format_to(w.end(),"<<p={}: {}>>,",is,multi_structures[is]->as_string());
     } else {
-      format_to(w,"unconverted, ");
+      format_to(w.end(),"unconverted, ");
       for (int d=0; d<get_dimensionality(); d++)
-      	format_to(w,"d={}: {}, ",d,get_dimension_structure(d)->as_string());
+      	format_to(w.end(),"d={}: {}, ",d,get_dimension_structure(d)->as_string());
     }
-    format_to(w," ]");
+    format_to(w.end()," ]");
     return to_string(w);
   } catch (string c) { print("Error: {}\n",c);
     throw(format("Could not parallel_structure as_string"));
@@ -1950,10 +1950,10 @@ bool processor_coordinate::is_null() const {
 
 string processor_coordinate::as_string() const {
   memory_buffer w;
-  format_to(w,"P[");
+  format_to(w.end(),"P[");
   for ( int i=0; i<coordinates.size(); i++ )
-    format_to(w,"{},",coordinates.at(i));
-  format_to(w,"]");
+    format_to(w.end(),"{},",coordinates.at(i));
+  format_to(w.end(),"]");
   return to_string(w);
 };
 
@@ -3584,7 +3584,7 @@ string sparse_element::as_string() {
 string sparse_row::as_string() {
   memory_buffer w;
   for (auto e=row.begin(); e!=row.end(); ++e)
-    format_to(w,"{} ",(*e).as_string());
+    format_to(w.end(),"{} ",(*e).as_string());
   return to_string(w);
 };
 
@@ -3675,9 +3675,9 @@ string sparse_matrix::as_string() {
 };
 
 string sparse_matrix::contents_as_string() {
-  memory_buffer w; format_to(w,"{}:\n",as_string());
+  memory_buffer w; format_to(w.end(),"{}:\n",as_string());
   for (auto row=m.begin(); row!=m.end(); ++row)
-    format_to(w,"{}\n",(*row)->as_string());
+    format_to(w.end(),"{}\n",(*row)->as_string());
   return to_string(w);
 };
 
@@ -3889,7 +3889,7 @@ string object::as_string() {
 };
 
 string object::values_as_string(processor_coordinate &p) {
-  memory_buffer w; format_to(w,"{}:",get_name());
+  memory_buffer w; format_to(w.end(),"{}:",get_name());
   const auto distro = get_distribution();
   if (distro->get_orthogonal_dimension()>1)
     throw(string("Can not handle k>1 for object values_as_string"));
@@ -3897,12 +3897,12 @@ string object::values_as_string(processor_coordinate &p) {
   index_int f = distro->location_of_first_index(distro,p),
     s = distro->volume(p);
   for (index_int i=0; i<s; i++)
-    format_to(w," {}:{}",i+f,data.at(i));
+    format_to(w.end()," {}:{}",i+f,data.at(i));
   return to_string(w);
 };
 
 string object::values_as_string(processor_coordinate &&p) {
-  memory_buffer w; format_to(w,"{}:",get_name());
+  memory_buffer w; format_to(w.end(),"{}:",get_name());
   const auto distro = get_distribution();
   if (distro->get_orthogonal_dimension()>1)
     throw(string("Can not handle k>1 for object values_as_string"));
@@ -3910,7 +3910,7 @@ string object::values_as_string(processor_coordinate &&p) {
   index_int f = distro->location_of_first_index(distro,p),
     s = distro->volume(p);
   for (index_int i=0; i<s; i++)
-    format_to(w," {}:{}",i+f,data.at(i));
+    format_to(w.end()," {}:{}",i+f,data.at(i));
   return to_string(w);
 };
 
@@ -3990,7 +3990,7 @@ void message::compute_subarray
     numa_sizes[id] = outer->local_size_r().coord(id);
     struct_sizes[id] = inner->local_size_r().coord(id);
     struct_starts[id] = loc->at(id);
-    format_to(annotation," {}:{}@{}in{}",id,struct_sizes[id],struct_starts[id],numa_sizes[id]);
+    format_to(annotation.end()," {}:{}@{}in{}",id,struct_sizes[id],struct_starts[id],numa_sizes[id]);
   }
   // if (ortho>1)
   //   annotation.write(" (k={})",ortho);
@@ -4134,8 +4134,8 @@ void message::set_tag_by_content
 string message::as_string() {
   memory_buffer w;
   try {
-    format_to(w,"{}:",sendrecv_type_as_string());
-    format_to(w,"{}->{}:{}",
+    format_to(w.end(),"{}:",sendrecv_type_as_string());
+    format_to(w.end(),"{}->{}:{}",
 	    get_sender().as_string(),get_receiver().as_string(),
 	    global_struct->as_string());
   } catch ( string e ) { print("ERROR: {}\n",e);
@@ -4381,9 +4381,9 @@ shared_ptr<multi_indexstruct> signature_function::make_beta_struct_from_ops
 
   if (halo_struct->is_empty()) {
     memory_buffer w;
-    format_to(w,"Make empty beta struct from {} by applying:",gamma_struct->as_string());
+    format_to(w.end(),"Make empty beta struct from {} by applying:",gamma_struct->as_string());
     for ( auto o : ops )
-      format_to(w," {},",o->as_string());
+      format_to(w.end()," {},",o->as_string());
     throw(to_string(w));
   }
   halo_struct = halo_struct->force_simplify();
@@ -5002,28 +5002,28 @@ void algorithm::clear_has_been_executed() {
 
 string task::as_string() {
   memory_buffer w;
-  format_to(w,"{}[s={},p={}",get_name(),get_step(),get_domain().as_string());
-  if (get_is_synchronization_point()) format_to(w,",sync");
-  if (has_type_origin())              format_to(w,",origin");
-  format_to(w,"]");
+  format_to(w.end(),"{}[s={},p={}",get_name(),get_step(),get_domain().as_string());
+  if (get_is_synchronization_point()) format_to(w.end(),",sync");
+  if (has_type_origin())              format_to(w.end(),",origin");
+  format_to(w.end(),"]");
   if (!has_type_origin()) {
     auto preds = get_predecessors();
-    format_to(w,", #preds={}: [",preds.size());
+    format_to(w.end(),", #preds={}: [",preds.size());
     for (auto p : preds )
-      format_to(w,"{} ",p->get_name());
-    format_to(w," ]");
+      format_to(w.end(),"{} ",p->get_name());
+    format_to(w.end()," ]");
   }
   auto rmsgs = get_receive_messages();
   if (rmsgs.size()>0) {
-    format_to(w,"\nReceive msgs:");
+    format_to(w.end(),"\nReceive msgs:");
     for ( auto m : rmsgs)
-      format_to(w," {}",m->as_string());
+      format_to(w.end()," {}",m->as_string());
   }
   auto smsgs = get_send_messages();
   if (smsgs.size()>0) {
-    format_to(w,"\nSend msgs:");
+    format_to(w.end(),"\nSend msgs:");
     for ( auto m : smsgs)
-      format_to(w," {}",m->as_string());
+      format_to(w.end()," {}",m->as_string());
   }
   return to_string(w);
 };
@@ -5234,12 +5234,12 @@ int kernel::get_all_msgs_completed() {
 
 string kernel::as_string() { memory_buffer w;
   auto o = get_out_object();
-  format_to(w,"K[{}]-out:<<{}#{}>>",get_name(),o->get_name(),
+  format_to(w.end(),"K[{}]-out:<<{}#{}>>",get_name(),o->get_name(),
 	  o->get_distribution()->global_volume());
   auto deps = get_dependencies();
   for ( auto d : deps ) { //.begin(); d!=deps.end(); ++d) {
     auto o = d.get_in_object();
-    format_to(w,"-in:<<{}#{}>>",o->get_name(),o->get_distribution()->global_volume());
+    format_to(w.end(),"-in:<<{}#{}>>",o->get_name(),o->get_distribution()->global_volume());
   }
   return to_string(w);
 };
@@ -5658,28 +5658,28 @@ string algorithm::header_as_string() {
 
 string algorithm::kernels_as_string() {
   memory_buffer w;
-  format_to(w,"Kernels:");
+  format_to(w.end(),"Kernels:");
   auto kernels = get_kernels();
   for (auto k : kernels ) 
-    format_to(w,"<<{}>>\n",k->as_string());
-  format_to(w,"]");
+    format_to(w.end(),"<<{}>>\n",k->as_string());
+  format_to(w.end(),"]");
   return to_string(w);
 };
 
 string algorithm::contents_as_string() {
   memory_buffer w;
   auto tsks = get_tasks();
-  format_to(w,"Tasks [ ");
+  format_to(w.end(),"Tasks [ ");
   for (auto t=tsks.begin(); t!=tsks.end(); ++t) {
-    format_to(w,"<<{}>> ",(*t)->header_as_string());
+    format_to(w.end(),"<<{}>> ",(*t)->header_as_string());
   }
-  format_to(w,"]");
+  format_to(w.end(),"]");
   for (auto t=tsks.begin(); t!=tsks.end(); ++t) {
-    format_to(w,"\n");
-    format_to(w,"{}: predecessors ",(*t)->header_as_string());
+    format_to(w.end(),"\n");
+    format_to(w.end(),"{}: predecessors ",(*t)->header_as_string());
     auto preds = (*t)->get_predecessor_coordinates();
     for ( auto p : preds ) //->begin(); p!=preds->end(); ++p)
-      format_to(w,"{}, ",p->as_string());
+      format_to(w.end(),"{}, ",p->as_string());
   }
   return to_string(w);
 };

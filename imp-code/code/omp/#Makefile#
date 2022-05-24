@@ -26,7 +26,7 @@ CXX = ${CXX_COMPILER}
 CXXFLAGS = ${CXX_OPTFLAGS} -I../imp -I../omp -DIMPisOMP
 %.o : %.cxx
 	${CXX_COMPILER} ${CXXFLAGS} ${OMPFLAGS} ${CXXUNITFLAGS} \
-	    -I${CPPFORMAT_INC} -I${GSL_INC} -I${CATCHDIR} \
+	    -I${TACC_FMTLIB_INC} -I${GSL_INC} -I${CATCHDIR} \
 	    -c $<
 
 ####
@@ -54,7 +54,7 @@ ${UNITTESTS} :: \
 	  unittest_main.o $@.o \
 	  ${UNITTEST_OBJS} \
 	  ${SPECIFIC_OBJECTS_$@} \
-	  ${CPPFORMAT_LIB}/${LIBFORMAT} ${LIBCXX}
+	  ${TACC_FMTLIB_LIB}/${LIBFORMAT} ${LIBCXX}
 #	${SYMUTIL:-/bin/true} $@
 ${UNITTEST_OBJS} : omp_base.h
 

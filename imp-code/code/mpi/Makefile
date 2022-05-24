@@ -22,7 +22,7 @@ OMPCODEDIR = ../omp
 MPICODEDIR = ../mpi
 include ../imp/Make.imp
 
-CXXFLAGS = ${CXX_OPTFLAGS} -I../imp -I${CPPFORMAT_INC}
+CXXFLAGS = ${CXX_OPTFLAGS} -I../imp -I${TACC_FMTLIB_INC}
 %.o : %.cxx
 	${MPICXX} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} \
 	    -I${CATCHDIR} -I${EIGEN_INC} -I${GSL_INC} \
@@ -57,7 +57,7 @@ ${UNITTESTS} ::  \
 	  unittest_main.o $@.o \
 	  ${UNITTEST_OBJS} \
 	  ${SPECIFIC_OBJECTS_${@}} \
-	  ${CPPFORMAT_LIB}/${LIBFORMAT} ${LIBCXX}
+	  ${TACC_FMTLIB_LIB}/${LIBFORMAT} ${LIBCXX}
 ${UNITTEST_OBJS} : mpi_base.h
 
 ${patsubst %,%.o,${UNITTESTS}} : \

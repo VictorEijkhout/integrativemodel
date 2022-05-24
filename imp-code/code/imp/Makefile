@@ -22,7 +22,7 @@ CXXFLAGS = ${CXX_OPTFLAGS}
 ##
 %.o : %.cxx
 	${CXX_COMPILER} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} \
-	  -I${CATCHDIR} -I${CPPFORMAT_INC} -I${EIGEN_INC} -I${GSL_INC} \
+	  -I${CATCHDIR} -I${TACC_FMTLIB_INC} -I${EIGEN_INC} -I${GSL_INC} \
 	  -c $<
 
 imp_base.o utils.o : utils.h
@@ -37,7 +37,7 @@ UNITTESTS = unittest_indexstruct
 unittest_indexstruct : unittest_indexstruct.o unittest_main.o indexstruct.o
 	${CXX_LINKER} ${CXXFLAGS} ${CXXUNITFLAGS} -I${CATCHDIR} \
 	    -o $@ $^ \
-	    ${CPPFORMAT_LIB}/${LIBFORMAT} ${LIBCXX}
+	    ${TACC_FMTLIB_LIB}/${LIBFORMAT} ${LIBCXX}
 ${patsubst %,%.o,${UNITTESTS}} : imp_base.h imp_base.cxx
 unittest_indexstruct.o indexstruct.o : indexstruct.hpp
 

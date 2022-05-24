@@ -27,7 +27,7 @@ CXXFLAGS = ${CXX_OPTFLAGS} -I${IMPCODEDIR} -I${OMPCODEDIR} -I${MPICODEDIR} -DIMP
 .SECONDEXPANSION:
 %.o : %.cxx
 	${MPICXX} ${CXXFLAGS} ${MPIFLAGS} ${OMPFLAGS} ${CXXUNITFLAGS} \
-	    -I${CPPFORMAT_INC} -I${GSL_INC} -I${CATCHDIR} -I${EIGEN_INC} \
+	    -I${TACC_FMTLIB_INC} -I${GSL_INC} -I${CATCHDIR} -I${EIGEN_INC} \
 	    -c $<
 
 ####
@@ -53,7 +53,7 @@ ${patsubst %,%.o,${UNITTESTS}} product_base.o : ${BASEHS} \
 ${UNITTESTS} : unittest_main.o $$@.o ${UNITTEST_OBJS} ${APPS_OBJS}
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} ${OMPFLAGS} ${MPIFLAGS} \
 		-o $@ ${PRODUCTFLAGS} $^ \
-		${CPPFORMAT_LIB}/${LIBFORMAT} ${LIBCXX}
+		${TACC_FMTLIB_LIB}/${LIBFORMAT} ${LIBCXX}
 ${UNITTEST_OBJS} : product_base.h ${MPICODEDIR}/mpi_base.h ${OMPCODEDIR}/omp_base.h \
     ../imp/imp_functions.h ../imp/imp_base.h ../imp/utils.h
 

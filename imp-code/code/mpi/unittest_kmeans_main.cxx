@@ -6,7 +6,7 @@
 #include <math.h>
 
 #define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #define MPI_VARS_HERE
 #include "mpi_static_vars.h"

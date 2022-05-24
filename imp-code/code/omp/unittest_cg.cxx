@@ -255,12 +255,12 @@ TEST_CASE( "power method","[3]" ) {
     memory_buffer inname,outname;
 
     REQUIRE_NOTHROW( inobj = shared_ptr<object>( new omp_object(scalar) ) );
-    format_to(inname,"in-object-{}",step);
+    format_to(inname.end(),"in-object-{}",step);
     REQUIRE_NOTHROW( inobj->set_name(to_string(inname)) );
     norms[2*step] = inobj;
 
     REQUIRE_NOTHROW( outobj = shared_ptr<object>( new omp_object(scalar) ) );
-    format_to(outname,"out-object-{}",step);
+    format_to(outname.end(),"out-object-{}",step);
     REQUIRE_NOTHROW( outobj->set_name(to_string(outname)) );
     norms[2*step+1] = outobj;
 
@@ -275,7 +275,7 @@ TEST_CASE( "power method","[3]" ) {
     shared_ptr<kernel> matvec, scaletonext,getnorm,computelambda;
     // matrix-vector product
     REQUIRE_NOTHROW( matvec = shared_ptr<kernel>( new omp_spmvp_kernel( xs[2*step],xs[2*step+1],A ) ) );
-    memory_buffer w; format_to(w,"mvp-{}.",step);
+    memory_buffer w; format_to(w.end(),"mvp-{}.",step);
     REQUIRE_NOTHROW( matvec->set_name(to_string(w)) );
     REQUIRE_NOTHROW( queue.add_kernel(matvec) );
     // norms to compare

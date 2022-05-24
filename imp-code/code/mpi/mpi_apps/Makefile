@@ -29,7 +29,7 @@ include ../../imp/Make.imp
 include ../../imp/Make.apps
 
 CXXFLAGS = ${CXX_OPTFLAGS} -I. -I.. -I../../imp -DIMPisMPI \
-    -I${CPPFORMAT_INC} -I${GSL_INC}
+    -I${TACC_FMTLIB_INC} -I${GSL_INC}
 OPTLEVEL = 2
 %.o : %.cxx
 	${MPICXX} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} \
@@ -45,7 +45,7 @@ EXECUTABLE_OBJS = \
 ${EXECUTABLES} :: $$@.cxx $$@.o ${EXECUTABLE_OBJS}
 	${MPICXX} ${CXXFLAGS} -o $@ ${MPIFLAGS} $@.o \
 	    ${EXECUTABLE_OBJS} ${SPECIFIC_OBJECTS_$@} \
-	    ${CPPFORMAT_LIB}/${LIBFORMAT} ${LIBCXX}
+	    ${TACC_FMTLIB_LIB}/${LIBFORMAT} ${LIBCXX}
 
 # non-trivial dependencies
 ${EXECUTABLE_OBJECTS} ../mpi_base.o :: \

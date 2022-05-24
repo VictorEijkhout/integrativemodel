@@ -28,7 +28,7 @@ include ../../imp/Make.imp
 include ../../imp/Make.apps
 
 CXX = mpicxx
-CXXFLAGS = ${CXX_OPTFLAGS} -I. -I.. -I../../imp -DIMPisOMP -I${CPPFORMAT_INC}
+CXXFLAGS = ${CXX_OPTFLAGS} -I. -I.. -I../../imp -DIMPisOMP -I${TACC_FMTLIB_INC}
 OPTLEVEL = 2
 %.o : %.cxx
 	${CXX} ${CXXFLAGS} ${OMPFLAGS} ${CXXUNITFLAGS} -I${CATCHDIR} -c $<
@@ -41,7 +41,7 @@ EXECUTABLE_OBJS = \
 ${EXECUTABLES} :: $$@.cxx $$@.o ${EXECUTABLE_OBJS}
 	${CXX} ${CXXFLAGS} -o $@ ${OMPFLAGS} $@.o \
 	    ${EXECUTABLE_OBJS} ${SPECIFIC_OBJECTS_$@} \
-	    ${CPPFORMAT_LIB}/${LIBFORMAT} ${LIBCXX}
+	    ${TACC_FMTLIB_LIB}/${LIBFORMAT} ${LIBCXX}
 
 # non-trivial dependencies
 ${EXECUTABLE_OBJECTS} ../omp_base.o : \

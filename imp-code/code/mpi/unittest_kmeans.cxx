@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "mpi_base.h"
 #include "mpi_ops.h"
@@ -760,14 +760,14 @@ TEST_CASE( "distance to centers, general","[20]" ) {
   CHECK( centers->volume(mycoord)==ncluster );
   CHECK( centers->get_orthogonal_dimension()==dim );
   // equally spaced cluster centers over the points
-  memory_buffer w; format_to(w,"Cluster centers:");
+  memory_buffer w; format_to(w.end(),"Cluster centers:");
   {
     REQUIRE_NOTHROW( centers->allocate() );
     data_pointer centerdata ; REQUIRE_NOTHROW( centerdata = centers->get_data(mycoord) );
     int iloc = 0;
     for (int icluster=0; icluster<ncluster; icluster++) {
       double cluster_center = icluster * globalsize / (double)ncluster;
-      format_to(w," {},",cluster_center);
+      format_to(w.end()," {},",cluster_center);
       for (int idim=0; idim<dim; idim++)
 	centerdata.at(iloc++) = cluster_center;
     }
@@ -833,12 +833,12 @@ TEST_CASE( "Find nearest center, general","[30]" ) {
       memory_buffer w;
       index_int gpoint = ipoint+mytid*localsize;
       double point_loc = gpoint;
-      format_to(w,"point g={}, cluster dists:",gpoint);
+      format_to(w.end(),"point g={}, cluster dists:",gpoint);
       for (int icluster=0; icluster<ncluster; icluster++) {
 	double
 	  cluster_loc = icluster*globalsize/(double)ncluster,
 	  step_dist = std::abs( point_loc - cluster_loc );
-	format_to(w," {}:{}->{}",icluster,cluster_loc,step_dist);
+	format_to(w.end()," {}:{}->{}",icluster,cluster_loc,step_dist);
 	double dist = 0;
 	for (int id=0; id<dim; id++)
 	  dist += step_dist*step_dist;

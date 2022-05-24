@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "mpi_base.h"
 #include "mpi_static_vars.h"
@@ -235,7 +235,7 @@ TEST_CASE( "multistage tree collecting iterated, irregular","[distribution][redu
   vector<shared_ptr<object>> objects;
   cur_level = bottom_level;
   auto div2 = ioperator("/2");
-  memory_buffer w; format_to(w,"Bottom level: {}\n",bottom_level->as_string());
+  memory_buffer w; format_to(w.end(),"Bottom level: {}\n",bottom_level->as_string());
   for (nlevels=1; nlevels<2*ntids; nlevels++) {
     levels.push_back( cur_level );
     REQUIRE_NOTHROW( objects.push_back( cur_level->new_object(cur_level) ) );
@@ -243,7 +243,7 @@ TEST_CASE( "multistage tree collecting iterated, irregular","[distribution][redu
     REQUIRE_NOTHROW( lsize = cur_level->outer_size() );
     if (lsize==1) break;
     cur_level = cur_level->operate(div2);
-    format_to(w,"Level {}: {}\n",nlevels,cur_level->as_string());
+    format_to(w.end(),"Level {}: {}\n",nlevels,cur_level->as_string());
   }
   INFO( to_string(w) );
   CHECK( nlevels==levels.size() );

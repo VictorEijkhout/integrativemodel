@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "mpi_base.h"
 #include "mpi_static_vars.h"
@@ -3248,7 +3248,7 @@ TEST_CASE( "s-step with communication avoiding distributions, iterated","[kernel
     INFO( "level " << istep );
     memory_buffer w;
     for ( auto m : msgs ) {
-      format_to(w,"{}->{} ",m->get_sender().as_string(),m->get_receiver().as_string()); }
+      format_to(w.end(),"{}->{} ",m->get_sender().as_string(),m->get_receiver().as_string()); }
     INFO( "messages: " << to_string(w) );
     if (istep==0) {
       if (ntids==1)

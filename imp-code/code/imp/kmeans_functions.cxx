@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-9
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** kmeans_functions.cxx : implementations of the kmeans support functions
  ****
@@ -198,15 +198,15 @@ void coordinate_masking( kernel_function_args ) {
       *masked = selected.data() + ipoint*ncluster*(dim+1);
     int igroup = (int)(group.at(ipoint)); // what is the group of this coordinate?
     int outp = 0; // positioning pointer in the output
-    format_to(w,"{} local {} belongs to {}; ",p.as_string(),ipoint,igroup);
+    format_to(w.end(),"{} local {} belongs to {}; ",p.as_string(),ipoint,igroup);
     for (int icluster=0; icluster<ncluster; icluster++) {
       // set mask location to +1 or -1
-      format_to(w,"cluster {} : ",icluster);
+      format_to(w.end(),"cluster {} : ",icluster);
       if (icluster==igroup) {
-	format_to(w,"yes, ");
+	format_to(w.end(),"yes, ");
 	masked[ outp++ ] = +1.;
       } else {
-	format_to(w,"no, ");
+	format_to(w.end(),"no, ");
 	masked[ outp++ ] = -1;
       }
       // copy coordinate data

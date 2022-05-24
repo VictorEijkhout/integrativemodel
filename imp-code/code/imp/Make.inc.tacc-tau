@@ -14,8 +14,6 @@ SYMUTIL = /bin/true
 OPTLEVEL = 0
 MPIRUN = ibrun
 REGRESSION_PROCS = 16
-CPPFORMAT_INC = ${WORK}/cppformat/cppformat
-CPPFORMAT_LIB = ${WORK}/cppformat/installation/lib
 LIBFORMAT = libfmt.a
 CATCHDIR = ${WORK}/catch
 

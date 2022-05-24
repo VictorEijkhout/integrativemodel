@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-9
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** MPI implementations of the support functions
  ****

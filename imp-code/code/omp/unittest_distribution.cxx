@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -247,14 +247,14 @@ TEST_CASE( "Masked distribution creation","[distribution][mask][70]" ) {
   processor_mask *mask;
 
   memory_buffer path;
-  SECTION( "create mask by adding" ) { format_to(path,"adding odd");
+  SECTION( "create mask by adding" ) { format_to(path.end(),"adding odd");
     REQUIRE_NOTHROW( mask = new processor_mask(decomp) );
     for (int p=1; p<ntids; p+=2 ) {
       processor_coordinate *c = new processor_coordinate(1); c->set(0,p);
       REQUIRE_NOTHROW( mask->add(c) );
     }
   }
-  SECTION( "create mask by subtracting" ) { format_to(path,"subtracting odd");
+  SECTION( "create mask by subtracting" ) { format_to(path.end(),"subtracting odd");
     REQUIRE_NOTHROW( mask = new processor_mask(decomp,ntids) );
     for (int p=0; p<ntids; p+=2) {
       processor_coordinate *c = new processor_coordinate(1); c->set(0,p);

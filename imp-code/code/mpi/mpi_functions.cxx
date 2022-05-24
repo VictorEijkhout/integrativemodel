@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-9
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** mpi_functions.cxx : implementations of the support functions
  ****
@@ -168,7 +168,7 @@ void scanexpand( kernel_function_args )
 
   if (outfirst/2<infirst || outfirst/2>inlast || outlast/2<infirst || outlast/2>outlast) {
     fmt::memory_buffer w;
-    format_to(w,"[{}] scanexpand: outrange [{}-{}] not sourced from [{}-{}]",
+    format_to(w.end(),"[{}] scanexpand: outrange [{}-{}] not sourced from [{}-{}]",
 	    p.as_string(),outfirst,outlast,infirst,inlast);
     throw(to_string(w).data());
   }

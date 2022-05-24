@@ -68,7 +68,7 @@ int omp_architecture::omp_reduce_scatter(int *senders,int root) {
 };
 
 string omp_architecture::as_string() {
-  fmt::memory_buffer w; format_to(w,"OpenMP architecture on {} threads",nprocs());
+  fmt::memory_buffer w; format_to(w.end(),"OpenMP architecture on {} threads",nprocs());
   return to_string(w);
 };
 
@@ -585,12 +585,12 @@ void omp_object::copy_data_from
 //snippet end
 
 string omp_object::values_as_string() {
-  fmt::memory_buffer w; format_to(w,"{}:",get_name());
+  fmt::memory_buffer w; format_to(w.end(),"{}:",get_name());
   if (get_orthogonal_dimension()>1)
     throw(string("Can not handle k>1 for object values_as_string"));
   auto data = this->get_raw_data(); index_int s = get_distribution()->global_volume();
   for (index_int i=0; i<s; i++)
-    format_to(w," {}:{}",i,data[i]);
+    format_to(w.end()," {}:{}",i,data[i]);
   return to_string(w);
 };
 

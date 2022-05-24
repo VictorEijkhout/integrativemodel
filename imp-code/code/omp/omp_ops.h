@@ -4,7 +4,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** omp_ops.h: Header file for the OpenMP operation kernels
  ****
@@ -182,10 +182,10 @@ public:
   };
   std::string as_string() override {
     fmt::memory_buffer w;
-    format_to(w,"K[{}]=\n",get_name());
-    format_to(w,"  <<{}>>\n",expand->as_string());
-    format_to(w,"  <<{}>>\n",multiply->as_string());
-    format_to(w,"  <<{}>>",sum->as_string());
+    format_to(w.end(),"K[{}]=\n",get_name());
+    format_to(w.end(),"  <<{}>>\n",expand->as_string());
+    format_to(w.end(),"  <<{}>>\n",multiply->as_string());
+    format_to(w.end(),"  <<{}>>",sum->as_string());
     return to_string(w);
   };
 };

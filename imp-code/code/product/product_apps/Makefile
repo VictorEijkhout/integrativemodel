@@ -29,7 +29,7 @@ include ../../imp/Make.imp
 include ../../imp/Make.apps
 
 CXX = mpicxx
-CXXFLAGS = ${CXX_OPTFLAGS} -I. -I.. -I../../imp -I../../omp -I../../mpi -DIMPisPRODUCT -I${CPPFORMAT_INC}
+CXXFLAGS = ${CXX_OPTFLAGS} -I. -I.. -I../../imp -I../../omp -I../../mpi -DIMPisPRODUCT -I${TACC_FMTLIB_INC}
 OPTLEVEL = 2
 %.o : %.cxx
 	${CXX} ${CXXFLAGS} ${MPIFLAGS} ${OMPFLAGS} ${CXXUNITFLAGS} -I${CATCHDIR} -c $<
@@ -43,7 +43,7 @@ EXECUTABLE_OBJS = \
 ${EXECUTABLES} :: $$@.o ${EXECUTABLE_OBJS}
 	${CXX} ${CXXFLAGS} -o $@ ${MPIFLAGS} ${OMPFLAGS} $@.o \
 	    ${EXECUTABLE_OBJS} ${SPECIFIC_OBJECTS_$@} \
-	    ${CPPFORMAT_LIB}/libformat.a ${LIBCXX}
+	    ${TACC_FMTLIB_LIB}/libformat.a ${LIBCXX}
 
 BASEHS = ${PRODUCTCODEDIR}/product_base.h ../../mpi/mpi_base.h ../../omp/omp_base.h ../../imp/imp_base.h
 ${EXECUTABLE_OBJECTS} product_base.o : ${BASEHS} ../product_ops.h

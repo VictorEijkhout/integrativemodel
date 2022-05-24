@@ -4,7 +4,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** imp_base.h: Header file for the base classes
  ****
@@ -2613,7 +2613,7 @@ public:
   bool has_type( request_type t ) const { return type==t; };
   bool is_completed() const { return msg->get_status() == message_status::COMPLETED; };
   std::string as_string() const { fmt::memory_buffer w;
-    format_to(w,"req:"); format_to(w,msg->as_string()); return to_string(w);
+    format_to(w.end(),"req:"); format_to(w.end(),msg->as_string()); return to_string(w);
   };
 };
 
@@ -2637,7 +2637,7 @@ public:
     for ( auto r : the_requests ) r->set_completed();
   };
   std::string as_string() const { fmt::memory_buffer w;
-    for ( auto r : the_requests ) format_to(w,r->as_string());
+    for ( auto r : the_requests ) format_to(w.end(),r->as_string());
     return to_string(w);
   };
 };

@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-9
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** imp_functions.cxx : implementations of the support functions
  ****
@@ -654,7 +654,7 @@ void local_normsquared( kernel_function_args ) {
     s += indata.at(I) * indata.at(I);
   }
   // for (index_int i=0; i<len; i++) {
-  //   //format_to(w,"{} ",indata[src0+i]);
+  //   //format_to(w.end(),"{} ",indata[src0+i]);
   //   s += indata[src0+i]*indata[src0+i];
   // }
   // print("norm squared of {}: {} comes to {}\n",
@@ -954,7 +954,7 @@ void vecaxbyz( kernel_function_args,void *ctx ) {
 
   //memory_buffer w;
   for (index_int i=0; i<len; i++) {
-    //format_to(w,"{}+{} ",x1data.at(src1+i),x2data.at(src2+i));
+    //format_to(w.end(),"{}+{} ",x1data.at(src1+i),x2data.at(src2+i));
     outdata.at(tar0+i) = s1*x1data.at(src1+i) + s2*x2data.at(src2+i);
   }
   // print("axbyz computing {}x{} + {}x{}->{} : {}\n",

@@ -4,7 +4,7 @@
 #### This make include file is part of the prototype implementation of
 #### the Integrative Model for Parallelism
 ####
-#### copyright Victor Eijkhout 2014-8
+#### copyright Victor Eijkhout 2014-2022
 ####
 #### Make.inc :
 #### IMP settings for Victor's laptop
@@ -22,7 +22,7 @@ TACC_FAMILY_COMPILER = clang
 ####
 #### catch
 ####
-CATCHDIR = ${HOME}/Installation/catch/Catch2/single_include/catch2
+CATCHDIR = ${TACC_CATCH2_INC}
 
 ####
 #### Eigen
@@ -33,13 +33,6 @@ EIGEN_INC = ${HOME}/Installation/eigen/installation-3.3.7/include/eigen3/
 #### Electric Fence
 ####
 EFENCE_LIB = /opt/local/lib/libefence.a
-
-####
-#### fmtlib
-####
-CPPFORMAT_INC = ${HOME}/Installation/fmtlib/installation/include
-CPPFORMAT_LIB = ${HOME}/Installation/fmtlib/installation/lib
-LIBFORMAT = libfmt.a
 
 ####
 #### GSL

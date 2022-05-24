@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "mpi_base.h"
 #include "mpi_static_vars.h"
@@ -141,7 +141,7 @@ TEST_CASE( "Threepoint queue with gen kernel","[queue][execute][halo][modulo][10
     } else {
       k = std::shared_ptr<kernel>( new mpi_kernel(yvector[iv-1],yvector[iv]) );
     }
-    { fmt::memory_buffer w; format_to(w,"3pt-compute-y{}",iv);
+    { fmt::memory_buffer w; format_to(w.end(),"3pt-compute-y{}",iv);
       k->set_name( to_string(w) );
     }
     k->add_beta_oper( no_op );

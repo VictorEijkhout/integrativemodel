@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "mpi_base.h"
 #include "mpi_ops.h"
@@ -451,14 +451,14 @@ TEST_CASE( "power method with data reuse","[reuse][11]" ) {
 
     REQUIRE_NOTHROW( inobj = shared_ptr<object>( new mpi_object(scalar) ) );
     { memory_buffer w;
-      format_to(w,"in-object-{}",step);
+      format_to(w.end(),"in-object-{}",step);
       REQUIRE_NOTHROW( inobj->set_name(to_string(w)) );
     }
     norms[2*step] = inobj;
 
     REQUIRE_NOTHROW( outobj = shared_ptr<object>( new mpi_object(scalar) ) );
     { memory_buffer w;
-      format_to(w,"out-object-{}",step);
+      format_to(w.end(),"out-object-{}",step);
       REQUIRE_NOTHROW( outobj->set_name(to_string(w)) );
     }
     norms[2*step+1] = outobj;

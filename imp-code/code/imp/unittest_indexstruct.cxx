@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-8
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** Unit tests for the IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -2198,9 +2198,9 @@ TEST_CASE( "Bilinear shift test","[operate][multi][133]" ) {
   }
 
   memory_buffer w;
-  format_to(w,"Beta struct from {} by applying:",gamma_struct->as_string());
-  for ( auto o : ops ) format_to(w," {},",o->as_string());
-  format_to(w," is: {}",halo_struct->as_string());
+  format_to(w.end(),"Beta struct from {} by applying:",gamma_struct->as_string());
+  for ( auto o : ops ) format_to(w.end()," {},",o->as_string());
+  format_to(w.end()," is: {}",halo_struct->as_string());
   INFO(w.str());
 
   CHECK( !halo_struct->is_empty());

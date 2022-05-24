@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "mpi_base.h"
 #include "mpi_ops.h"
@@ -851,7 +851,7 @@ TEST_CASE( "matrix iteration shift left","[kernel][sparse][45]" ) {
     outobj = y[i];
     shared_ptr<kernel> k;
     REQUIRE_NOTHROW( k = shared_ptr<kernel>( new mpi_spmvp_kernel( inobj,outobj,Aup ) ) );
-    fmt::memory_buffer w; format_to(w,"mvp-{}",i); k->set_name( to_string(w) );
+    fmt::memory_buffer w; format_to(w.end(),"mvp-{}",i); k->set_name( to_string(w) );
     REQUIRE_NOTHROW( queue->add_kernel(k) );
     inobj = outobj;
   }
@@ -875,12 +875,12 @@ TEST_CASE( "matrix iteration shift left","[kernel][sparse][45]" ) {
       REQUIRE_NOTHROW( send = t->get_send_messages() );
 
       fmt::memory_buffer w;
-      format_to(w,"[{}] receiving from: ",mytid);
+      format_to(w.end(),"[{}] receiving from: ",mytid);
       for (int i=0; i<recv.size(); i++)
-	REQUIRE_NOTHROW( format_to(w,"{},",recv.at(i)->get_sender().coord(0)) );
-      format_to(w,". sending to: ");
+	REQUIRE_NOTHROW( format_to(w.end(),"{},",recv.at(i)->get_sender().coord(0)) );
+      format_to(w.end(),". sending to: ");
       for (int i=0; i<send.size(); i++)
-	REQUIRE_NOTHROW( format_to(w,"{},",send.at(i)->get_receiver().coord(0)) );
+	REQUIRE_NOTHROW( format_to(w.end(),"{},",send.at(i)->get_receiver().coord(0)) );
 
       INFO( "Send/recv: " << to_string(w) );
       if (mytid==0)

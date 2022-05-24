@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-9
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** indexstruct and ioperator package headers
  ****
@@ -456,8 +456,8 @@ public:
   virtual std::shared_ptr<indexstruct> operate( const ioperator &op ) const override;
 
   virtual std::string as_string() const override { fmt::memory_buffer w;
-    format_to(w,"indexed: {}:[",indices.size());
-    for (auto i : indices) format_to(w,"{},",i); format_to(w,"]"); return to_string(w);
+    format_to(w.end(),"indexed: {}:[",indices.size());
+    for (auto i : indices) format_to(w.end(),"{},",i); format_to(w.end(),"]"); return to_string(w);
   }
 };
 
@@ -675,8 +675,8 @@ public:
   bool equals( domain_coordinate *other );
   bool is_zero();
   std::string as_string() const { fmt::memory_buffer w;
-    format_to(w,"["); for ( auto i : coordinates ) format_to(w,"{},",i);
-    format_to(w,"]"); return to_string(w); };
+    format_to(w.end(),"["); for ( auto i : coordinates ) format_to(w.end(),"{},",i);
+    format_to(w.end(),"]"); return to_string(w); };
 
   bool is_on_left_face(int d,std::shared_ptr<multi_indexstruct>) const;
   bool is_on_right_face(int d,std::shared_ptr<multi_indexstruct>) const;
@@ -1186,12 +1186,12 @@ public:
 
   std::string as_string() {
     fmt::memory_buffer w;
-    format_to(w,"["); int id=0; const char *sep="";
+    format_to(w.end(),"["); int id=0; const char *sep="";
     for ( auto iop : operators ) {
-      format_to(w,"{}op{}:{}",sep,id++,iop.as_string());
+      format_to(w.end(),"{}op{}:{}",sep,id++,iop.as_string());
       sep = ", ";
     }
-    format_to(w,"]");
+    format_to(w.end(),"]");
     return to_string(w);
   };
 };

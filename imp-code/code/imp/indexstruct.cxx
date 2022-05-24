@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-9
+ **** copyright Victor Eijkhout 2014-2022
  ****
  **** indexstruct and ioperator package implementation
  ****
@@ -1617,11 +1617,11 @@ shared_ptr<indexstruct> composite_indexstruct::convert_to_indexed() const {
 
 std::string composite_indexstruct::as_string() const {
   fmt::memory_buffer w;
-  format_to(w,"composite ({} members):",structs.size());
+  format_to(w.end(),"composite ({} members):",structs.size());
   //for (auto s : structs)
   for (int is=0; is<structs.size(); is++) {
     auto s = structs.at(is);
-    format_to(w," {}",s->as_string());
+    format_to(w.end()," {}",s->as_string());
   }
   return to_string(w);
 };
@@ -2759,7 +2759,7 @@ shared_ptr<multi_indexstruct> multi_indexstruct::minus
 
   fmt::memory_buffer w;
   if (trace) {
-    format_to(w,"Minus {}-{}",as_string(),idx->as_string());
+    format_to(w.end(),"Minus {}-{}",as_string(),idx->as_string());
     print("{}\n",to_string(w)); }
 
   // easy cases
@@ -2889,16 +2889,16 @@ index_int multi_indexstruct::linearfind( index_int i ) {
 
 std::string multi_indexstruct::as_string() const {
   int dim = get_dimensionality();
-  fmt::memory_buffer w; format_to(w,"Dim={} ",dim);
+  fmt::memory_buffer w; format_to(w.end(),"Dim={} ",dim);
   if (multi.size()==0) {
     for (int id=0; id<dim; id++)
-      format_to(w,"{}:[{}]",id,get_component(id)->as_string());
+      format_to(w.end(),"{}:[{}]",id,get_component(id)->as_string());
   } else {
-    format_to(w,"M{}:",multi.size());
+    format_to(w.end(),"M{}:",multi.size());
     for (int im=0; im<multi.size(); im++) {
-      format_to(w,"{}",multi.at(im)->as_string());
+      format_to(w.end(),"{}",multi.at(im)->as_string());
       if (im<multi.size()-1)
-	format_to(w,"+");
+	format_to(w.end(),"+");
     }
   }
   return to_string(w);
@@ -3266,9 +3266,9 @@ shared_ptr<indexstruct> sigma_operator::operate( shared_ptr<indexstruct> i) cons
 
 std::string sigma_operator::as_string() const {
   fmt::memory_buffer w;
-  format_to(w,"Sigma operator");
+  format_to(w.end(),"Sigma operator");
   if (is_point_operator())
-    format_to(w," from ioperator \"{}\"",point_func.as_string());
+    format_to(w.end()," from ioperator \"{}\"",point_func.as_string());
   return to_string(w);
 };
 
