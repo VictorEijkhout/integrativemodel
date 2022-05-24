@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#SBATCH -J packingtest
+#SBATCH -A A-ccsc
+#SBATCH -o packingtest.o%j
+#SBATCH -n 4
+#SBATCH -N 1
+#SBATCH -p development
+#SBATCH -t 00:50:00
+##SBATCH --mail-user=eijkhout@tacc.utexas.edu
+##SBATCH --mail-type=ALL
+
+set -x
+
+ddt --connect -n 4 ./unittest_ops [64]

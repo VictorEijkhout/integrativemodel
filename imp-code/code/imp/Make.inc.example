@@ -1,0 +1,56 @@
+# -*- makefile -*-
+################################################################
+####
+#### This make include file is part of the prototype implementation of
+#### the Integrative Model for Parallelism
+####
+#### copyright Victor Eijkhout 2014-9
+####
+#### examples settings. copy this to Make.inc and customize;
+#### this file should not go into the repository.
+####
+################################################################
+
+IMPROOT = ${HOME}/Current/Ilib/i-mp/code
+SYMUTIL = /usr/bin/dsymutil
+MPIRUN = mpirun
+OPTLEVEL = 0
+
+MPICXX = mpicxx
+
+####
+#### Catch
+####
+CATCHDIR = ${WORK}/catch
+
+####
+#### Eigen
+####
+EIGEN_INC = ${TACC_EIGEN_INC}
+
+####
+#### Electric Fence
+####
+EFENCE_LIB = 
+
+####
+#### fmtlib
+####
+CPPFORMAT_INC = ${TACC_FMTLIB_INC}
+CPPFORMAT_LIB = ${TACC_FMTLIB_LIB}
+LIBFORMAT = libfmt.a
+
+####
+#### GSL
+####
+GSL_INC = ${HOME}/Installation/gsl/gsl-lite/include
+
+####
+#### Guidelines Support Library
+#### https://github.com/Microsoft/GSL
+####
+GSL_INC =
+
+LIBCXX_intel = 
+LIBCXX_gcc   = -lc++
+LIBCXX = ${LIBCXX_${TACC_FAMILY_COMPILER}}

@@ -1,0 +1,26 @@
+#!/bin/bash
+#SBATCH -J imp_test
+#SBATCH -o imp_test.o%j    # Output and error file name (%j expands to jobID)
+#SBATCH -N 4
+#SBATCH -n 4
+#SBATCH -p normal
+#SBATCH -t 0:30:00     # Run time (hh:mm:ss) - 1.5 hours
+#SBATCH -A A-ccsc
+##SBATCH --mail-type=ALL
+##SBATCH --mail-user=eijkhout@tacc.utexas.edu
+
+# export MV2_USE_LAZY_MEM_UNREGISTER=0
+
+export OMP_NUM_THREADS=4
+if [ ! -z "${TACC_IPM_DIR}" ] ; then
+  export I_MPI_STATS=ipm
+  export IPM_REPORT=full
+  export LD_PRELOAD=$TACC_IPM_LIB/libipm.so
+fi
+
+if [ ! -z "${TACC_ITAC_DIR}" ] ; then
+  export TRACE_OPTION=-trace
+fi
+
+ibrun ${TRACE_OPTION} heat -nglobal 30000000
+

@@ -1,0 +1,245 @@
+changeset:   331:dbb67bc6c0ae
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sun Jun 18 05:15:03 2017 -0500
+summary:     need to run this with ddt
+
+changeset:   276:623c4a0741aa
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Tue May 09 15:20:48 2017 -0500
+summary:     report renaming
+
+changeset:   271:9563ba81bfd7
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Wed Apr 12 06:06:42 2017 -0500
+summary:     omp unittests compile again
+
+changeset:   269:49600cb9c5cf
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon Apr 10 16:39:00 2017 -0500
+summary:     domain iteration works
+
+changeset:   261:1436188b7f92
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sat Mar 25 14:39:19 2017 -0500
+summary:     kmeans 30 passes
+
+changeset:   260:3aada4db81eb
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Wed Mar 22 11:16:14 2017 -0500
+summary:     omp unittests compile again
+
+changeset:   240:62eb5a381723
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sat Feb 25 11:42:33 2017 -0600
+summary:     grid update application with possible overlap
+
+changeset:   237:4651a0fdbea2
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Thu Feb 23 19:38:54 2017 -0600
+summary:     working towards making omp compile again
+
+changeset:   194:fe7885cd1c53
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sat Jan 07 18:00:05 2017 -0600
+summary:     moving kmeans stuff about
+
+changeset:   181:57ed48efb9ec
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon Nov 14 10:35:54 2016 -0700
+summary:     intersections slightly more efficient
+
+changeset:   177:2085d0ab492c
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon Nov 07 10:52:47 2016 -0600
+summary:     starting on reusable cg queue
+
+changeset:   145:d99471746146
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon Oct 17 09:27:27 2016 -0500
+summary:     more shared pointers, mpi regression passes, omp not
+
+changeset:   135:d34613fd625c
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Fri Oct 14 17:25:16 2016 -0500
+summary:     freeze
+
+changeset:   132:e9ef76726fdf
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Fri Oct 07 12:45:03 2016 -0500
+summary:     norm kernel is now imp level
+
+changeset:   129:26e7daaa9799
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Fri Sep 30 19:51:16 2016 +0100
+summary:     started working on lulesh template
+
+changeset:   123:3943a473a0a9
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sun Sep 18 14:53:44 2016 -0500
+summary:     lulesh local to global nodes works
+
+changeset:   120:16f6252f84c5
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sun Sep 11 12:10:25 2016 -0500
+summary:     kmeans unittest 11 added
+
+changeset:   119:79c9e02852b6
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Wed Sep 07 23:42:42 2016 -0500
+summary:     more advances in address calculation
+
+changeset:   115:6cfbf1cf0cb8
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sun Sep 04 22:05:31 2016 -0500
+summary:     more work on omp msg copy
+
+changeset:   113:22a71a47a52d
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Tue Aug 30 07:26:45 2016 -0500
+summary:     factories are a good thing
+
+changeset:   110:5c87a688f379
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon Aug 22 13:32:08 2016 -0500
+summary:     first test of omp send messages passes
+
+changeset:   109:d4d22cf57913
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sun Aug 21 18:44:10 2016 -0500
+summary:     starting on send messages for omp
+
+changeset:   107:bbef6d92d9db
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Tue Aug 16 22:04:10 2016 -0500
+summary:     small changes
+
+changeset:   106:9fe47f7848b0
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Thu Aug 11 10:50:41 2016 -0500
+summary:     just freezing this state
+
+changeset:   104:20981824c9a5
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon Aug 08 15:25:41 2016 -0500
+summary:     steps towards over & omp multi
+
+changeset:   103:3d3e3332df42
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Thu Aug 04 05:47:43 2016 -0500
+summary:     improvements in omp
+
+changeset:   102:426c30cf95e4
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Wed Aug 03 13:48:02 2016 -0500
+summary:     omp halo copy finally seems to work
+
+changeset:   92:97960d8ea3eb
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Tue Jul 19 09:55:37 2016 -0500
+summary:     starting to make lulesh-2d template
+
+changeset:   91:3e84532ebeab
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon Jul 18 12:13:46 2016 -0500
+summary:     ortho seems to be fixed again
+
+changeset:   88:6b8e432e67c4
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Fri Jul 15 11:20:46 2016 -0500
+summary:     more fixes
+
+changeset:   81:f90786fe13d2
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sun Jul 10 13:33:54 2016 -0500
+summary:     over to stampede
+
+changeset:   72:b1c5701a9512
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Wed Jul 06 10:26:11 2016 -0500
+summary:     flush recent fixes
+
+changeset:   70:3ce9cae9547d
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sat Jun 25 14:07:24 2016 -0400
+summary:     progress on product
+
+changeset:   67:e7907b5101d4
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sun Jun 12 10:38:55 2016 -0500
+summary:     i thknk we have the beginnings of a numa treatment
+
+changeset:   64:2a392f3808fd
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Wed Jun 08 10:55:02 2016 -0500
+summary:     futzing with linearizing of domain/processor coordinates
+
+changeset:   63:ccfe0b8e6591
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Tue May 31 14:18:18 2016 -0500
+summary:     flush
+
+changeset:   56:2209a9307d48
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon May 16 15:23:17 2016 -0500
+summary:     introduced sigma operators and mult_sigma operators
+
+changeset:   53:cb09d5c6fa9b
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Thu Apr 28 19:24:48 2016 -0500
+summary:     passing a bunch of omp unittests again
+
+changeset:   49:8a74f624df73
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sat Apr 23 01:59:35 2016 -0500
+summary:     omp struct runs, but embedding still fails
+
+changeset:   43:cfecd30b18f9
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Wed Apr 13 12:41:19 2016 -0500
+summary:     finally fixed that modulo bug
+
+changeset:   42:089d928d61a8
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sun Apr 10 21:52:01 2016 -0500
+summary:     omp struct and distribution pass
+
+changeset:   41:e7670166f4c8
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sun Apr 10 18:27:14 2016 -0500
+summary:     request vector slightly cleaned up
+
+changeset:   40:c6440edc07a2
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Sun Apr 10 17:07:45 2016 -0500
+summary:     request vector slightly cleaned up
+
+changeset:   17:d3e7b3474aeb
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon Mar 14 11:37:01 2016 -0500
+summary:     starting to factor out domain_set for multi_objects
+
+changeset:   11:98c1bd6d0b79
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon Feb 22 16:20:16 2016 -0600
+summary:     touchup before InsideHPC interview
+
+changeset:   10:a29b72fc2655
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Tue Dec 15 20:24:41 2015 -0600
+summary:     omp regression also passes
+
+changeset:   9:47f664130bc2
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Tue Dec 15 14:27:16 2015 -0600
+summary:     improved indexstruct package
+
+changeset:   8:e5ab2b53f390
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Fri Nov 13 23:44:50 2015 -0600
+summary:     masked distributions
+
+changeset:   4:82ef71ebbf52
+user:        Victor Eijkhout <eijkhout@tacc.utexas.edu>
+date:        Mon Oct 26 18:38:28 2015 -0500
+summary:     total refresh of the repository
+

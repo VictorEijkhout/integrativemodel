@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ $# -lt 2 ] ; then
+  echo "Usage: $0 system"
+fi 
+system=$1
+laps=`make listoverlaps`
+
+cd $system
+for l in $laps ; do
+  for f in $l-*.out ; do
+    ../chart.py $f
+  done
+done
+

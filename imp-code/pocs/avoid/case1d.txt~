@@ -1,0 +1,41 @@
+Case without funky halo:
+
+[avoid:52] ./avoid1 -blocking 2 -over 3 -nodes 3 -d
+
+# what is computed on Step 1:
+
+[avoid:59] cat nodegraph-0.dot | awk '$3~"S1" {print $3}' | sort -n -u -t "D" -k 2
+S1D0
+S1D1
+S1D2
+S1D3d
+
+# what is computed on step 2:
+
+[avoid:61] cat nodegraph-0.dot | awk '$3~"S2" {print $3}' | sort -n -u -t "D" -k 2
+S2D0
+S2D1
+S2D2
+
+Smallest case with funky halo:
+
+[avoid:63] ./avoid1 -blocking 3 -over 4 -nodes 3 -d
+
+# Step 1 computed on node 0:
+
+[avoid:67] cat nodegraph-0.dot | awk '$3~"S1" {print $3}' | sort -n -u -t "D" -k 2
+S1D0
+S1D1
+S1D2
+S1D3
+S1D4d  <== note: duplicated
+S1D5   <== note: this one should not be here; it comes from node 1
+
+# Step 2 computed on node 0:
+
+[avoid:69] cat nodegraph-0.dot | awk '$3~"S2" {print $3}' | sort -n -u -t "D" -k 2
+S2D0
+S2D1
+S2D2
+S2D3
+S2D4d  <== note: duplicated computation

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+total=12
+cores=6
+over=30
+
+for block in 1 2 3 4 6 12 ; do
+  steps=$(( total/block ))
+  ./avoid1 -blocking $block -steps $steps -cores $cores -over $over
+done

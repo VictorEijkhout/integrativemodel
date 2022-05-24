@@ -1,0 +1,225 @@
++ for p in 16 50 100 180 384
++ for s in 10 30 100 300
++ echo 'Processors: 16'
+Processors: 16
++ echo 'Size: 10'
+Size: 10
++ ibrun -np 16 ./lulesh -elocal 10
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.0143299
+Execution time: 0.00179195
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 16'
+Processors: 16
++ echo 'Size: 30'
+Size: 30
++ ibrun -np 16 ./lulesh -elocal 30
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.0132661
+Execution time: 0.00465298
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 16'
+Processors: 16
++ echo 'Size: 100'
+Size: 100
++ ibrun -np 16 ./lulesh -elocal 100
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.0130239
+Execution time: 0.041224
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 16'
+Processors: 16
++ echo 'Size: 300'
+Size: 300
++ ibrun -np 16 ./lulesh -elocal 300
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.0263691
+Execution time: 0.344893
+TACC:  Shutdown complete. Exiting. 
++ for p in 16 50 100 180 384
++ for s in 10 30 100 300
++ echo 'Processors: 50'
+Processors: 50
++ echo 'Size: 10'
+Size: 10
++ ibrun -np 50 ./lulesh -elocal 10
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.090148
+Execution time: 0.00975895
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 50'
+Processors: 50
++ echo 'Size: 30'
+Size: 30
++ ibrun -np 50 ./lulesh -elocal 30
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.026139
+Execution time: 0.00521684
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 50'
+Processors: 50
++ echo 'Size: 100'
+Size: 100
++ ibrun -np 50 ./lulesh -elocal 100
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.0269611
+Execution time: 0.0437481
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 50'
+Processors: 50
++ echo 'Size: 300'
+Size: 300
++ ibrun -np 50 ./lulesh -elocal 300
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.0406229
+Execution time: 0.361538
+TACC:  Shutdown complete. Exiting. 
++ for p in 16 50 100 180 384
++ for s in 10 30 100 300
++ echo 'Processors: 100'
+Processors: 100
++ echo 'Size: 10'
+Size: 10
++ ibrun -np 100 ./lulesh -elocal 10
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.115732
+Execution time: 0.0107548
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 100'
+Processors: 100
++ echo 'Size: 30'
+Size: 30
++ ibrun -np 100 ./lulesh -elocal 30
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.0435481
+Execution time: 0.00512004
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 100'
+Processors: 100
++ echo 'Size: 100'
+Size: 100
++ ibrun -np 100 ./lulesh -elocal 100
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.0429471
+Execution time: 0.0435929
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 100'
+Processors: 100
++ echo 'Size: 300'
+Size: 300
++ ibrun -np 100 ./lulesh -elocal 300
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.057307
+Execution time: 0.365734
+TACC:  Shutdown complete. Exiting. 
++ for p in 16 50 100 180 384
++ for s in 10 30 100 300
++ echo 'Processors: 180'
+Processors: 180
++ echo 'Size: 10'
+Size: 10
++ ibrun -np 180 ./lulesh -elocal 10
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.144041
+Execution time: 0.0107069
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 180'
+Processors: 180
++ echo 'Size: 30'
+Size: 30
++ ibrun -np 180 ./lulesh -elocal 30
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.0690742
+Execution time: 0.00533199
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 180'
+Processors: 180
++ echo 'Size: 100'
+Size: 100
++ ibrun -np 180 ./lulesh -elocal 100
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.0703449
+Execution time: 0.0435441
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 180'
+Processors: 180
++ echo 'Size: 300'
+Size: 300
++ ibrun -np 180 ./lulesh -elocal 300
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.08114
+Execution time: 0.358737
+TACC:  Shutdown complete. Exiting. 
++ for p in 16 50 100 180 384
++ for s in 10 30 100 300
++ echo 'Processors: 384'
+Processors: 384
++ echo 'Size: 10'
+Size: 10
++ ibrun -np 384 ./lulesh -elocal 10
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.216025
+Execution time: 0.0018661
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 384'
+Processors: 384
++ echo 'Size: 30'
+Size: 30
++ ibrun -np 384 ./lulesh -elocal 30
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.140035
+Execution time: 0.00538898
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 384'
+Processors: 384
++ echo 'Size: 100'
+Size: 100
++ ibrun -np 384 ./lulesh -elocal 100
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.131271
+Execution time: 0.0430629
+TACC:  Shutdown complete. Exiting. 
++ for s in 10 30 100 300
++ echo 'Processors: 384'
+Processors: 384
++ echo 'Size: 300'
+Size: 300
++ ibrun -np 384 ./lulesh -elocal 300
+TACC:  Starting up job 1762045 
+TACC:  Starting parallel tasks... 
+Analysis time: 0.146558
+Execution time: 0.366471
+TACC:  Shutdown complete. Exiting. 

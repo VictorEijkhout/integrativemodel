@@ -1,0 +1,6 @@
+[mpi_apps:1681] make balance && mpirun -np 8 ./balance -n 10 -s 40 -trace | awk '/Maximum/ { t = t+$4} END {print t}'                                                                               
+make: `balance' is up to date.                                                                                                                                                                      
+2525.17                                                                                                                                                                                             
+[mpi_apps:1682] make balance && mpirun -np 8 ./balance -B -n 10 -s 40 -trace | awk '/Maximum/ { t = t+$4} END {print t}'                                                                             
+make: `balance' is up to date.                                                                                                                                                                      
+3559.99                                                                                                                                                                                             

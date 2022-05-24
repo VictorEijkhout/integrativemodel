@@ -1,0 +1,59 @@
+graph nodegraph0 {
+  subgraph cluster_1 { label = "k1_1"
+    S1D2
+}
+  subgraph cluster_k2 { label = "k2"
+    S1D0
+    S1D1
+    S2D0
+    S2D1
+    S3D0
+}
+  subgraph cluster_k5_1 { label = "k5_1"
+    S0D6
+    S0D5
+    S0D4
+    S1D5
+}
+  subgraph cluster_k5_2 { label = "k5_2"
+}
+S0D4 -- S1D4d
+S0D3 -- S1D4d
+S0D5 -- S1D4d
+S0D3 -- S1D3
+S0D2 -- S1D3
+S0D4 -- S1D3
+S0D2 -- S1D2
+S0D1 -- S1D2
+S0D3 -- S1D2
+S0D1 -- S1D1
+S0D0 -- S1D1
+S0D2 -- S1D1
+S0D0 -- S1D0
+S0D1 -- S1D0
+S1D4d -- S2D4d
+S1D3 -- S2D4d
+S1D5 -- S2D4d
+S1D3 -- S2D3
+S1D2 -- S2D3
+S1D4d -- S2D3
+S1D2 -- S2D2
+S1D1 -- S2D2
+S1D3 -- S2D2
+S1D1 -- S2D1
+S1D0 -- S2D1
+S1D2 -- S2D1
+S1D0 -- S2D0
+S1D1 -- S2D0
+S2D3 -- S3D3
+S2D2 -- S3D3
+S2D4d -- S3D3
+S2D2 -- S3D2
+S2D1 -- S3D2
+S2D3 -- S3D2
+S2D1 -- S3D1
+S2D0 -- S3D1
+S2D2 -- S3D1
+S2D0 -- S3D0
+S2D1 -- S3D0
+}

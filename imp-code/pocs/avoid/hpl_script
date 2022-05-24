@@ -1,0 +1,80 @@
+#!/bin/bash
+
+export domain_side=25
+export cores=-1
+export program=avoid_hpl
+if [ $# -gt 0 ] ; then
+    while [ $# -gt 0 ] ; do
+	if [ $1 = "-h" ] ; then
+	    echo "Usage: $0 [ -h ] [ -d nnn ] [ -c nnn ] [ -p program ]"
+	    exit
+	elif [ $1 = "-d" ] ; then
+	    shift
+	    if [ $# -eq 0 ] ; then 
+		echo "Usage: $0 [ -h ] [ -d nnn ] [ -c nnn ] [ -p program ]"
+		exit
+	    fi
+	    export domain_side=$1
+	    export cores=${domain_side}
+	    shift
+	elif [ $1 = "-c" ] ; then
+	    shift
+	    if [ $# -eq 0 ] ; then
+		echo "Usage: $0 [ -h ] [ -d nnn ] [ -c nnn ] [ -p program ]"
+		exit
+	    fi
+	    export cores=$1
+	    shift
+	elif [ $1 = "-p" ] ; then
+	    shift
+	    if [ $# -eq 0 ] ; then
+		echo "Usage: $0 [ -h ] [ -d nnn ] [ -c nnn ] [ -p program ]"
+		exit
+	    fi
+	    export program=$1
+	    shift
+	else
+	    echo "Unrecognized option: $1"
+	    exit
+	fi
+    done
+fi
+if [ ${cores} -eq -1 ] ; then
+    export cores=${domain_side}
+fi
+export maxblock=$(( domain_side-1 ))
+
+echo "Using program: ${program}"
+echo "Using domain side: ${domain_side}"
+echo "Using cores: ${cores}"
+
+export outputfile=avoid-d${domain_side}-c${cores}.out
+rm -f ${outputfile}
+touch ${outputfile}
+
+( echo ; \
+  echo "Run with 2D domain, side=${domain_side}" ; \
+  echo "reporting ${cores} cores" ; \
+  echo ) | tee -a ${outputfile}
+
+##
+## now run for all possible blockings
+##
+for latency in 100 1000 10000 ; do
+  echo "Latency: ${latency}" | tee -a ${outputfile}
+  for nlocal in 10 100 1000 ; do
+    echo "nlocal = ${nlocal}" | tee -a ${outputfile}
+
+    export over=$(( maxblock+1 ))
+
+    ./${program} \
+	    -nodes 3 -over ${domain_side} -nlocal 10 \
+	    -cores ${cores} \
+	    -latency ${latency} \
+	| grep "Parallel time" \
+	| tee -a ${outputfile}
+
+  echo 
+  done # nlocal
+done # latency
+

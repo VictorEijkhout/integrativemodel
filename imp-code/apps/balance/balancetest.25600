@@ -1,0 +1,105 @@
+Running on 1 nodes, 8 ranks, 100 steps
+reference run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 603.618
+TACC:  Shutdown complete. Exiting. 
+imp run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 479.98
+TACC:  Shutdown complete. Exiting. 
+imp timing
+479352
+unbalanced run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 603.14
+TACC:  Shutdown complete. Exiting. 
+unbalanced timing
+602779
+
+Running on 2 nodes, 16 ranks, 100 steps
+reference run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 441.482
+TACC:  Shutdown complete. Exiting. 
+imp run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 372.64
+TACC:  Shutdown complete. Exiting. 
+imp timing
+372229
+unbalanced run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 441.7
+TACC:  Shutdown complete. Exiting. 
+unbalanced timing
+441179
+
+Running on 4 nodes, 32 ranks, 100 steps
+reference run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 361.094
+TACC:  Shutdown complete. Exiting. 
+imp run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 324.019
+TACC:  Shutdown complete. Exiting. 
+imp timing
+323258
+unbalanced run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 361.196
+TACC:  Shutdown complete. Exiting. 
+unbalanced timing
+360379
+
+Running on 8 nodes, 64 ranks, 100 steps
+reference run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 321.301
+TACC:  Shutdown complete. Exiting. 
+imp run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 298.514
+TACC:  Shutdown complete. Exiting. 
+imp timing
+297041
+unbalanced run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 321.177
+TACC:  Shutdown complete. Exiting. 
+unbalanced timing
+319708
+
+Running on 16 nodes, 128 ranks, 100 steps
+reference run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 301.478
+TACC:  Shutdown complete. Exiting. 
+imp run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 289.59
+TACC:  Shutdown complete. Exiting. 
+imp timing
+284784
+unbalanced run
+TACC:  Starting up job 1375569 
+TACC:  Starting parallel tasks... 
+Total duration: 301.177
+TACC:  Shutdown complete. Exiting. 
+unbalanced timing
+296565
+

@@ -1,0 +1,9 @@
+export n="30000000" # ten million
+
+for p in 1 2 4 8 12 16 ; do
+  export OMP_NUM_THREADS=$p
+  echo "================"
+  echo "Size:" $n "threads:" $p
+  reference_task -s 30 -n $n
+  threepoint -s 30 -n $n
+done
