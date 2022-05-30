@@ -22,11 +22,12 @@ OMPCODEDIR = ../omp
 MPICODEDIR = ../mpi
 include ../imp/Make.imp
 
-CXXFLAGS = ${CXX_OPTFLAGS} -I../imp -I${TACC_FMTLIB_INC}
+CXXFLAGS = ${CXX_OPTFLAGS} -I${IMPCODEDIR} -I${CPPFORMAT_INC}
 %.o : %.cxx
 	${MPICXX} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} \
-	    -I${CATCHDIR} -I${EIGEN_INC} -I${GSL_INC} \
+	    -I${CATCH_INC} -I${EIGEN_INC} -I${GSL_INC} \
 	    -c $<
+LIBCXX = -lstdc++
 
 ####
 #### Unit tests
@@ -57,8 +58,30 @@ ${UNITTESTS} ::  \
 	  unittest_main.o $@.o \
 	  ${UNITTEST_OBJS} \
 	  ${SPECIFIC_OBJECTS_${@}} \
-	  ${TACC_FMTLIB_LIB}/${LIBFORMAT} ${LIBCXX}
+	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
+	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
+	  ${LIBCXX}
 ${UNITTEST_OBJS} : mpi_base.h
+
+##
+## Gradually building up tests
+##
+unittest_main.o : \
+    mpi_env.h ${IMPCODEDIR}/imp_env.h \
+    mpi_static_vars.h ${IMPCODEDIR}/imp_static_vars.h
+info ::
+	@echo "Test from the group up:"
+	@echo "    unittest_env"
+unittest_env : unittest_main.o unittest_env.o mpi_env.o ${IMPCODEDIR}/imp_env.o
+	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
+	  unittest_main.o $@.o \
+	  mpi_env.o ${IMPCODEDIR}/imp_env.o \
+	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
+	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
+	  ${LIBCXX}
+mpi_env.o : mpi_env.h ${IMPCODEDIR}/imp_env.h
+${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
+	cd ${IMPCODEDIR} && make imp_env.o
 
 ${patsubst %,%.o,${UNITTESTS}} : \
     ${IMPCODEDIR}/unittest_functions.h ${IMPCODEDIR}/imp_functions.h ${IMPCODEDIR}/indexstruct.hpp \

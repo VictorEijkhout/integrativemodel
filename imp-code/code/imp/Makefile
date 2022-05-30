@@ -3,7 +3,7 @@
 #### This makefile is part of the prototype implementation of
 #### the Integrative Model for Parallelism
 ####
-#### copyright Victor Eijkhout 2014-8
+#### copyright Victor Eijkhout 2014-2022
 ####
 #### Mode-independent unit tests
 ####
@@ -22,11 +22,13 @@ CXXFLAGS = ${CXX_OPTFLAGS}
 ##
 %.o : %.cxx
 	${CXX_COMPILER} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} \
-	  -I${CATCHDIR} -I${TACC_FMTLIB_INC} -I${EIGEN_INC} -I${GSL_INC} \
+	  -I${CATCHDIR} -I${CPPFORMAT_INC} -I${EIGEN_INC} -I${GSL_INC} \
 	  -c $<
 
+imp_entity.o : imp_entity.h
+imp_env.o : imp_env.h
 imp_base.o utils.o : utils.h
-imp_base.o : imp_base.h imp_base.cxx indexstruct.hpp
+imp_base.o : imp_base.h imp_entity.h indexstruct.hpp
 
 ##
 ## Unittests, independent of any mode
@@ -37,7 +39,7 @@ UNITTESTS = unittest_indexstruct
 unittest_indexstruct : unittest_indexstruct.o unittest_main.o indexstruct.o
 	${CXX_LINKER} ${CXXFLAGS} ${CXXUNITFLAGS} -I${CATCHDIR} \
 	    -o $@ $^ \
-	    ${TACC_FMTLIB_LIB}/${LIBFORMAT} ${LIBCXX}
+	    ${CPPFORMAT_LIB}/${LIBFORMAT} ${LIBCXX}
 ${patsubst %,%.o,${UNITTESTS}} : imp_base.h imp_base.cxx
 unittest_indexstruct.o indexstruct.o : indexstruct.hpp
 

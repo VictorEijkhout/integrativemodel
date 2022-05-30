@@ -15,7 +15,7 @@
 
 #include <stdlib.h>
 #include <cstdio>
-#include <string.h>
+#include <string>
 
 #include <mpi.h>
 #include <imp_base.h>
@@ -46,38 +46,6 @@
  **** Basics
  ****/
 //class mpi_architecture;
-class mpi_environment : public environment {
-public: // data
-  MPI_Comm comm;
-  int processor_grouping{0}; // let's take stampede as default
-public: // methods
-  mpi_environment(int argc,char **argv);
-  ~mpi_environment();
-  mpi_environment( mpi_environment& other ) : environment( other ) {
-    comm = other.comm; };
-  void mpi_delete_environment(); // extra deletions after the destructor
-  //  virtual void delete_environment() override;
-
-  void set_mpi_environment();
-  virtual architecture make_architecture() override ;
-  virtual void get_comm(void *ptr) override { *(MPI_Comm*)ptr = comm; };
-  int get_processor_grouping() { return processor_grouping; };
-  void set_processor_grouping(int g) { processor_grouping = g; };
-  virtual void print_options() override;
-  virtual int iargument(const char *argname,int vdef) override {
-    int val,mytid; MPI_Comm_rank(comm,&mytid);
-    if (mytid==0) {
-      //      val = static_cast<environment*>(this)->iargument(argname,vdef);
-      val = environment::iargument(argname,vdef);
-    }
-    MPI_Bcast(&val,1,MPI_INT,0,comm);
-    return val;
-  };
-  result_tuple *mpi_summarize_entities();
-  virtual void print_all(std::string s) override;
-  virtual void tasks_to_dot_file() override;
-};
-
 #ifdef VT
 void vt_register_kernels();
 #endif
@@ -189,8 +157,7 @@ public:
     : mpi_decomposition(arch,arch.get_proc_layout(1)) {};
 
   void set_decomp_factory();
-  virtual std::string as_string() override {
-    return fmt::format("MPI decomposition <<{}>>",decomposition::as_string()); };
+  virtual std::string as_string() const override;
 };
 
 void make_mpi_communicator(communicator *cator,const decomposition &d);

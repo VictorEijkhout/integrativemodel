@@ -116,6 +116,8 @@
 
 #include "utils.h"
 #include "imp_static_vars.h"
+#include "imp_env.h"
+#include "imp_entity.h"
 #include "imp_functions.h"
 #include "indexstruct.hpp"
 
@@ -140,105 +142,6 @@
  ****/
 
 enum class memoization_status { UNSET, SET, LOCKED };
-
-/*!
-  A simple class for containing an entity name; 
-  right now only architecture inherits from this; 
-  everything else inherits from \ref entity.
-  \todo roll this into \ref entity
- */
-class entity_name {
-private:
-  std::string name;
-protected:
-  static int entity_number;
-public:
-  entity_name() { name = std::string( fmt::format("entity-{}",entity_number++) ); };
-  entity_name( const char *n ) { name = std::string(n); };
-  entity_name( std::string n ) { name = std::string(n); };
-  entity_name( int n ) : entity_name( fmt::format("entity-{}",n) ) {};
-  ~entity_name() {};
-  virtual void set_name( const char *n ) { name = std::string(n); };
-  virtual void set_name( std::string n ) { name = std::string(n); };
-  const std::string &get_name() const { return name; };
-};
-
-/****
- **** Entity
- ****/
-
-/*!
-  We use this to track globally what kind of entities we have.
-  
-  SHELLKERNEL : kernel, except that we do not want it to show up in
-          dot files. Stuff like reduction.
- */
-enum class entity_cookie { UNKNOWN,
-    ARCHITECTURE, COMMUNICATOR, DECOMPOSITION, DISTRIBUTION, MASK,
-    SHELLKERNEL, SIGNATURE,
-    KERNEL, TASK, MESSAGE, OBJECT, OPERATOR, QUEUE };
-
-enum class trace_level {
-  NONE=0, CREATE=1, PROGRESS=2, MESSAGE=4, REDUCT=8
-    };
-
-class environment;
-/*!
-  We define a basic entity class that everyone inherits from.
-  This is mostly to be able to keep track of everything:
-  there is a static environment member which has a list of entities;
-  every newly created entity goes on this list.
-*/
-class entity : public entity_name {
-protected:
-  static environment *env;
-public:
-  //! Default constructor
-  entity() {};
-  //! General constructor
-  entity( entity_cookie c );
-  entity( entity *e,entity_cookie c );
-  ~entity() {};
-  static void set_env( environment *e );
-
-  /*
-   * What kind of entity is this?
-   */
-protected:
-  entity_cookie typecookie{entity_cookie::UNKNOWN};
-public:
-  void set_cookie( entity_cookie c ) { typecookie = c; };
-  entity_cookie get_cookie() const { return typecookie; };
-  std::string cookie_as_string() const;
-
-public:
-  static trace_level tracing;
-  //static bool trace_progress;
-public:
-  static void add_trace_level( trace_level lvl ) {
-    tracing = (trace_level) ( (int)tracing | (int)lvl );
-  };
-  bool has_trace_level( trace_level lvl ) {
-    return (int)tracing & (int)lvl;
-  };
-  trace_level get_trace_level() { return tracing; };
-  bool tracing_progress() { return ((int)tracing & (int)trace_level::PROGRESS)>0; };
-  
-  /*
-   * Statistics: allocation and timing
-   */
-protected:
-  float allocated_space{0.};
-public:
-  void register_allocated_space( float s ) { allocated_space += s; };
-  float get_allocated_space() { return allocated_space; };
-
-  /*
-   * Output
-   */
-  virtual std::string as_string() { //!< Base class method for rendering as string
-    return fmt::format("type: {}",cookie_as_string()); }
-};
 
 /*!
   An event class. This mostly has begin/end methods and records the duration between.
@@ -414,21 +317,11 @@ public: // data
   int beta_has_local_addres_space{-1}; //!< \todo why is this public data?
 public: // methods
   //! Default constructor
-  architecture() {};
+  architecture();
   //! architecture constructor will mostly be called through derived architectures.
   architecture(int m,int n) : architecture(n) { arch_procid = m; };
-  architecture(int n) : entity(entity_cookie::ARCHITECTURE) {
-    arch_nprocs = n; set_name("some architecture"); };
-  //! Copy constructor
-  architecture( const architecture *a )
-    : entity( /* dynamic_cast<entity*>(a), */ entity_cookie::ARCHITECTURE) {
-    arch_procid = a->arch_procid; arch_nprocs = a->arch_nprocs;
-    type = a->type; over_factor = a->over_factor; protocol = a->protocol;
-    message_as_buffer = a->message_as_buffer; mytid = a->mytid;
-    beta_has_local_addres_space = a->beta_has_local_addres_space;
-    can_embed_in_beta = a->can_embed_in_beta; strategy = a->strategy;
-  }
-  ~architecture() {};
+  architecture(int n) { // : entity(entity_cookie::ARCHITECTURE) {
+    arch_nprocs = n; }; //set_name("some architecture"); };
   //! A mode-dependent switch to turn on tricky optimizations
   virtual void set_power_mode() {};
 
@@ -729,8 +622,6 @@ public:
   */
   decomposition( const decomposition &d,const processor_coordinate &p )
     : decomposition(d) { start_coord = p; };
-  decomposition(decomposition *d);
-  ~decomposition() {};
 
   /*
    * Global info
@@ -811,195 +702,6 @@ public:
   bool operator!=( const decomposition& ) const;
   bool operator==( const decomposition& ) const;
   processor_coordinate &operator*();
-};
-
-enum class environment_type {
-  BASE,MPI,OMP,PRODUCT,HYBRID,IR};
-#define result_tuple std::tuple<\
-				/* 0: object count */ int,		\
-				/* 1 : kernel count */ int,		\
-				/* 2 : task count */ int,               \
-				/* 3 : distribution count */ int,       \
-				/* 4 : allocated space */ index_int,    \
-				/* 5 : run duration */ double,          \
-				/* 6 : analysis time */ double,         \
-				/* 7 : message count */ int,            \
-				/* 8 : message volume */ double,        \
-				/* 9 : flop count */ double \
-				>
-#define RESULT_OBJECT 0
-#define RESULT_KERNEL 1
-#define RESULT_TASK 2
-#define RESULT_DISTRIBUTION 3
-#define RESULT_ALLOCATED 4
-#define RESULT_DURATION 5
-#define RESULT_ANALYSIS 6
-#define RESULT_MESSAGE 7
-#define RESULT_WORDSENT 8
-#define RESULT_FLOPS 9
-
-/*!
-  An environment describes the processor structure. 
-
-  There is a feeble attempt 
-  to include profiling information in this object.
-
-  \todo make \ref set_command_line virtual with default, override in mpi case
-*/
-class environment : public entity_name {
-private:
-protected:
-  int debug_level{0};
-  // tracing
-  std::vector<double> execution_times;
-  double flops{0.};
-  int ntasks_executed;
-public:
-  // Store the commandline and look for the debug parameter
-  environment(int argc,char **argv);
-  // Reporting and cleanup
-  ~environment();
-  // environment( environment& other ) { //! Copy constructor
-  //   arch = other.arch; type = other.type; ir_outputfile = other.ir_outputfile;
-  //   strategy = other.strategy; delete_environment = other.delete_environment;
-  //   allreduce = other.allreduce; allreduce_d = other.allreduce_d; allreduce_and = other.allreduce_and;
-  //   gather32 = other.gather32; gather64 = other.gather64;
-  // };
-  //! In case we want to delete things in reverse order: MPI_Finalize needs to be called last.
-  std::function< void(void) > delete_environment{
-    [] () -> void { printf("default delete\n"); return; } };
-
-protected:
-  int strategy{0};
-public:
-  int get_collective_strategy() { return strategy; };
-
-  /*
-   * Type
-   */
-protected:
-  environment_type type{environment_type::BASE};
-public:
-  int check_type_is( environment_type t ) { return type==t; };
-  int is_type_mpi() { return type==environment_type::MPI; };
-  int is_type_omp() { return type==environment_type::OMP; };
-
-  /*
-   * Collectives in the environment
-   */
-  std::function< index_int(index_int) > allreduce { [] (index_int i) -> index_int { return i; } };
-  std::function< index_int(index_int) > allreduce_d { [] (double i) -> double { return i; } };
-  std::function< int(int) > allreduce_and { [] (double i) -> double { return i; } };
-    
-  std::function< void(int contrib,std::vector<int>&) > gather32 {
-    [] (int c,std::vector<int>&) -> void { throw(std::string("No default gather32")); } };
-  std::function< void(index_int contrib,std::vector<index_int>&) > gather64 {
-    [] (index_int c,std::vector<index_int>&) -> void { throw(std::string("No default gather64")); } };
-  std::function < std::vector<index_int>*(index_int,int) > overgather {
-    [] (index_int c,int o) -> std::vector<index_int>* { throw(std::string("No default gather")); } };
-  std::function< int(int *senders,int root) > reduce_scatter{nullptr};
-  
-  /*
-   * Architecture
-   */
-protected:
-  //! The actual architecture is created in the mode-specific environments
-  architecture arch{nullptr};
-public:
-  virtual architecture make_architecture() = 0;
-  const architecture get_architecture() const { return arch; };
-  architecture get_embedded_architecture() const {
-    return arch.get_embedded_architecture(); };
-  virtual void get_comm(void*) {
-    throw(std::string("Get Comm not implemented")); };
-
-  /*
-   * Commandline
-   */
-protected:
-  int nargs{0}; char **the_args{nullptr};
-public:
-  void set_command_line(int argc,char **argv) { nargs = argc; the_args = argv; };
-  bool has_argument(const char*);
-  //! Return an integer commandline argument with default value
-  virtual int iargument(const char*,int);
-  static std::function< void(void) > print_application_options;
-  virtual void print_options();
-protected:
-  std::vector< std::string > internal_args; // for now unused.
-public:
-  int hasarg_from_internal(std::string a) {
-    for (auto arg : internal_args)
-      if (arg==a) return 1;
-    return 0;
-  };
-
-  // profiling
-  void register_execution_time(double);
-  void register_flops(double);
-  void record_task_executed();
-  virtual void print_stats() {}; // by default no-op
-#define DEBUG_STATS 1
-#define DEBUG_PROGRESS 2
-#define DEBUG_VECTORS 4
-#define DEBUG_MESSAGES 8
-  int get_debug_level() { return debug_level; };
-
-  /*
-   * Printable output
-   */
-protected:
-  int do_printing{1};
-public:
-  //! Test whether this environment does printing; this gets disabled on MPI for mytid>0.
-  void set_is_printing_environment( int p=1 ) { do_printing = p; };
-  //! Are we a printing environment?
-  int get_is_printing_environment() { return do_printing; };
-protected:
-  std::string ir_outputfilename{"dag.ir"};
-  FILE *ir_outputfile{nullptr};
-  std::string *indentation{new std::string};
-public:
-  virtual void set_ir_outputfile( const char *n );
-  void close_ir_outputfile() {
-    if (ir_outputfile!=nullptr) { fclose(ir_outputfile); ir_outputfile = nullptr; };
-  };
-  //! By default, return a string counting the global number of processors
-  virtual std::string as_string();
-  //! By default print to standard out
-  void increase_indent() { indentation->push_back(' '); indentation->push_back(' '); };
-  void decrease_indent() { indentation->resize( indentation->size()-2 ); };
-    //indentation->pop_back(); indentation->pop_back(); };
-  void print_line( std::string );
-  void open_bracket(); void close_bracket();
-  //void print_object_line( char *s );
-  virtual void print_to_file( std::string );
-  virtual void print_to_file( const char* );
-  virtual void print_to_file( int, std::string );
-  virtual void print_to_file( int, const char* );
-  //  virtual void print() { this->print_to_file( this->as_string() ); };
-  virtual void print_single(std::string s) { print_to_file(s); };
-  virtual void print_all(std::string s) { print_to_file(s); };
-
-  /*
-   * Entities
-   */
-protected:
-  static std::vector<entity*> list_of_all_entities;
-public:
-  void push_entity( entity *e ); int n_entities() const; void list_all_entities();
-  // basic summary
-  result_tuple *local_summarize_entities();
-  // mode-specific summary is by default the basic one, but see MPI!
-  std::function< result_tuple*(void) > mode_summarize_entities{
-    [this] (void) -> result_tuple* { return local_summarize_entities(); } };
-  double get_allocated_space(); int nmessages_sent(result_tuple*);
-  std::string summary_as_string( result_tuple *results );
-  void print_summary();
-  std::string kernels_as_dot_string();
-  void kernels_to_dot_file();
-  std::string tasks_as_dot_string();
-  virtual void tasks_to_dot_file(); // more complicated with MPI
 };
 
 /*! \page tracing Tracing
@@ -1286,7 +988,8 @@ protected:
 public:
   void set_structure_type( distribution_type t ) {
     if (t==distribution_type::UNDEFINED)
-      throw(fmt::format("Should not set undefined distribution type in <<{}>>",get_name()));
+      throw(fmt::format("Should not set undefined distribution type in <<{}>>","dt"));
+    //get_name()));
     type = t; };
   distribution_type get_type() const { return type; };
   int has_type(distribution_type t) const { return get_type()==t; };
@@ -1714,7 +1417,7 @@ public:
   gathered_distribution( const decomposition &d,int k,index_int lsize)
     : distribution(d) {
     create_from_replicated_local_size(lsize*domains_volume());
-    set_name("gathered-scalar"); set_orthogonal_dimension(k);
+    //set_name("gathered-scalar"); set_orthogonal_dimension(k);
   };
 };
 
@@ -1723,7 +1426,7 @@ public:
   binned_distribution( const decomposition &d,object *o)
     : distribution(d) {
     create_by_binning(o);
-    set_name("binned");
+    //set_name("binned");
   };
 };
 
@@ -2144,7 +1847,7 @@ public:
   The allocation of data is done in the derived classes \ref mpi_object 
   and \ref omp_object.
 */
-class object : public object_data,public entity {
+class object : public object_data ,public entity {
 private:
   static int count;
 public:
@@ -2152,12 +1855,7 @@ public:
     Create an object with locally allocated data. The actual allocation is done in the
     derived classes, since it depends on details of the architecture.
    */
-  object( std::shared_ptr<distribution> d )
-    : object_data(d->local_ndomains()),entity(entity_cookie::OBJECT) {
-    object_distribution = d;
-    object_number = count++; //data_is_filled = new processor_mask(d.get());
-    set_name(fmt::format("object-{}",object_number));
-  };
+  object( std::shared_ptr<distribution> d );
 
 protected:
   int object_number{-1}; //!< Unique number for each object \todo do this in entity?
@@ -2479,7 +2177,7 @@ class signature_function : public entity {
 public:
   //! The constructor does not set or allocate anything.
   signature_function()
-    : entity(entity_cookie::SIGNATURE) {};
+  {}; //: entity(entity_cookie::SIGNATURE) {};
 
   // type
 protected:
@@ -2711,15 +2409,16 @@ public:
 
  \todo should this inherit from entity, as opposed to kernel doing so?
  */
-class dependencies : public tracer,public entity {
+class dependencies : public tracer { //,public entity {
 protected:
   std::vector<dependency> the_dependencies;
 public:
   //! Create dependencies for origin kernel
-  dependencies() : entity(entity_cookie::KERNEL) {};
+  dependencies() {}; // : entity(entity_cookie::KERNEL) {};
   // Create first dependency for compute kernel
   //  dependencies( std::shared_ptr<object> in );
-  std::vector<dependency> &get_dependencies() { return the_dependencies; };
+  auto &get_dependencies() { return the_dependencies; };
+  const auto& get_dependencies() const { return the_dependencies; };
   const dependency &get_dependency(int d) const;
   dependency &set_dependency(int d);
 
@@ -2765,6 +2464,7 @@ public:
   // message stuff
   std::vector<std::shared_ptr<message>> derive_dependencies_receive_messages
   (const processor_coordinate&,int,bool=false);
+  std::string as_string() const { return "dependencies as string"; };
 };
 
 class task;
@@ -2783,18 +2483,16 @@ enum class kernel_type { UNDEFINED,ORIGIN,COMPUTE,TRACE };
   \todo kernel should inherit from object.....
 */
 class kernel : public dependencies,
-	       public std::enable_shared_from_this<kernel> {
+	       public std::enable_shared_from_this<kernel>,
+	       public entity {
 public:
-  //! Pre-basic constructor
-  kernel() {};
-  //! Origin kernel only has an output object
-  kernel( std::shared_ptr<object> out ) : kernel() {
-    out_object = out;
-    type = kernel_type::ORIGIN; set_name("origin kernel"); };
+  kernel();
+  kernel( std::shared_ptr<object> out );
   //! Compute kernel constructor. \todo can we delegate this one too?
   kernel( std::shared_ptr<object> in,std::shared_ptr<object> out) : kernel(out) {
     add_in_object(in);
-    type = kernel_type::COMPUTE; set_name("compute kernel"); };
+    type = kernel_type::COMPUTE; //set_name("compute kernel");
+  };
 
   std::function< std::shared_ptr<task>(kernel*,const processor_coordinate &) >
   make_task_for_domain{
@@ -2933,7 +2631,7 @@ public:
   static std::function< std::shared_ptr<kernel>(std::shared_ptr<object>,std::shared_ptr<object>) > make_reduction_kernel;
 
   // statistics
-  virtual std::string as_string() override; // is overridden for composite kernels
+  virtual std::string as_string() const override ; // is overridden for composite kernels
   int local_nmessages();
 };
 
@@ -2946,7 +2644,7 @@ public:
     : kernel(out) {
     out->allocate();
     set_localexecutefn( &vecnoset );
-    set_name(name);
+    //set_name(name);
   };
 };
 
@@ -2972,7 +2670,8 @@ class algorithm;
   track of the kernel from which a task comes, other than through its #step
   value.
 */
-class task : public entity,public tracer,public std::enable_shared_from_this<task> {
+class task : public entity,
+	     public tracer,public std::enable_shared_from_this<task> {
 protected:
   kernel *containing_kernel{nullptr};
   processor_coordinate domain; //!< the processor number of this task in the kernel
@@ -2996,19 +2695,22 @@ public:
     localexecutefn = k->localexecutefn; localexecutectx = k->localexecutectx;
     type = k->get_type();
     // set coordinate information and such
-    domain = d; task_number = count++; set_name("unnamed-task"); };
+    domain = d; task_number = count++; //set_name("unnamed-task");
+  };
   //! Create an origin task for standalone testing: create a kernel that is normally inherited
   task(const processor_coordinate &d,std::shared_ptr<object> out) {
     containing_kernel = out->get_distribution()->new_kernel_from_object(out).get();
     domain = d; task_number = count++;
-    type = kernel_type::ORIGIN; set_name("unnamed-origin-task"); };
+    type = kernel_type::ORIGIN; //set_name("unnamed-origin-task");
+  };
   //! Create a compute task for standalone testing: create a kernel that is normally inherited
   task(const processor_coordinate &d,std::shared_ptr<object> in,std::shared_ptr<object> out) {
     containing_kernel = out->get_distribution()->new_kernel_from_object(out).get();
     if (in==NULL || in==nullptr) throw(std::string("using wrong task constructor"));
     domain = d; task_number = count++;
     containing_kernel->add_in_object(in);
-    type = kernel_type::COMPUTE; set_name("unnamed-compute-task"); };
+    type = kernel_type::COMPUTE; //set_name("unnamed-compute-task");
+  };
   //! \todo can we make this const?
   processor_coordinate &get_domain() { return domain; };
 
@@ -3019,6 +2721,7 @@ public:
   auto get_step_counter() { return containing_kernel->get_step_counter(); };
   auto &get_dependency(int i) { return containing_kernel->get_dependency(i); };
   auto &get_dependencies() { return containing_kernel->get_dependencies(); };
+  const auto &get_dependencies() const { return containing_kernel->get_dependencies(); };
   auto has_type_origin() { return containing_kernel->has_type_origin(); };
   auto get_out_object() { return containing_kernel->get_out_object(); };
   auto get_n_in_objects() { return containing_kernel->get_n_in_objects(); };
@@ -3231,7 +2934,10 @@ public:
   void set_flop_count( double c ) { this->record_flop_count(c); };
   virtual std::string as_string();
   std::string header_as_string() {
-    return fmt::format("<{}-{}>:{}",get_step_counter(),get_domain().as_string(),get_name()); };
+    return fmt::format("<{}-{}>:{}",get_step_counter(),get_domain().as_string(),
+		       "foo"//get_name()
+		       );
+  };
   void set_result_monitor( std::function< void(std::shared_ptr<task> t) > m ) {
     result_monitor = m; };
 };
@@ -3257,7 +2963,8 @@ public: // routines
   algorithm() {};
   algorithm( const decomposition &d )
     : decomposition(d) {
-    set_name("unnamed-queue"); };
+    //set_name("unnamed-queue");
+  };
   int has_type(algorithm_type t) { return type==t; };
 
   /*

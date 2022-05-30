@@ -22,7 +22,8 @@ TACC_FAMILY_COMPILER = clang
 ####
 #### catch
 ####
-CATCHDIR = ${TACC_CATCH2_INC}
+CATCH_INC = ${TACC_CATCH2_INC}
+CATCH_LIB = ${TACC_CATCH2_LIB}
 
 ####
 #### Eigen
@@ -33,6 +34,13 @@ EIGEN_INC = ${HOME}/Installation/eigen/installation-3.3.7/include/eigen3/
 #### Electric Fence
 ####
 EFENCE_LIB = /opt/local/lib/libefence.a
+
+####
+#### fmtlib
+####
+CPPFORMAT_INC = ${TACC_FMTLIB_INC}
+CPPFORMAT_LIB = ${TACC_FMTLIB_LIB}
+LIBFORMAT = libfmt.a
 
 ####
 #### GSL
