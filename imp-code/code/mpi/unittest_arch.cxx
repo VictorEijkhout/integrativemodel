@@ -1,0 +1,28 @@
+/****************************************************************
+ ****
+ **** This file is part of the prototype implementation of
+ **** the Integrative Model for Parallelism
+ ****
+ **** copyright Victor Eijkhout 2014-2022
+ ****
+ **** Unit tests for the MPI product backend of IMP
+ **** based on the CATCH framework (https://github.com/philsquared/Catch)
+ ****
+ **** unit tests for MPI architecture
+ ****
+ ****************************************************************/
+
+#include <stdlib.h>
+#include <math.h>
+
+#include "catch2/catch_all.hpp"
+
+#include "mpi_arch.h"
+
+using fmt::format;
+using fmt::print;
+
+TEST_CASE( "end points","[arch][01]" ) {
+
+}
+

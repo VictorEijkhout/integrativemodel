@@ -130,32 +130,6 @@ void vt_register_kernels() {
 /*!
   Document mpi-specific options.
 */
-/*!
-  MPI architecture data consists of the output of MPI_Comm_rank/size,
-  as done in the environment setup.
-  Based on these, we offer implementations of \ref nprocs and \ref mytid;
-  we do not override \ref architecture_data::nthreads_per_node
-*/
-void mpi_architecture( /*const*/ architecture &a, int ntids, int tid ) {
-  if (ntids>0)
-    a.arch_nprocs = ntids;
-  if (tid>=0)
-    a.arch_procid = tid;
-  
-  a.type = architecture_type::SPMD;
-  a.protocol = protocol_type::MPI;
-  a.beta_has_local_addres_space = 1;
-  a.set_name(fmt::format("mpi-architecture-on-proc{}-out-of-{}",tid,ntids));
-
-  a.message_as_buffer =
-    [] (architecture &a,std::shared_ptr<message> m,
-	// char *b,int l) -> void {
-	std::string &b) -> void {
-      mpi_message_as_buffer(a,m,b /* ,l */); };
-  // For MPI we can actually report a `mytid'
-  a.mytid = [a] (void) -> int { return a.arch_procid; };
-};
-
 /****
  **** Decomposition
  ****/
