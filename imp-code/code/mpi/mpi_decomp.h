@@ -1,5 +1,7 @@
 #include "mpi.h"
-#include "imp_arch.h"
+#include "imp_decomp.h"
+
+#if 0
 
 /****
  **** Architecture
@@ -68,3 +70,4 @@ void mpi_architecture( architecture&, int=-1, int=-1 );
 //   virtual std::string as_string() override;
 // };
 
+#endif

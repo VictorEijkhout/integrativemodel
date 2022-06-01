@@ -22,66 +22,71 @@ class task;
 
 //! Processor coordinates on a pretend grid. We order them by rows.
 //! \todo write method to range over this
-class processor_coordinate {
-private:
-  std::vector<int> coordinates;
-public:
-  processor_coordinate() {}; //!< Default constructor. I don't like it.
-  // Create an empty processor_coordinate object of given dimension
-  processor_coordinate(int dim);
+template<class I,int d>
+class coordinate {
+protected :
+  std::array<I,d> coordinates;
+public :
+  coordinate();
+  // // Create an empty coordinate object of given dimension
+  // coordinate(int dim);
   // Create coordinate from linearized number, against decomposition
-  processor_coordinate(int p,const decomposition &dec);
+  coordinate(int p,const decomposition &dec);
   // from explicit dimension sizes
-  processor_coordinate( std::vector<int> dims );
-  processor_coordinate( std::vector<index_int> dims );
+  coordinate( std::vector<int> dims );
+  coordinate( std::vector<index_int> dims );
   // Copy constructor
-  processor_coordinate( processor_coordinate *other );
+  coordinate( coordinate *other );
 
   // basic stats and manipulation
-  int get_dimensionality() const; int get_same_dimensionality( int d ) const;
-  int &at(int i) { return coordinates.at(i); };
-  void set(int d,int v); int coord(int d) const ; int volume() const;
+  int get_dimensionality() const; int get_same_dimensionality( int ) const;
+  int size() const { return d; };
+  I &at(int i);
+  const I &at(int i) const;
+  //  int volume() const;
 
   // operators
-  processor_coordinate operator+( index_int i) const;
-  processor_coordinate operator+( const processor_coordinate& ) const;
-  processor_coordinate operator-(index_int i) const;
-  processor_coordinate operator-( const processor_coordinate& ) const;
-  processor_coordinate operator%( const processor_coordinate ) const;
+  coordinate operator+( index_int i) const;
+  coordinate operator+( const coordinate& ) const;
+  coordinate operator-(index_int i) const;
+  coordinate operator-( const coordinate& ) const;
+  coordinate operator%( const coordinate ) const;
   bool operator>(index_int i) const;
-  bool operator>( const processor_coordinate ) const;
-  bool operator==( const processor_coordinate&& ) const;
-  bool operator==( const processor_coordinate& ) const;
-  bool operator!=( const processor_coordinate&& ) const;
-  bool operator!=( const processor_coordinate& ) const;
-    int operator[](int d) const { return coord(d); };
-  processor_coordinate rotate( std::vector<int> v,const processor_coordinate &m) const;
-  const std::vector<int> &data() { return coordinates; };
+  bool operator>( const coordinate ) const;
+  bool operator==( const coordinate&& ) const;
+  bool operator==( const coordinate& ) const;
+  bool operator!=( const coordinate&& ) const;
+  bool operator!=( const coordinate& ) const;
+  //  int operator[](int i) const { return coord(i); };
+  coordinate rotate( std::vector<int> v,const coordinate &m) const;
+  //  const std::vector<int> &data() { return coordinates; };
 
   // linearization
-  int linearize( const processor_coordinate&) const; // linear number wrt cube layout
+  int linearize( const coordinate&) const; // linear number wrt cube layout
   int linearize( const decomposition& ) const; // linear number wrt cube
 
   // equality operation
-  processor_coordinate negate();
+  coordinate negate();
   bool is_zero();
-  // processor_coordinate operate( const ioperator &op );
-  // processor_coordinate operate( const ioperator &&op );
+  // coordinate operate( const ioperator &op );
+  // coordinate operate( const ioperator &&op );
   domain_coordinate operate( const ioperator &op );
   domain_coordinate operate( const ioperator &&op );
   std::string as_string() const;
 
+#if 0
   bool is_on_left_face(const decomposition&) const;
   bool is_on_right_face(const decomposition&) const;
   bool is_on_face( const decomposition& ) const;
   bool is_on_face( const std::shared_ptr<object> ) const;
   bool is_on_face( const object& ) const;
   bool is_null() const;
-  processor_coordinate left_face_proc(int d,processor_coordinate &&farcorner) const ;
-  processor_coordinate right_face_proc(int d,processor_coordinate &&farcorner) const ;
-  processor_coordinate left_face_proc(int d,const processor_coordinate &farcorner) const ;
-  processor_coordinate right_face_proc(int d,const processor_coordinate &farcorner) const ;
-
+  coordinate left_face_proc(int d,coordinate &&farcorner) const ;
+  coordinate right_face_proc(int d,coordinate &&farcorner) const ;
+  coordinate left_face_proc(int d,const coordinate &farcorner) const ;
+  coordinate right_face_proc(int d,const coordinate &farcorner) const ;
+#endif
+  
   // operators
   //  domain_coordinate operator*(index_int i);
 
@@ -89,9 +94,9 @@ public:
 protected:
   int iterator{-1};
 public:
-  processor_coordinate& begin() { iterator = 0; return *this; };
-  processor_coordinate& end() { return *this; };
-  bool operator!=( processor_coordinate ps ) { return iterator<coordinates.size()-1; };
+  coordinate& begin() { iterator = 0; return *this; };
+  coordinate& end() { return *this; };
+  bool operator!=( coordinate ps ) { return iterator<coordinates.size()-1; };
   void operator++() { iterator++; };
   int operator*() const {
     if (iterator<0)
@@ -101,19 +106,26 @@ public:
     return v; };
 };
 
-class processor_coordinate1d : public processor_coordinate {
-public:
-  processor_coordinate1d(int p) : processor_coordinate(1) { set(0,p); };
-};
+// template<class I,int d>
+// class coordinate1d : public coordinate {
+// public:
+//   coordinate1d(int p) : coordinate(1) { set(0,p); };
+// };
 
+#if 0
 //! Make a zero coordinate, in case you need to refer to the origin.
-class processor_coordinate_zero : public processor_coordinate {
+template<class I,int d>
+class coordinate_zero : public coordinate<I,d> {
 public:
-  processor_coordinate_zero(int d) :  processor_coordinate(d) {
-    for (int id=0; id<d; id++) set(id,0); };
-  processor_coordinate_zero(const decomposition &d);
+  coordinate_zero<I,d>() :  coordinate<I,d>() {
+    for (int id=0; id<d; id++)
+      coordinates.at(id) = 0;
+  };
+    //  coordinate_zero(const decomposition &d);
 };
+#endif
 
+#if 0
 /****
  **** Architecture
  ****/
@@ -234,12 +246,12 @@ public:
   virtual int is_first_proc(int p) const { return p==0; };
   virtual int is_last_proc(int p)  const { return p==arch_nprocs-1; };
 protected:
-  processor_coordinate coordinates;
+  coordinate coordinates;
 public:
-  processor_coordinate get_proc_origin(int d) const; // far corner of the processor grid
-  processor_coordinate get_proc_endpoint(int d) const; // far corner of the processor grid
-  processor_coordinate get_proc_layout(int d) const; // far corner of the processor grid
-  processor_coordinate get_processor_coordinates() const {
+  coordinate get_proc_origin(int d) const; // far corner of the processor grid
+  coordinate get_proc_endpoint(int d) const; // far corner of the processor grid
+  coordinate get_proc_layout(int d) const; // far corner of the processor grid
+  coordinate get_coordinates() const {
     if (coordinates==nullptr) throw(std::string("No coordinates translation set"));
     return coordinates; };
 protected:
@@ -324,3 +336,4 @@ public:
   virtual std::string as_string() const;
 };
 
+#endif

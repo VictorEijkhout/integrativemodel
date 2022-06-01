@@ -1,20 +1,43 @@
-#include "imp_arch.h"
+#include "imp_decomp.h"
+#include <cassert>
 
+#include <iostream>
+using std::cout;
 using std::array,std::vector,std::string;
 
 template<int d>
 array<int,d> endpoint(int s) {
-  array<int,d> endpoint;
+  array<int,d> endpoint; constexpr int last=d-1;
   for (int id=0; id<d; id++)
     endpoint.at(id) = 1;
-  endpoint[0] = s;
-  for (int id=0; id<d-1; id++) { // find the largest factor of endpoint[id] and put in id+1
-    for (int f=(int)(sqrt(endpoint[id])); f>=2; f--) {
-      if (endpoint[id]%f==0) {
-	endpoint[id] /= f; endpoint[id+1] = f;
-	break; // end factor finding loop, go to next dimension
+  endpoint[0] = 1;
+  if (s==1) return endpoint;
+  for (int prime=2; ; ) {
+    if (s%prime==0) {
+      cout << "prime divisor: " << prime << "\n";
+      s /= prime;
+      // insert this prime
+      if (prime>=endpoint.front()) {
+	// move everything to the back
+	for (int idx=last; idx>0; idx--)
+	  endpoint.at(idx) = endpoint.at(idx-1);
       }
-    }
+      endpoint.front() = prime;
+      if (s==1) break;
+    } else {
+      // next prime
+      int saved_prime = prime;
+      for (int next_prime=prime+1; ; next_prime++) {
+	bool isprime=true;
+	for (int f=2; f<next_prime/2; f++) {
+	  if (next_prime%f==0) { isprime = false; break; }
+	}
+	if (isprime) { prime = next_prime; break; }
+      } // end of next prime loop
+      cout << "next prime: " << prime << "\n";
+      assert(prime>saved_prime);
+      assert(prime<=s);
+    } // end else
   }
   return endpoint;
 };
@@ -25,6 +48,31 @@ array<int,d> farpoint(int s) {
   for (int id=0; id<d; id++)
     farpoint[id]--;
   return farpoint;
+};
+
+/*
+ * Coordinates
+ */
+//! Create an empty coordinate object of given dimension
+//snippet pcoorddim
+template<class I,int d>
+coordinate<I,d>::coordinate() {
+  for (int id=0; id<d; id++)
+    coordinates.at(id) = -1;
+};
+//snippet end
+
+template<class I,int d>
+I& coordinate<I,d>::at(int i) {
+  return coordinates.at(i); };
+
+template<class I,int d>
+const I& coordinate<I,d>::at(int i) const {
+  return coordinates.at(i); };
+
+template<class I,int d>
+string coordinate<I,d>::as_string() const {
+  return "coordinate";
 };
 
 #if 0
@@ -39,20 +87,20 @@ architecture::architecture()
   See \ref architecture::get_proc_endpoint
   \todo this one is never used. Do away?
 */
-processor_coordinate architecture::get_proc_origin(int d) const {
-  return processor_coordinate( vector<int>(d,0) );
+coordinate architecture::get_proc_origin(int d) const {
+  return coordinate( vector<int>(d,0) );
 };
 
 //! Multi-d descriptor of number of processes. This is actually the highest proc number.
 //! \todo find a much better way of deducing or setting a processor grid
-processor_coordinate architecture::get_proc_endpoint(int d) const {
+coordinate architecture::get_proc_endpoint(int d) const {
   int P = nprocs()*get_over_factor();
-  return processor_coordinate( make_endpoint(d,P) );
- //  processor_coordinate *coord;
+  return coordinate( make_endpoint(d,P) );
+ //  coordinate *coord;
  //  if (d==1) {
- //    coord = new processor_coordinate(1); coord->set(0,P-1);
+ //    coord = new coordinate(1); coord->set(0,P-1);
  //  } else if (d==2) {
- //    coord = new processor_coordinate(2);
+ //    coord = new coordinate(2);
  //    int ntids_i,ntids_j;
  //    for (int n=sqrt(P+1); n>=1; n--)
  //      if (P%n==0) { // real grid otherwise
@@ -66,7 +114,7 @@ processor_coordinate architecture::get_proc_endpoint(int d) const {
 };
 
 //! The size layout is one more than the endpoint \todo return as non-reference copy
-processor_coordinate architecture::get_proc_layout(int dim) const {
+coordinate architecture::get_proc_layout(int dim) const {
   auto layout = get_proc_endpoint(dim);
   for (int id=0; id<dim; id++)
     layout.set(id, layout.coord(id)+1 );
@@ -138,7 +186,7 @@ std::string architecture::as_string() const {
 
 //! Default decomposition uses all procs of the architecture in one-d manner.
 decomposition::decomposition( const architecture &arch )
-  : decomposition( arch, processor_coordinate
+  : decomposition( arch, coordinate
 		   ( vector<int>{arch.nprocs()*arch.get_over_factor()} ) ) {
 };
 
@@ -147,21 +195,21 @@ decomposition::decomposition( const architecture &arch )
   The processor coordinate is a size specification, to make it compatible with nprocs
 */
 //snippet decompfromcoord
-decomposition::decomposition( const architecture &arch,processor_coordinate &sizes )
+decomposition::decomposition( const architecture &arch,coordinate &sizes )
   : architecture(arch) {
   int dim = sizes.get_dimensionality();
   if (dim<=0)
     throw(string("Non-positive decomposition dimensionality"));
-  domain_layout = sizes; //new processor_coordinate(sizes);
+  domain_layout = sizes; //new coordinate(sizes);
   set_corners();
 };
 //snippet end
-decomposition::decomposition( const architecture &arch,processor_coordinate &&sizes )
+decomposition::decomposition( const architecture &arch,coordinate &&sizes )
   : architecture(arch) {
   int dim = sizes.get_dimensionality();
   if (dim<=0)
     throw(string("Non-positive decomposition dimensionality"));
-  domain_layout = sizes; //new processor_coordinate(sizes);
+  domain_layout = sizes; //new coordinate(sizes);
   set_corners();
 };
 
@@ -177,19 +225,19 @@ int decomposition::domains_volume() const {
   return p;
 };
 
-const processor_coordinate &decomposition::first_local_domain() const {
+const coordinate &decomposition::first_local_domain() const {
   if (mdomains.size()==0)
     throw(format("Decomposition has no domains"));
   return mdomains.at(0);
 };
-const processor_coordinate &decomposition::last_local_domain() const {
+const coordinate &decomposition::last_local_domain() const {
   if (mdomains.size()==0)
     throw(format("Decomposition has no domains"));
   return mdomains.at(mdomains.size()-1);
 };
 
 //! Get the local number where this domain is stored. Domains are multi-dimensionally numbered.
-int decomposition::get_domain_local_number( const processor_coordinate &d ) const {
+int decomposition::get_domain_local_number( const coordinate &d ) const {
   // print("get domain local number of {} in decomp: <<{}>>\n",
   // 	d.as_string(),this->as_string());
   for ( int i=0; i<mdomains.size(); i++) {
@@ -226,13 +274,13 @@ void decomposition::add_domains( indexstruct *d ) {
   //print("adding domains from indexstruct <<{}>>\n",d->as_string());
   for ( auto i=d->first_index(); i<=d->last_index(); i++ ) {
     int ii = (int)i; // std::static_cast<int>(i);
-    add_domain( processor_coordinate( vector<int>{ ii } ),false );
+    add_domain( coordinate( vector<int>{ ii } ),false );
   }
   set_corners();
 };
 
 //! Add a multi-d local domain.
-void decomposition::add_domain( processor_coordinate d,bool recompute ) {
+void decomposition::add_domain( coordinate d,bool recompute ) {
   //print("adding domain at coordinate <<{}>>\n",d.as_string());
   int dim = d.get_same_dimensionality( domain_layout.get_dimensionality() );
   mdomains.push_back(d);
@@ -241,10 +289,10 @@ void decomposition::add_domain( processor_coordinate d,bool recompute ) {
 
 //! Get the multi-dimensional coordinate of a linear one. \todo check this calculation
 //! http://stackoverflow.com/questions/10903149/how-do-i-compute-the-linear-index-of-a-3d-coordinate-and-vice-versa
-processor_coordinate decomposition::coordinate_from_linear(int p) const {
+coordinate decomposition::coordinate_from_linear(int p) const {
   int dim = domain_layout.get_dimensionality();
   if (dim<=0) throw(string("Zero dim layout"));
-  processor_coordinate pp(dim);
+  coordinate pp(dim);
   for (int id=dim-1; id>=0; id--) {
     int dsize = domain_layout.coord(id);
     if (dsize==0)
@@ -257,17 +305,17 @@ processor_coordinate decomposition::coordinate_from_linear(int p) const {
 void decomposition::set_corners() {
   // origin; we set this to all zeros, which may not be enough.
   int d = get_dimensionality();
-  closecorner = processor_coordinate( vector<int>(d,0) );
+  closecorner = coordinate( vector<int>(d,0) );
   // farcorner; explicit endpoint.
   int P = domains_volume();
-  farcorner = processor_coordinate( make_endpoint(d,P) );
+  farcorner = coordinate( make_endpoint(d,P) );
 };
 
 //! \todo why can't we declare this const?
-const processor_coordinate &decomposition::get_origin_processor() const {
+const coordinate &decomposition::get_origin_processor() const {
   return closecorner;
 };
-const processor_coordinate &decomposition::get_farpoint_processor() const {
+const coordinate &decomposition::get_farpoint_processor() const {
   return farcorner;
 };
 
@@ -280,7 +328,7 @@ string decomposition::as_string() const {
 
 /*!
   We begin iteration by giving the first coordinate.
-  We store the current iterate as a private processor_coordinate: `cur_coord'.
+  We store the current iterate as a private coordinate: `cur_coord'.
   Iteration is done C-style: the last coordinate varies quickest.
 
   Note: iterating is only defined for bricks.
@@ -338,7 +386,7 @@ bool decomposition::operator==( const decomposition &other ) const {
   return iterate_count==other.iterate_count;
 };
 
-processor_coordinate &decomposition::operator*() {
+coordinate &decomposition::operator*() {
   //print("decomp::deref: {}\n",cur_coord.as_string());
   return cur_coord;
 };
@@ -351,3 +399,10 @@ template array<int,3> endpoint<3>(int);
 template array<int,1> farpoint<1>(int);
 template array<int,2> farpoint<2>(int);
 template array<int,3> farpoint<3>(int);
+
+template class coordinate<int,1>;
+template class coordinate<int,2>;
+template class coordinate<int,3>;
+template class coordinate<index_int,1>;
+template class coordinate<index_int,2>;
+template class coordinate<index_int,3>;

@@ -69,14 +69,16 @@ ${UNITTEST_OBJS} : mpi_base.h
 unittest_main.o : \
     mpi_env.h ${IMPCODEDIR}/imp_env.h \
     mpi_static_vars.h ${IMPCODEDIR}/imp_static_vars.h
+NEW_TESTS = 
 
 info ::
 	@echo "Test from the group up:"
 	@echo "    unittest_env"
-	@echo "    unittest_arch"
+	@echo "    unittest_decomp"
 #
 # environment
 #
+NEW_TESTS := unittest_env
 ENV_OBJS := mpi_env.o ${IMPCODEDIR}/imp_env.o
 unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
@@ -89,19 +91,20 @@ mpi_env.o : mpi_env.h ${IMPCODEDIR}/imp_env.h
 ${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
 	cd ${IMPCODEDIR} && make imp_env.o
 #
-# architecture
+# architecture and decomposition
 #
-ARCH_OBJS := mpi_arch.o ${IMPCODEDIR}/imp_arch.o ${ENV_OBJS}
-unittest_arch : unittest_main.o unittest_arch.o ${ARCH_OBJS}
+NEW_TESTS := unittest_decomp
+DECOMP_OBJS := mpi_decomp.o ${IMPCODEDIR}/imp_decomp.o ${ENV_OBJS}
+unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
 	  unittest_main.o $@.o \
-	  ${ARCH_OBJS} \
+	  ${DECOMP_OBJS} \
 	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
 	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
-mpi_arch.o : mpi_arch.h ${IMPCODEDIR}/imp_arch.h
-${IMPCODEDIR}/imp_arch.o : ${IMPCODEDIR}/imp_arch.cxx ${IMPCODEDIR}/imp_arch.h
-	cd ${IMPCODEDIR} && make imp_arch.o
+mpi_decomp.o : mpi_decomp.h ${IMPCODEDIR}/imp_decomp.h
+${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
+	cd ${IMPCODEDIR} && make imp_decomp.o
 
 ${patsubst %,%.o,${UNITTESTS}} : \
     ${IMPCODEDIR}/unittest_functions.h ${IMPCODEDIR}/imp_functions.h ${IMPCODEDIR}/indexstruct.hpp \
@@ -157,5 +160,5 @@ applications :
 	  done
 
 clean ::
-	@/bin/rm -f unittest ${UNITTESTS}
+	@/bin/rm -f unittest ${UNITTESTS} ${NEW_TESTS}
 	@cd mpi_apps ; make clean

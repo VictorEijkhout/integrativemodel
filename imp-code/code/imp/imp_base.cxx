@@ -923,17 +923,9 @@ string parallel_structure::as_string() const {
  **** Mask & coordinate
  ****/
 
-//! Create an empty processor_coordinate object of given dimension
-//snippet pcoorddim
-processor_coordinate::processor_coordinate(int dim) {
-  for (int id=0; id<dim; id++)
-    coordinates.push_back(-1);
-};
-//snippet end
-
 //! Create coordinate from linearized number, against decomposition \todo unnecessary?
-processor_coordinate::processor_coordinate(int p,const decomposition &dec)
-  : processor_coordinate(dec.get_dimensionality()) {
+coordinate::coordinate(int p,const decomposition &dec)
+  : coordinate(dec.get_dimensionality()) {
   int dim = dec.get_dimensionality();
   auto pcoord = dec.coordinate_from_linear(p);
   for (int d=0; d<dim; d++)
@@ -941,32 +933,32 @@ processor_coordinate::processor_coordinate(int p,const decomposition &dec)
 };
 
 //! Constructor from explicit vector of sizes
-processor_coordinate::processor_coordinate( vector<int> dims )
-  : processor_coordinate(dims.size()) {
+coordinate::coordinate( vector<int> dims )
+  : coordinate(dims.size()) {
   for (int id=0; id<dims.size(); id++)
     set(id,dims[id]);
 };
-processor_coordinate::processor_coordinate( vector<index_int> dims )
-  : processor_coordinate(dims.size()) {
+coordinate::coordinate( vector<index_int> dims )
+  : coordinate(dims.size()) {
   for (int id=0; id<dims.size(); id++)
     set(id,dims[id]);
 };
 
 //! Copy constructor
-processor_coordinate::processor_coordinate( processor_coordinate *other ) {
+coordinate::coordinate( coordinate *other ) {
   for (int id=0; id<other->coordinates.size(); id++)
     coordinates.push_back( other->coordinates[id] ); };
 
 //! Create from the dimensionality of a decomposition.
-processor_coordinate_zero::processor_coordinate_zero( const decomposition &d)
-  :  processor_coordinate_zero(d.get_dimensionality()) {};
+coordinate_zero::coordinate_zero( const decomposition &d)
+  :  coordinate_zero(d.get_dimensionality()) {};
 
 /*!
   Get the dimensionality by the size of the coordinate vector.
   The dimension zero case corresponds to the default constructor,
   which is used for processor coordinate objects stored in a decomposition object.
 */
-int processor_coordinate::get_dimensionality() const {
+int coordinate::get_dimensionality() const {
   int s = coordinates.size();
   if (s<0)
     throw(string("Non-positive processor-coordinate dimensionality"));
@@ -974,21 +966,21 @@ int processor_coordinate::get_dimensionality() const {
 };
 
 //! Get the dimensionality, and it should be the same as someone else's.
-int processor_coordinate::get_same_dimensionality( int d ) const {
+int coordinate::get_same_dimensionality( int d ) const {
   int rd = get_dimensionality();
   if (rd!=d)
     throw(format("Non-conforming dimensionalities {} vs {}",rd,d));
   return rd;
 };
 
-void processor_coordinate::set(int d,int v) {
+void coordinate::set(int d,int v) {
   if (d<0 || d>=get_dimensionality())
     throw(format("Can not set dimension {}",d));
   coordinates.at(d) = v;
 };
 
 //! Get one component of the coordinate.
-int processor_coordinate::coord(int d) const {
+int coordinate::coord(int d) const {
   if (d<0 || d>=coordinates.size() )
     throw(format("dimension {} out of range for coordinate <<{}>>",d,as_string()));
   return coordinates.at(d);
@@ -997,44 +989,44 @@ int processor_coordinate::coord(int d) const {
 /*! Compute volume by multiplying all coordinates
   \todo is this a bad name? what do we use it for?
 */
-int processor_coordinate::volume() const {
+int coordinate::volume() const {
   int r = 1;
   for (int id=0; id<coordinates.size(); id++) r *= coordinates[id]; return r;
 };
 
 //! Equality test
-bool processor_coordinate::operator==( const processor_coordinate &&other ) const {
+bool coordinate::operator==( const coordinate &&other ) const {
   int dim = get_same_dimensionality(other.get_dimensionality());
   for (int id=0; id<dim; id++)
     if (coord(id)!=other.coord(id)) return false;
   return true;
 };
-bool processor_coordinate::operator==( const processor_coordinate &other ) const {
+bool coordinate::operator==( const coordinate &other ) const {
   auto other_copy = other;
   return operator==(std::move(other_copy));
 };
 
-bool processor_coordinate::operator!=( const processor_coordinate &&other ) const {
+bool coordinate::operator!=( const coordinate &&other ) const {
   return !(*this==other);
 };
-bool processor_coordinate::operator!=( const processor_coordinate &other ) const {
+bool coordinate::operator!=( const coordinate &other ) const {
   return ! (*this==other);
 };
 
 //! Equality to zero
-bool processor_coordinate::is_zero() { auto z = 1;
+bool coordinate::is_zero() { auto z = 1;
   for ( auto c : coordinates ) z = z && c==0;
   return z;
 };
 
-bool processor_coordinate::operator>( const processor_coordinate other ) const {
+bool coordinate::operator>( const coordinate other ) const {
   int dim = get_same_dimensionality( other.get_dimensionality());
   for (int id=0; id<dim; id++)
     if (coord(id)<=other.coord(id)) return false;
   return true;
 };
 
-bool processor_coordinate::operator>( index_int other) const {
+bool coordinate::operator>( index_int other) const {
   int dim = get_dimensionality();
   for (int id=0; id<dim; id++)
     if (coord(id)<=other) return false;
@@ -1042,81 +1034,81 @@ bool processor_coordinate::operator>( index_int other) const {
 };
 
 //! Operate plus with second coordinate an integer
-processor_coordinate processor_coordinate::operator+( index_int iplus) const {
+coordinate coordinate::operator+( index_int iplus) const {
   int dim = get_dimensionality();
-  processor_coordinate pls(dim);
+  coordinate pls(dim);
   for (int id=0; id<dim; id++)
     pls.set(id,coord(id)+iplus);
   return pls;
 };
 
 //! Operate plus with second coordinate a coordinate
-processor_coordinate processor_coordinate::operator+( const processor_coordinate &cplus) const {
+coordinate coordinate::operator+( const coordinate &cplus) const {
   int dim = get_same_dimensionality(cplus.get_dimensionality());
-  processor_coordinate pls(dim);
+  coordinate pls(dim);
   for (int id=0; id<dim; id++)
     pls.set(id,coord(id)+cplus.coord(id));
   return pls;
 };
 
 //! Operate minus with second coordinate an integer
-processor_coordinate processor_coordinate::operator-(index_int iminus) const {
+coordinate coordinate::operator-(index_int iminus) const {
   int dim = get_dimensionality();
-  processor_coordinate pls(dim);
+  coordinate pls(dim);
   for (int id=0; id<dim; id++)
     pls.set(id,coord(id)-iminus);
   return pls;
 };
 
 //! Operate minus with second coordinate a coordinate
-processor_coordinate processor_coordinate::operator-( const processor_coordinate &cminus) const {
+coordinate coordinate::operator-( const coordinate &cminus) const {
   int dim = get_same_dimensionality(cminus.get_dimensionality());
-  processor_coordinate pls(dim);
+  coordinate pls(dim);
   for (int id=0; id<dim; id++)
     pls.set(id,coord(id)-cminus.coord(id));
   return pls;
 };
 
 //! Module each component wrt a layout vector \todo needs unittest
-processor_coordinate processor_coordinate::operator%( const processor_coordinate modvec) const {
+coordinate coordinate::operator%( const coordinate modvec) const {
   int dim = get_same_dimensionality(modvec.get_dimensionality());
-  processor_coordinate pls(dim);
+  coordinate pls(dim);
   for (int id=0; id<dim; id++)
     pls.set(id, coord(id)%modvec.coord(id));
   return pls;
 };
 
 //! Rotate a processor coordinate in a grid \todo needs unittest
-processor_coordinate processor_coordinate::rotate
-    ( vector<int> v, const processor_coordinate &m) const {
+coordinate coordinate::rotate
+    ( vector<int> v, const coordinate &m) const {
   int dim = get_same_dimensionality(v.size());
-  auto pv = processor_coordinate(v);
+  auto pv = coordinate(v);
   return ( (*this)+pv )%m;
 };
 
 /*
  * operations
  */
-domain_coordinate processor_coordinate::operate( const ioperator &op ) {
+domain_coordinate coordinate::operate( const ioperator &op ) {
   int dim = get_dimensionality();
-  domain_coordinate opped(dim); // = new processor_coordinate(dim);
+  domain_coordinate opped(dim); // = new coordinate(dim);
   for (int id=0; id<dim; id++)
     opped.set(id, op.operate(coord(id)) );
   return opped;
 };
 
-domain_coordinate processor_coordinate::operate( const ioperator &&op ) {
+domain_coordinate coordinate::operate( const ioperator &&op ) {
   int dim = get_dimensionality();
-  domain_coordinate opped(dim); // = new processor_coordinate(dim);
+  domain_coordinate opped(dim); // = new coordinate(dim);
   for (int id=0; id<dim; id++)
     opped.set(id, op.operate(coord(id)) );
   return opped;
 };
 
 //! Unary minus
-processor_coordinate processor_coordinate::negate() {
+coordinate coordinate::negate() {
   int dim = get_dimensionality();
-  processor_coordinate n(dim);
+  coordinate n(dim);
   for (int id=0; id<dim; id++)
     n.set(id,-coord(id));
   return n;
@@ -1125,7 +1117,7 @@ processor_coordinate processor_coordinate::negate() {
 /*!
   Get a process linear number wrt a surrounding cube.
 */
-int processor_coordinate::linearize( const processor_coordinate &layout ) const {
+int coordinate::linearize( const coordinate &layout ) const {
   int dim = get_same_dimensionality(layout.get_dimensionality());
   int s = coord(0);
   for (int id=1; id<dim; id++) {
@@ -1138,30 +1130,30 @@ int processor_coordinate::linearize( const processor_coordinate &layout ) const 
 /*!
   Get a process linear number wrt a surrounding cube.
 */
-int processor_coordinate::linearize( const decomposition &procstruct ) const {
+int coordinate::linearize( const decomposition &procstruct ) const {
   return linearize( procstruct.get_domain_layout() );
 };
 
 /*! Construct processor coordinate that is identical to self,
   but zero in the indicated dimension.
   The `farcorner' argument is not used, but specified for symmetry 
-  with \ref processor_coordinate::right_face_proc.
+  with \ref coordinate::right_face_proc.
   \todo this gets called with farpoint, should be origin
 */
-processor_coordinate processor_coordinate::left_face_proc
-    (int d,processor_coordinate &&farcorner) const {
+coordinate coordinate::left_face_proc
+    (int d,coordinate &&farcorner) const {
   int dim = get_same_dimensionality( farcorner.get_dimensionality() );
-  processor_coordinate left(dim);
+  coordinate left(dim);
   for (int id=0; id<dim; id++)
     if (id!=d) left.set(id,coord(id));
     else left.set(id,0);
   return left;
 };
 
-processor_coordinate processor_coordinate::left_face_proc
-    (int d,const processor_coordinate &farcorner) const {
+coordinate coordinate::left_face_proc
+    (int d,const coordinate &farcorner) const {
   int dim = get_same_dimensionality( farcorner.get_dimensionality() );
-  processor_coordinate left(dim);
+  coordinate left(dim);
   for (int id=0; id<dim; id++)
     if (id!=d) left.set(id,coord(id));
     else left.set(id,0);
@@ -1172,19 +1164,19 @@ processor_coordinate processor_coordinate::left_face_proc
   but maximal in the indicated dimension.
   The maximality is given by the `farcorner' argument.
 */
-processor_coordinate processor_coordinate::right_face_proc
-    (int d,const processor_coordinate &farcorner) const {
+coordinate coordinate::right_face_proc
+    (int d,const coordinate &farcorner) const {
   int dim = get_same_dimensionality( farcorner.get_dimensionality() );
-  processor_coordinate right(dim);
+  coordinate right(dim);
   for (int id=0; id<dim; id++)
     if (id!=d) right.set(id,coord(id));
     else right.set(id,farcorner.coord(id));
   return right;
 };
-processor_coordinate processor_coordinate::right_face_proc
-    (int d,processor_coordinate &&farcorner) const {
+coordinate coordinate::right_face_proc
+    (int d,coordinate &&farcorner) const {
   int dim = get_same_dimensionality( farcorner.get_dimensionality() );
-  processor_coordinate right(dim);
+  coordinate right(dim);
   for (int id=0; id<dim; id++)
     if (id!=d) right.set(id,coord(id));
     else right.set(id,farcorner.coord(id));
@@ -1192,7 +1184,7 @@ processor_coordinate processor_coordinate::right_face_proc
 };
 
 //! Is this coordinate on any face of the processor brick? \todo farcorner by reference
-bool processor_coordinate::is_on_left_face( const decomposition &procstruct ) const {
+bool coordinate::is_on_left_face( const decomposition &procstruct ) const {
   const auto origin = procstruct.get_origin_processor();
   for (int id=0; id<get_dimensionality(); id++)
     if (coord(id)==origin[id]) return true;
@@ -1200,7 +1192,7 @@ bool processor_coordinate::is_on_left_face( const decomposition &procstruct ) co
 };
 
 //! Is this coordinate on any face of the processor brick? \todo farcorner by reference
-bool processor_coordinate::is_on_right_face( const decomposition &procstruct ) const {
+bool coordinate::is_on_right_face( const decomposition &procstruct ) const {
   const auto farcorner = procstruct.get_farpoint_processor();
   for (int id=0; id<get_dimensionality(); id++)
     if (coord(id)==farcorner[id]) return true;
@@ -1208,24 +1200,24 @@ bool processor_coordinate::is_on_right_face( const decomposition &procstruct ) c
 };
 
 //! Is this coordinate on any face of the processor brick? \todo farcorner by reference
-bool processor_coordinate::is_on_face( const decomposition &procstruct ) const {
+bool coordinate::is_on_face( const decomposition &procstruct ) const {
   return is_on_left_face(procstruct) || is_on_right_face(procstruct);
 };
-bool processor_coordinate::is_on_face( shared_ptr<object> proc ) const {
+bool coordinate::is_on_face( shared_ptr<object> proc ) const {
   return is_on_face( proc->get_distribution() );
 };
-bool processor_coordinate::is_on_face( const object &proc ) const {
+bool coordinate::is_on_face( const object &proc ) const {
   return is_on_face( proc.get_distribution() );
 };
 
 //! Is this coordinate the origin?
-bool processor_coordinate::is_null() const {
+bool coordinate::is_null() const {
   for (int id=0; id<get_dimensionality(); id++)
     if (coord(id)!=0) return false;
   return true;
 };
 
-string processor_coordinate::as_string() const {
+string coordinate::as_string() const {
   memory_buffer w;
   format_to(w.end(),"P[");
   for ( int i=0; i<coordinates.size(); i++ )
@@ -1271,13 +1263,13 @@ processor_mask::processor_mask( const decomposition &d,int P ) : processor_mask(
 //   if (get_dimensionality()!=1)
 //     throw(string("Can not add linear procs to mask in multi-d"));
 //   for (int p=0; p<P; p++) {
-//     processor_coordinate *c = new processor_coordinate(1);
+//     coordinate *c = new coordinate(1);
 //     c->set(0,p); add(c);
 //   };
 // };
 
 //! Add a processor to the mask
-void processor_mask::add( const processor_coordinate &p) {
+void processor_mask::add( const coordinate &p) {
   throw("mask adding disabled");
   // int plin = p.linearize(this);
   // included[plin] = Fuzz::YES;
@@ -1296,7 +1288,7 @@ vector<int> processor_mask::get_includes() { vector<int> includes;
 };
 
 //! Test alivesness of a process.
-int processor_mask::lives_on( const processor_coordinate &p) const {
+int processor_mask::lives_on( const coordinate &p) const {
   int plin = p.linearize(*this);
   return included[plin]==Fuzz::YES;
 };
@@ -1433,7 +1425,7 @@ shared_ptr<parallel_indexstruct> parallel_structure::get_dimension_structure(int
 
 //! Get the multi_indexstruct of a multi-d processor coordinate
 shared_ptr<multi_indexstruct> parallel_structure::get_processor_structure
-    ( const processor_coordinate &p ) const {
+    ( const coordinate &p ) const {
   //print("Get p={} from {}\n",p.as_string(),as_string());
   if (!get_is_converted()) {
     //throw(format("We really need the conversion in get_processor_structure"));
@@ -1472,7 +1464,7 @@ shared_ptr<multi_indexstruct> parallel_structure::get_processor_structure
   \todo can we be more clever about setting taht structure type?
 */
 void parallel_structure::set_processor_structure
-    ( processor_coordinate &p,shared_ptr<multi_indexstruct> pstruct) {
+    ( coordinate &p,shared_ptr<multi_indexstruct> pstruct) {
   if (!get_is_converted())
     convert_to_multi_structures();
   decomposition *d = dynamic_cast<decomposition*>(this);
@@ -1704,7 +1696,7 @@ void parallel_structure::convert_to_multi_structures(bool trace) const {
 };
 
 //! The vector of local sizes of a processor
-const domain_coordinate &parallel_structure::local_size_r(const processor_coordinate &p) {
+const domain_coordinate &parallel_structure::local_size_r(const coordinate &p) {
   try {
     return get_processor_structure(p)->local_size_r();
   } catch (string c) {
@@ -1712,7 +1704,7 @@ const domain_coordinate &parallel_structure::local_size_r(const processor_coordi
   }
 };
 
-//! Global size as a \ref processor_coordinate
+//! Global size as a \ref coordinate
 const domain_coordinate &parallel_structure::global_size() {
   try {
     return get_enclosing_structure()->local_size_r();
@@ -1724,7 +1716,7 @@ const domain_coordinate &parallel_structure::global_size() {
 /*!
   Local number of points in the structure
 */
-index_int parallel_structure::volume( const processor_coordinate &&p ) {
+index_int parallel_structure::volume( const coordinate &&p ) {
   try {
     auto struc = get_processor_structure(p);
     index_int
@@ -1737,7 +1729,7 @@ index_int parallel_structure::volume( const processor_coordinate &&p ) {
   }
 };
 
-index_int parallel_structure::volume( const processor_coordinate &p ) {
+index_int parallel_structure::volume( const coordinate &p ) {
   try {
     auto struc = get_processor_structure(p);
     index_int
@@ -1912,20 +1904,20 @@ void distribution::create_from_unique_local( shared_ptr<multi_indexstruct> strct
 
 //! Test whether a coordinate lives on a processor
 bool distribution::contains_element
-    (const processor_coordinate &p,const domain_coordinate &&i) {
+    (const coordinate &p,const domain_coordinate &&i) {
   auto pstruct = get_processor_structure(p);
   return pstruct->contains_element(i);
 };
 
 //! Test whether a coordinate lives on a processor
 bool distribution::contains_element
-    ( const processor_coordinate &p,const domain_coordinate &i) {
+    ( const coordinate &p,const domain_coordinate &i) {
   auto pstruct = get_processor_structure(p);
   return pstruct->contains_element(i);
 };
 
 //! Local allocation of a distribution is local size of the struct times orthogonal dimension
-index_int distribution::local_allocation_p( processor_coordinate &p ) {
+index_int distribution::local_allocation_p( coordinate &p ) {
   auto v = volume(p); //print("[{}] has volume {}\n",p.as_string(),v);
   return get_orthogonal_dimension()*v;
 };
@@ -2054,19 +2046,19 @@ index_int parallel_structure::linearize( const domain_coordinate &coord ) {
 */
 void distribution::set_dist_factory() {
   new_message = 
-    [this] (const processor_coordinate &snd,const processor_coordinate &rcv,
+    [this] (const coordinate &snd,const coordinate &rcv,
 	    shared_ptr<multi_indexstruct> g) -> shared_ptr<message> {
     throw(string("No default new_message")); };
   new_embed_message = 
-    [this] (const processor_coordinate &snd,const processor_coordinate &rcv,
+    [this] (const coordinate &snd,const coordinate &rcv,
 	    shared_ptr<multi_indexstruct> e,
 	    shared_ptr<multi_indexstruct> g) -> shared_ptr<message> {
     throw(string("No default new_embed_message")); };
   location_of_first_index =
-    [] ( shared_ptr<distribution> d,const processor_coordinate &p) -> index_int {
+    [] ( shared_ptr<distribution> d,const coordinate &p) -> index_int {
         throw(string("imp_base.h local_of_first_index")); };
   location_of_last_index =
-    [] ( shared_ptr<distribution> d,const processor_coordinate &p) -> index_int {
+    [] ( shared_ptr<distribution> d,const coordinate &p) -> index_int {
         throw(string("imp_base.h local_of_last_index")); };
 };
 
@@ -2287,7 +2279,7 @@ string distribution_type_as_string(distribution_type t) {
 
 //! \todo make sure this is collective!
 shared_ptr<distribution> distribution::extend
-    ( processor_coordinate ep,shared_ptr<multi_indexstruct> i ) {
+    ( coordinate ep,shared_ptr<multi_indexstruct> i ) {
   //parallel_structure *base_structure = dynamic_cast<parallel_structure*>(this);
   //if (base_structure==nullptr)
   //throw(string("Could not upcast to parallel structure"));
@@ -2329,7 +2321,7 @@ replicated_distribution::replicated_distribution
 };
 
 //! Get first index by reference, from processor \todo this needs to go: it copies too much
-const domain_coordinate &parallel_structure::first_index_r( const processor_coordinate &p) {
+const domain_coordinate &parallel_structure::first_index_r( const coordinate &p) {
   try {
     return get_processor_structure(p)->first_index_r();
   } catch (string c) {
@@ -2340,7 +2332,7 @@ const domain_coordinate &parallel_structure::first_index_r( const processor_coor
 };
 
 //! Get last index by reference, from processor \todo this needs to go: it copies too much
-const domain_coordinate &parallel_structure::last_index_r( const processor_coordinate &p) {
+const domain_coordinate &parallel_structure::last_index_r( const coordinate &p) {
   try {
     return get_processor_structure(p)->last_index_r();
   } catch (string c) {
@@ -2351,7 +2343,7 @@ const domain_coordinate &parallel_structure::last_index_r( const processor_coord
 };
 
 //! Get first index by reference, from processor by rvalue reference
-const domain_coordinate &parallel_structure::first_index_r( const processor_coordinate &&p) {
+const domain_coordinate &parallel_structure::first_index_r( const coordinate &&p) {
   try {
     return get_processor_structure(p)->first_index_r();
   } catch (string c) {
@@ -2362,7 +2354,7 @@ const domain_coordinate &parallel_structure::first_index_r( const processor_coor
 };
 
 //! Get last index by reference, from processor by rvalue reference
-const domain_coordinate &parallel_structure::last_index_r( const processor_coordinate &&p) {
+const domain_coordinate &parallel_structure::last_index_r( const coordinate &&p) {
   try {
     return get_processor_structure(p)->last_index_r();
   } catch (string c) {
@@ -2399,7 +2391,7 @@ const domain_coordinate &parallel_structure::global_last_index() {
 };
 
 shared_ptr<indexstruct> distribution_sigma_operator::operate
-    (int dim,shared_ptr<distribution> d,processor_coordinate &p) const {
+    (int dim,shared_ptr<distribution> d,coordinate &p) const {
   if (!sigma_based)
     throw(format("Need to be of sigma type for this operate"));
   return sigop.operate( d->get_processor_structure(p)->get_component(dim) );
@@ -2407,14 +2399,14 @@ shared_ptr<indexstruct> distribution_sigma_operator::operate
 
 //! \todo the processor coordinate needs ot be passed by reference and be const
 shared_ptr<indexstruct> distribution_sigma_operator::operate
-    (int dim,shared_ptr<distribution> d,processor_coordinate p) const {
+    (int dim,shared_ptr<distribution> d,coordinate p) const {
   if (!sigma_based)
     throw(format("Need to be of sigma type for this operate"));
   return sigop.operate( d->get_processor_structure(p)->get_component(dim) );
 };
 
 shared_ptr<multi_indexstruct> distribution_sigma_operator::operate
-    ( const shared_ptr<distribution> d,processor_coordinate &p) const {
+    ( const shared_ptr<distribution> d,coordinate &p) const {
   if (!is_coordinate_based())
     throw(format("Need to be of lambda type for this operate"));
   return dist_coordinate_f(d,p);
@@ -2498,7 +2490,7 @@ void parallel_structure::memoize_structure() {
  \todo can the tmphalo be completely conditional to the local address space?
 */
 vector<shared_ptr<message>> distribution::messages_for_objects
-    ( int step,const processor_coordinate &mycoord,self_treatment doself,
+    ( int step,const coordinate &mycoord,self_treatment doself,
       shared_ptr<object> invector,shared_ptr<object> halo,
       bool trace) {
   auto indistro = invector->get_distribution(),
@@ -2517,7 +2509,7 @@ vector<shared_ptr<message>> distribution::messages_for_objects
 };
 			      
 vector<shared_ptr<message>> distribution::messages_for_segment
-    ( int step,const processor_coordinate &mycoord,self_treatment doself,
+    ( int step,const coordinate &mycoord,self_treatment doself,
       shared_ptr<multi_indexstruct> beta_block,shared_ptr<multi_indexstruct> halo_block,
       bool trace) {
   if (trace)
@@ -2682,7 +2674,7 @@ shared_ptr<indexstruct> sparse_row::all_indices() {
   Sparse inner product of a sparse row and a dense row from an object.
   \todo omp struct 4 somehow takes the general path
  */
-double sparse_row::inprod( shared_ptr<object> inobj,const processor_coordinate &p ) {
+double sparse_row::inprod( shared_ptr<object> inobj,const coordinate &p ) {
   double s = 0.;
   const auto distro = inobj->get_distribution();
   int number_of_elements = row.size();
@@ -2923,7 +2915,7 @@ sparse_matrix *sparse_matrix::transpose() const {
   \todo write iterator over all rows, inprod returning sparse_element
 */
 void sparse_matrix::multiply
-    ( shared_ptr<object> in,shared_ptr<object> out,processor_coordinate &p) {
+    ( shared_ptr<object> in,shared_ptr<object> out,coordinate &p) {
   const auto distro = out->get_distribution();
   if (distro->get_dimensionality()>1)
     throw(string("spmvp not in multi-d"));
@@ -3037,7 +3029,7 @@ index_int object_data::get_raw_size() const {
 
 //! Inherit someone's data; base addresses align. \\! \todo should we lose the processor?
 void object_data::inherit_data
-    ( const processor_coordinate &p, shared_ptr<object> o,index_int offset ) {
+    ( const coordinate &p, shared_ptr<object> o,index_int offset ) {
   auto odat = o->get_nth_data_pointer(0);
   set_domain_data_pointer(0,odat,o->get_distribution()->volume(p));
   data_status = object_data_status::INHERITED;
@@ -3123,7 +3115,7 @@ object::object( std::shared_ptr<distribution> d )
 
 //! Store a data pointer in the right location, multi-d domain number
 void object::register_data_on_domain
-    ( processor_coordinate &dom,data_pointer dat,
+    ( coordinate &dom,data_pointer dat,
       index_int s, index_int offset ) {
   register_data_on_domain_number
     (get_distribution()->get_domain_local_number(dom),dat,s,offset);
@@ -3136,12 +3128,12 @@ void object::register_data_on_domain_number
   set_domain_data_pointer(loc,dat,s,offset); register_allocated_space(s);
 };
 
-data_pointer object::get_data( const processor_coordinate &p ) const {
+data_pointer object::get_data( const coordinate &p ) const {
   auto p_copy = p;
   return get_data(std::move(p_copy));
 };
 
-data_pointer object::get_data( const processor_coordinate &&p ) const {
+data_pointer object::get_data( const coordinate &&p ) const {
   //  if (!lives_on(p)) throw(format("object does not live on {}",p->as_string()));
   if (has_data_status_unallocated())
     throw(format("Trying to get data from unallocated object <<{}>>",get_name()));
@@ -3157,7 +3149,7 @@ data_pointer object::get_data( const processor_coordinate &&p ) const {
   This is so far only used in the sparse matrix product.
   \todo broken in multi-d
 */
-double object::get_element_by_index(index_int i,const processor_coordinate &p) const {
+double object::get_element_by_index(index_int i,const coordinate &p) const {
   const auto distro = get_distribution();
   auto localstruct = distro->get_numa_structure();
   index_int locali = localstruct->linearfind(i);
@@ -3174,7 +3166,7 @@ string object::as_string() {
   return format("{}:Distribution",get_name());
 };
 
-string object::values_as_string(processor_coordinate &p) {
+string object::values_as_string(coordinate &p) {
   memory_buffer w; format_to(w.end(),"{}:",get_name());
   const auto distro = get_distribution();
   if (distro->get_orthogonal_dimension()>1)
@@ -3187,7 +3179,7 @@ string object::values_as_string(processor_coordinate &p) {
   return to_string(w);
 };
 
-string object::values_as_string(processor_coordinate &&p) {
+string object::values_as_string(coordinate &&p) {
   memory_buffer w; format_to(w.end(),"{}:",get_name());
   const auto distro = get_distribution();
   if (distro->get_orthogonal_dimension()>1)
@@ -3213,7 +3205,7 @@ string object::values_as_string(processor_coordinate &&p) {
   \todo I wish we could make the local_struct through relativizing, but there's too much variability in how that is done.
 */
 message::message(const decomposition &d,
-		 const processor_coordinate &snd,const processor_coordinate &rcv,
+		 const coordinate &snd,const coordinate &rcv,
 		 shared_ptr<multi_indexstruct> &e,shared_ptr<multi_indexstruct> &g)
   : decomposition(d) {
   sender = snd; receiver = rcv;
@@ -3224,13 +3216,13 @@ message::message(const decomposition &d,
 };
 
 //! Return the message sender.
-processor_coordinate &message::get_sender() {
+coordinate &message::get_sender() {
   if (sender.get_dimensionality()<=0)
     throw(string("Invalid sender"));
   return sender; };
 
 //! Return the message receiver.
-processor_coordinate &message::get_receiver() {
+coordinate &message::get_receiver() {
   if (receiver.get_dimensionality()<=0)
     throw(string("Invalid receiver"));
   return receiver; };
@@ -3412,7 +3404,7 @@ bool message::get_is_collective() const {
 };
 
 void message::set_tag_by_content
-    (processor_coordinate &snd,processor_coordinate &rcv,int step,int np) {
+    (coordinate &snd,coordinate &rcv,int step,int np) {
   auto farcorner = get_farpoint_processor();
   tag = message_tag(snd.linearize(farcorner),rcv.linearize(farcorner),step,np);
 };
@@ -3637,12 +3629,12 @@ parallel_structure signature_function::derive_beta_structure_pattern_based
 
  */
 shared_ptr<multi_indexstruct> signature_function::make_beta_struct_from_ops
-( processor_coordinate &pcoord, // this argument only for tracing
+( coordinate &pcoord, // this argument only for tracing
   shared_ptr<multi_indexstruct> gamma_struct,
   const vector<multi_ioperator*> &ops, shared_ptr<multi_indexstruct> truncation ) const {
   return make_beta_struct_from_ops(pcoord,gamma_struct,ops,*(truncation.get())); };
 shared_ptr<multi_indexstruct> signature_function::make_beta_struct_from_ops
-( processor_coordinate &pcoord, // this argument only for tracing
+( coordinate &pcoord, // this argument only for tracing
   shared_ptr<multi_indexstruct> gamma_struct,
   const vector<multi_ioperator*> &ops,
   const multi_indexstruct &truncation ) const {
@@ -3800,7 +3792,7 @@ shared_ptr<distribution> dependency::find_beta_distribution
 };
 
 //! Test that all betas are defined on this domain
-bool dependencies::all_betas_live_on( const processor_coordinate &d) const {
+bool dependencies::all_betas_live_on( const coordinate &d) const {
   bool live{true};
   for (auto dep : the_dependencies)
     live = live && dep.get_beta_object()->get_distribution()->lives_on(d);
@@ -3808,7 +3800,7 @@ bool dependencies::all_betas_live_on( const processor_coordinate &d) const {
 };
 
 //! Test that all betas are filled on this domain
-bool dependencies::all_betas_filled_on( const processor_coordinate &d) const {
+bool dependencies::all_betas_filled_on( const coordinate &d) const {
   bool live{true};
   for (auto dep : the_dependencies)
     live = live && dep.get_beta_object()->get_data_is_filled(d);
@@ -3967,7 +3959,7 @@ void task::analyze_dependencies(bool trace) {
 };
 
 vector<shared_ptr<message>> dependencies::derive_dependencies_receive_messages
-    (const processor_coordinate &pid,int step,bool trace) {
+    (const coordinate &pid,int step,bool trace) {
   vector<shared_ptr<message>> messages;
   auto &deps = get_dependencies();
   for ( int id=0; id<deps.size(); id++) { // we need the dependency number in the message
@@ -4447,7 +4439,7 @@ void kernel::split_to_tasks(bool trace) {
     if (trace) print(".. make task for domain {}\n",dom.as_string());
     auto t = make_task_for_domain(this,dom);
     t->find_kernel_task_by_domain =
-      [&,outvector] (processor_coordinate &d) -> shared_ptr<task> {
+      [&,outvector] (coordinate &d) -> shared_ptr<task> {
       return get_tasks().at( d.linearize(outvector->get_distribution()->get_decomposition()) );
     };
     t->set_name( format("T[{}]-{}-{}",this->get_name(),
@@ -4593,7 +4585,7 @@ void algorithm::split_to_tasks() {
     for ( auto t : k->get_tasks() ) {
       this->add_task(t);
       t->find_other_task_by_coordinates =
-	[&] (int s,processor_coordinate &d) -> shared_ptr<task>{
+	[&] (int s,coordinate &d) -> shared_ptr<task>{
 	return find_task_by_coordinates(s,d); };
       t->record_flop_count =
 	[&] (double c) { record_flop_count(c); };
@@ -4700,7 +4692,7 @@ int task::check_circularity( shared_ptr<task> root ) {
   Find a task number in the queue given its step/domain coordinates.
 */
 shared_ptr<task> algorithm::find_task_by_coordinates
-    ( int s,const processor_coordinate &d ) const {
+    ( int s,const coordinate &d ) const {
   for ( auto t : tasks ) {
     if (t->get_step()==s && t->get_domain()==d)
       return t;
@@ -4711,7 +4703,7 @@ shared_ptr<task> algorithm::find_task_by_coordinates
 /*!
   Find a task number in the queue given its step/domain coordinates.
 */
-int algorithm::find_task_number_by_coordinates( int s,const processor_coordinate &d ) const {
+int algorithm::find_task_number_by_coordinates( int s,const coordinate &d ) const {
   for (int it=0; it<tasks.size(); it++) {
     auto t = tasks.at(it);
     if (t->get_step()==s && t->get_domain()==d) //.equals(d))
