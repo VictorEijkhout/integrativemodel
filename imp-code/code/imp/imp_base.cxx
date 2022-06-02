@@ -1019,13 +1019,6 @@ bool coordinate::is_zero() { auto z = 1;
   return z;
 };
 
-bool coordinate::operator>( const coordinate other ) const {
-  int dim = get_same_dimensionality( other.get_dimensionality());
-  for (int id=0; id<dim; id++)
-    if (coord(id)<=other.coord(id)) return false;
-  return true;
-};
-
 bool coordinate::operator>( index_int other) const {
   int dim = get_dimensionality();
   for (int id=0; id<dim; id++)

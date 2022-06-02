@@ -3,18 +3,23 @@
 
 #include <iostream>
 using std::cout;
+#include <numeric>
+using std::accumulate;
+#include <functional>
+using std::multiplies;
+
 using std::array,std::vector,std::string;
 
-template<int d>
-array<int,d> endpoint(int s) {
-  array<int,d> endpoint; constexpr int last=d-1;
+template<class I,int d>
+array<I,d> endpoint(I s) {
+  array<I,d> endpoint; constexpr I last=d-1;
   for (int id=0; id<d; id++)
     endpoint.at(id) = 1;
   endpoint[0] = 1;
   if (s==1) return endpoint;
-  for (int prime=2; ; ) {
+  for (I prime=2; ; ) {
     if (s%prime==0) {
-      cout << "prime divisor: " << prime << "\n";
+      //cout << "prime divisor: " << prime << "\n";
       s /= prime;
       // insert this prime
       if (prime>=endpoint.front()) {
@@ -26,15 +31,15 @@ array<int,d> endpoint(int s) {
       if (s==1) break;
     } else {
       // next prime
-      int saved_prime = prime;
-      for (int next_prime=prime+1; ; next_prime++) {
+      I saved_prime = prime;
+      for (I next_prime=prime+1; ; next_prime++) {
 	bool isprime=true;
-	for (int f=2; f<next_prime/2; f++) {
+	for (I f=2; f<next_prime/2; f++) {
 	  if (next_prime%f==0) { isprime = false; break; }
 	}
 	if (isprime) { prime = next_prime; break; }
       } // end of next prime loop
-      cout << "next prime: " << prime << "\n";
+      // cout << "next prime: " << prime << "\n";
       assert(prime>saved_prime);
       assert(prime<=s);
     } // end else
@@ -42,13 +47,13 @@ array<int,d> endpoint(int s) {
   return endpoint;
 };
 
-template<int d>
-array<int,d> farpoint(int s) {
-  auto farpoint =  endpoint<d>(s);
-  for (int id=0; id<d; id++)
-    farpoint[id]--;
-  return farpoint;
-};
+// template<int d>
+// array<int,d> farpoint(int s) {
+//   auto farpoint =  endpoint<d>(s);
+//   for (int id=0; id<d; id++)
+//     farpoint[id]--;
+//   return farpoint;
+// };
 
 /*
  * Coordinates
@@ -60,7 +65,26 @@ coordinate<I,d>::coordinate() {
   for (int id=0; id<d; id++)
     coordinates.at(id) = -1;
 };
+template<class I,int d>
+coordinate<I,d>::coordinate( I s )
+  : coordinates( endpoint<I,d>(s) ) {
+};
+template<class I,int d>
+coordinate<I,d>::coordinate( std::array<I,d> c)
+  : coordinates( c ) {
+};
 //snippet end
+
+template<class I,int d>
+I coordinate<I,d>::span() const {
+  I res = 1;
+  for ( auto i : coordinates )
+    res *= i;
+  return res;
+  // return accumulate
+  //   ( coordinates.begin(),coordinates.end()
+  //     ,multiplies<I>(),static_cast<I>(1) );
+};
 
 template<class I,int d>
 I& coordinate<I,d>::at(int i) {
@@ -68,7 +92,30 @@ I& coordinate<I,d>::at(int i) {
 
 template<class I,int d>
 const I& coordinate<I,d>::at(int i) const {
-  return coordinates.at(i); };
+  return coordinates.at(i);
+};
+
+template<class I,int d>
+I coordinate<I,d>::linear( const coordinate<I,d>& layout ) const {
+  int s = coordinates.at(0);
+  for (int id=1; id<d; id++) {
+    auto layout_dim = layout.coordinates[id];
+    s = s*layout_dim + coordinates[id];
+  }
+  return s;
+};
+
+template<class I,int d>
+bool coordinate<I,d>::operator>( const coordinate<I,d>& other ) const {
+  for (int id=0; id<d; id++)
+    if (coordinates[id]<=other.coordinates[id]) return false;
+  return true;
+};
+
+template<class I,int d>
+bool coordinate<I,d>::before( const coordinate<I,d>& other ) const {
+  return other.span()>=span();
+};
 
 template<class I,int d>
 string coordinate<I,d>::as_string() const {
@@ -393,12 +440,16 @@ coordinate &decomposition::operator*() {
 
 #endif
 
-template array<int,1> endpoint<1>(int);
-template array<int,2> endpoint<2>(int);
-template array<int,3> endpoint<3>(int);
-template array<int,1> farpoint<1>(int);
-template array<int,2> farpoint<2>(int);
-template array<int,3> farpoint<3>(int);
+template array<int,1> endpoint<int,1>(int);
+template array<int,2> endpoint<int,2>(int);
+template array<int,3> endpoint<int,3>(int);
+template array<index_int,1> endpoint<index_int,1>(index_int);
+template array<index_int,2> endpoint<index_int,2>(index_int);
+template array<index_int,3> endpoint<index_int,3>(index_int);
+
+// template array<int,1> farpoint<1>(int);
+// template array<int,2> farpoint<2>(int);
+// template array<int,3> farpoint<3>(int);
 
 template class coordinate<int,1>;
 template class coordinate<int,2>;
@@ -406,3 +457,5 @@ template class coordinate<int,3>;
 template class coordinate<index_int,1>;
 template class coordinate<index_int,2>;
 template class coordinate<index_int,3>;
+
+template class parallel_structure<1>;

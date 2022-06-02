@@ -38,7 +38,6 @@ class ioperator;
 class sigma_operator;
 // hm.
 class parallel_indexstruct;
-class parallel_structure;
 class domain_coordinate;
 class domain_coordinate1d;
 

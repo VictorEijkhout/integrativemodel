@@ -25,18 +25,18 @@ using fmt::print;
 TEST_CASE( "end points","[arch][01]" ) {
 
   INFO( "p3 d1" );
-  auto p3d1 = endpoint<1>(3);
+  auto p3d1 = endpoint<int,1>(3);
   REQUIRE( p3d1.size()==1 );
   REQUIRE( p3d1.at(0)==3 );
 
   INFO( "p4 d2" );
-  auto p4d2 = endpoint<2>(4);
+  auto p4d2 = endpoint<int,2>(4);
   REQUIRE( p4d2.size()==2 );
   REQUIRE( p4d2.at(0)==2 );
   REQUIRE( p4d2.at(1)==2 );
 
   INFO( "p30 d3" );
-  auto p30d3 = endpoint<3>(30);
+  auto p30d3 = endpoint<int,3>(30);
   REQUIRE( p30d3.size()==3 );
   REQUIRE( p30d3.at(0)==5 );
   REQUIRE( p30d3.at(1)==3 );
@@ -46,5 +46,27 @@ TEST_CASE( "end points","[arch][01]" ) {
 
 TEST_CASE( "coordinates" ) {
   auto ci1 = coordinate<int,1>();
-  REQUIRE( ci1.size()==1 );
+  REQUIRE( ci1.dimensionality()==1 );
+
+  auto ci1_2 = coordinate<int,1>(2);
+  REQUIRE( ci1_2.span()==2 );
+  auto ci2_14 = coordinate<int,2>(14);
+  REQUIRE( ci2_14.span()==14 );
+  REQUIRE( ci2_14.at(0)==7 );
+  REQUIRE( ci2_14.at(1)==2 );
+
+  auto c2_61 = coordinate<int,2>( {6,1} );
+  REQUIRE( c2_61.linear(ci2_14)==ci2_14.span()-1 );
+
+  // auto ci2_62 = coordinate<int,2>( {6,2} );
+  // REQUIRE( ci2_62.before( ci2_14 ) );
+  // auto ci2_63 = coordinate<int,2>( {6,3} );
+  // REQUIRE( ci2_63.before(ci2_14) );
 }
+
+TEST_CASE( "parallel structure" ) {
+  auto twoprocs   = coordinate<int,1>(2);
+  auto fourpoints = coordinate<index_int,1>(4);
+  auto parallel   = parallel_structure<1>( twoprocs,fourpoints );
+};
+

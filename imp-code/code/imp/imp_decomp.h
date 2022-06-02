@@ -8,10 +8,11 @@
 #include "imp_entity.h"
 #include "indexstruct.hpp"
 
-template<int d>
-std::array<int,d> endpoint(int s);
-template<int d>
-std::array<int,d> farpoint(int s);
+template<class I,int d>
+std::array<I,d> endpoint(I s);
+
+// template<class I,int d>
+// std::array<I,d> farpoint(I s);
 
 class decomposition;
 class domain_coordinate;
@@ -28,22 +29,16 @@ protected :
   std::array<I,d> coordinates;
 public :
   coordinate();
-  // // Create an empty coordinate object of given dimension
-  // coordinate(int dim);
-  // Create coordinate from linearized number, against decomposition
-  coordinate(int p,const decomposition &dec);
-  // from explicit dimension sizes
-  coordinate( std::vector<int> dims );
-  coordinate( std::vector<index_int> dims );
-  // Copy constructor
-  coordinate( coordinate *other );
+  coordinate(I span);
+  coordinate( std::array<I,d> );
 
-  // basic stats and manipulation
-  int get_dimensionality() const; int get_same_dimensionality( int ) const;
-  int size() const { return d; };
+  // basic manipulation
+  constexpr int dimensionality() const { return d; }
   I &at(int i);
   const I &at(int i) const;
-  //  int volume() const;
+  I span() const;
+  bool before( const coordinate<I,d>& ) const;
+  I linear( const coordinate<I,d>& ) const;
 
   // operators
   coordinate operator+( index_int i) const;
@@ -52,7 +47,7 @@ public :
   coordinate operator-( const coordinate& ) const;
   coordinate operator%( const coordinate ) const;
   bool operator>(index_int i) const;
-  bool operator>( const coordinate ) const;
+  bool operator>( const coordinate<I,d>& ) const;
   bool operator==( const coordinate&& ) const;
   bool operator==( const coordinate& ) const;
   bool operator!=( const coordinate&& ) const;
@@ -106,29 +101,34 @@ public:
     return v; };
 };
 
-// template<class I,int d>
-// class coordinate1d : public coordinate {
-// public:
-//   coordinate1d(int p) : coordinate(1) { set(0,p); };
-// };
-
-#if 0
-//! Make a zero coordinate, in case you need to refer to the origin.
-template<class I,int d>
-class coordinate_zero : public coordinate<I,d> {
-public:
-  coordinate_zero<I,d>() :  coordinate<I,d>() {
-    for (int id=0; id<d; id++)
-      coordinates.at(id) = 0;
-  };
-    //  coordinate_zero(const decomposition &d);
-};
-#endif
-
-#if 0
 /****
  **** Architecture
  ****/
+
+template<int d>
+class architecture {
+protected:
+  coordinate<int,d> endpoint;
+public:
+  architecture( int np )
+    : endpoint( coordinate<int,d>(np) ) {
+  };
+};
+
+template<int d>
+class parallel_structure {
+protected:
+  coordinate<int,d> procs;
+  coordinate<index_int,d> points;
+  std::vector< indexstruct > structs;
+public:
+  parallel_structure( coordinate<int,d> procs,coordinate<index_int,d> points )
+    : procs(procs),points(points),
+      structs( std::vector<indexstruct>(procs.span()) ) {
+  };
+};
+
+#if 0
 
 /*!
   Collective strategy

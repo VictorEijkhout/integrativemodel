@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "indexstruct.hpp"
 using fmt::memory_buffer;
@@ -2201,7 +2201,7 @@ TEST_CASE( "Bilinear shift test","[operate][multi][133]" ) {
   format_to(w.end(),"Beta struct from {} by applying:",gamma_struct->as_string());
   for ( auto o : ops ) format_to(w.end()," {},",o->as_string());
   format_to(w.end()," is: {}",halo_struct->as_string());
-  INFO(w.str());
+  INFO(w.data());
 
   CHECK( !halo_struct->is_empty());
   if (ipath==1 || ipath==4 || ipath==5) {

@@ -98,7 +98,7 @@ DECOMP_OBJS := mpi_decomp.o ${IMPCODEDIR}/imp_decomp.o ${ENV_OBJS}
 unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
 	  unittest_main.o $@.o \
-	  ${DECOMP_OBJS} \
+	  ${DECOMP_OBJS} ${IMPCODEDIR}/indexstruct.o \
 	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
 	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
@@ -112,7 +112,7 @@ ${patsubst %,%.o,${UNITTESTS}} : \
 
 ${patsubst %,${IMPCODEDIR}/%.o,${UNITTESTS}} : \
             ${patsubst %,${IMPCODEDIR}/%.cxx,${UNITTESTS}}
-	cd ${IMPCODEDIR} ; make $@
+	cd ${IMPCODEDIR} && make $@
 
 # this rule is slightly over generous
 unittest_kmeans_main.o unittest_kmeans.o mpi_apps/mpi_kmeans_kernel.o : \
