@@ -65,6 +65,15 @@ protected:
 public:
   environment(environment const&)    = delete;
   void operator=(environment const&) = delete;
+  /*
+   * Polymorphic functions
+   */
+public:
+  std::function< int() > nprocs{
+    [] () -> int { throw("Function undefined: nprocs"); return -1; } };
+  std::function< int() > procid{
+    [] () -> int { throw("Function undefined: procid"); return -1; } };
+
 protected:
   int debug_level{0};
   // tracing
@@ -76,7 +85,7 @@ public:
   void init(int argc,char **argv,bool=true);
   // Reporting and cleanup
   std::function< void(void) > delete_environment{
-    [] () -> void { printf("default delete\n"); return; } };
+    [] () -> void { return; } };
 protected:
   std::string environment_name{""};
 public:

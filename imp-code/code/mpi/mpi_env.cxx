@@ -15,13 +15,25 @@ using gsl::span;
   An MPI environment has all the components of a base environment, plus
   - store a communicator and a task id.
   - disable printing for task id not zero
-
-  \todo can we do the mpi_init in the environment constructor?
  */
+
+mpi_environment::mpi_environment()
+  : environment() {
+};
 
 void mpi_environment::init( int &argc,char **&argv ) {
   MPI_Init(&argc,&argv);
   comm = MPI_COMM_WORLD;
+  nprocs = [=] () -> int {
+    int np;
+    MPI_Comm_size(comm,&np);
+    return np;
+  };
+  procid = [=] () -> int {
+    int np;
+    MPI_Comm_rank(comm,&np);
+    return np;
+  };
   int procid=-1;
   MPI_Comm_rank(comm,&procid);
   if (procid==0)

@@ -6,6 +6,7 @@
 
 #include "utils.h"
 #include "imp_entity.h"
+#include "imp_env.h"
 #include "indexstruct.hpp"
 
 template<class I,int d>
@@ -31,6 +32,7 @@ public :
   coordinate();
   coordinate(I span);
   coordinate( std::array<I,d> );
+  coordinate( environment& );
 
   // basic manipulation
   constexpr int dimensionality() const { return d; }
@@ -39,22 +41,7 @@ public :
   I span() const;
   bool before( const coordinate<I,d>& ) const;
   I linear( const coordinate<I,d>& ) const;
-
-  // operators
-  coordinate operator+( index_int i) const;
-  coordinate operator+( const coordinate& ) const;
-  coordinate operator-(index_int i) const;
-  coordinate operator-( const coordinate& ) const;
-  coordinate operator%( const coordinate ) const;
-  bool operator>(index_int i) const;
   bool operator>( const coordinate<I,d>& ) const;
-  bool operator==( const coordinate&& ) const;
-  bool operator==( const coordinate& ) const;
-  bool operator!=( const coordinate&& ) const;
-  bool operator!=( const coordinate& ) const;
-  //  int operator[](int i) const { return coord(i); };
-  coordinate rotate( std::vector<int> v,const coordinate &m) const;
-  //  const std::vector<int> &data() { return coordinates; };
 
   // linearization
   int linearize( const coordinate&) const; // linear number wrt cube layout
@@ -120,12 +107,10 @@ class parallel_structure {
 protected:
   coordinate<int,d> procs;
   coordinate<index_int,d> points;
-  std::vector< indexstruct > structs;
+  std::vector< std::shared_ptr<indexstruct> > structs;
 public:
-  parallel_structure( coordinate<int,d> procs,coordinate<index_int,d> points )
-    : procs(procs),points(points),
-      structs( std::vector<indexstruct>(procs.span()) ) {
-  };
+  parallel_structure( coordinate<int,d> procs,coordinate<index_int,d> points );
+  std::shared_ptr<indexstruct> get_processor_structure(int p) const;
 };
 
 #if 0

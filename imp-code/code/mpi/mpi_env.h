@@ -9,14 +9,14 @@ public:
     return the_instance;
   }
 private:
-  mpi_environment() : environment() {};
+  mpi_environment();
   MPI_Comm comm;
 public:
   mpi_environment(mpi_environment const&) = delete;
   void operator=(mpi_environment const&)  = delete;
   void init( int &argc,char **&argv );
   ~mpi_environment();
-  //  architecture make_architecture();
+
   void print_options();
   void tasks_to_dot_file();
   void print_all( std::string s);

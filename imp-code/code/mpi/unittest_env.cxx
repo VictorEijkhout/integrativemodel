@@ -23,6 +23,8 @@ using fmt::format;
 using fmt::print;
 
 TEST_CASE( "basic environment stuff","[env][01]" ) {
-
+  auto &the_env = mpi_environment::instance();
+  print("Confirm that we are running as {} out of {} procs\n",
+	the_env.procid(),the_env.nprocs());
 }
 

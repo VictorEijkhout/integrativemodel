@@ -12,6 +12,7 @@ void environment::init(int argc,char **argv,bool dothis) {
   //  entity::set_env(this);
   set_command_line(argc,argv);
   set_name("imp");
+
   debug_level = iargument("d",0);
   //  message_tag_admin_threshold = 1000;
   strategy = iargument("collective",0);

@@ -9,8 +9,10 @@ using std::accumulate;
 using std::multiplies;
 
 using std::array,std::vector,std::string;
+using std::shared_ptr,std::make_shared;
+using fmt::format;
 
-template<class I,int d>
+template<typename I,int d>
 array<I,d> endpoint(I s) {
   array<I,d> endpoint; constexpr I last=d-1;
   for (int id=0; id<d; id++)
@@ -60,22 +62,26 @@ array<I,d> endpoint(I s) {
  */
 //! Create an empty coordinate object of given dimension
 //snippet pcoorddim
-template<class I,int d>
+template<typename I,int d>
 coordinate<I,d>::coordinate() {
   for (int id=0; id<d; id++)
     coordinates.at(id) = -1;
 };
-template<class I,int d>
+template<typename I,int d>
 coordinate<I,d>::coordinate( I s )
   : coordinates( endpoint<I,d>(s) ) {
 };
-template<class I,int d>
+template<typename I,int d>
 coordinate<I,d>::coordinate( std::array<I,d> c)
   : coordinates( c ) {
 };
+template<typename I,int d>
+coordinate<I,d>::coordinate( environment& e )
+  : coordinate( e.nprocs() ) {
+};
 //snippet end
 
-template<class I,int d>
+template<typename I,int d>
 I coordinate<I,d>::span() const {
   I res = 1;
   for ( auto i : coordinates )
@@ -86,16 +92,16 @@ I coordinate<I,d>::span() const {
   //     ,multiplies<I>(),static_cast<I>(1) );
 };
 
-template<class I,int d>
+template<typename I,int d>
 I& coordinate<I,d>::at(int i) {
   return coordinates.at(i); };
 
-template<class I,int d>
+template<typename I,int d>
 const I& coordinate<I,d>::at(int i) const {
   return coordinates.at(i);
 };
 
-template<class I,int d>
+template<typename I,int d>
 I coordinate<I,d>::linear( const coordinate<I,d>& layout ) const {
   int s = coordinates.at(0);
   for (int id=1; id<d; id++) {
@@ -105,21 +111,44 @@ I coordinate<I,d>::linear( const coordinate<I,d>& layout ) const {
   return s;
 };
 
-template<class I,int d>
+template<typename I,int d>
 bool coordinate<I,d>::operator>( const coordinate<I,d>& other ) const {
   for (int id=0; id<d; id++)
     if (coordinates[id]<=other.coordinates[id]) return false;
   return true;
 };
 
-template<class I,int d>
+template<typename I,int d>
 bool coordinate<I,d>::before( const coordinate<I,d>& other ) const {
   return other.span()>=span();
 };
 
-template<class I,int d>
+template<typename I,int d>
 string coordinate<I,d>::as_string() const {
   return "coordinate";
+};
+
+template<int d>
+parallel_structure<d>::parallel_structure
+        ( coordinate<int,d> procs,coordinate<index_int,d> points )
+  : procs(procs),points(points),
+    structs( vector<shared_ptr<indexstruct>>(procs.span()) ) {
+  int P = procs.span(), N = points.span();
+  for ( int ip=0; ip<P; ip++ ) {
+    index_int lo = (ip*N)/P, hi = ((ip+1)*N)/P;
+    auto contig = make_shared<contiguous_indexstruct>(lo,hi-1);
+    assert( contig->volume()==hi-lo );
+    structs.at(ip) = shared_ptr<indexstruct>(contig);
+  }
+};
+
+template<>
+shared_ptr<indexstruct> parallel_structure<1>::get_processor_structure(int p) const {
+  try {
+    return structs.at(p);
+  } catch (...) {
+    throw(format("Error returning proc {}",p));
+}
 };
 
 #if 0

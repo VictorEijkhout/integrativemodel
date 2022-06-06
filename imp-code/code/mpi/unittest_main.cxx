@@ -83,11 +83,5 @@ int main(int argc,char **argv) {
     fmt::print("Unittesting aborted.");
   }
 
-  printf("disabled finalize test!\n");
-  // {
-  //   int flg;
-  //   MPI_Finalized(&flg);
-  //   if (!flg) { printf("No finalize from process %d\n",mytid); throw(1); }
-  // }
   return result;
 }

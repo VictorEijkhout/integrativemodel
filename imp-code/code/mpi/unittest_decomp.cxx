@@ -17,6 +17,7 @@
 
 #include "catch2/catch_all.hpp"
 
+#include "mpi_env.h"
 #include "mpi_decomp.h"
 
 using fmt::format;
@@ -64,9 +65,26 @@ TEST_CASE( "coordinates" ) {
   // REQUIRE( ci2_63.before(ci2_14) );
 }
 
+TEST_CASE( "MPI coordinates" ) {
+  auto &mpi_env = mpi_environment::instance();
+  auto mpi_grid = coordinate<int,2>( mpi_env.nprocs() );
+  int np; MPI_Comm_size(MPI_COMM_WORLD,&np);
+  REQUIRE( mpi_grid.span()==np );
+}
+
 TEST_CASE( "parallel structure" ) {
-  auto twoprocs   = coordinate<int,1>(2);
-  auto fourpoints = coordinate<index_int,1>(4);
+  const int nprocs = 2;
+  auto twoprocs   = coordinate<int,1>(nprocs);
+  auto fourpoints = coordinate<index_int,1>(2*nprocs);
   auto parallel   = parallel_structure<1>( twoprocs,fourpoints );
+  index_int first = 0;
+  for (int iproc=0; iproc<nprocs; iproc++) {
+    decltype( parallel.get_processor_structure(iproc) ) istruct;
+    REQUIRE_NOTHROW( istruct = parallel.get_processor_structure(iproc) );
+    REQUIRE( istruct->first_index()==first );
+    first = istruct->last_index()+1;
+  }
+  REQUIRE_THROWS( parallel.get_processor_structure(-1) );
+  REQUIRE_THROWS( parallel.get_processor_structure(nprocs) );
 };
 
