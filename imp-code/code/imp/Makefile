@@ -20,6 +20,14 @@ CXXFLAGS = ${CXX_OPTFLAGS}
 ##
 ## Library stuff
 ##
+info ::
+	@echo "make implib"
+.PHONY: implib
+IMP_OBJS = imp_env.o imp_coord.o
+implib : ${IMP_OBJS}
+	${CXX_COMPILER} -o libimp.dylib \
+	    -dynamiclib -Wl,-undefined -Wl,dynamic_lookup \
+	    ${IMP_OBJS}
 %.o : %.cxx
 	${CXX_COMPILER} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} \
 	  -I${CATCH_INC} -I${CPPFORMAT_INC} -I${EIGEN_INC} -I${GSL_INC} \
@@ -27,8 +35,10 @@ CXXFLAGS = ${CXX_OPTFLAGS}
 
 imp_entity.o : imp_entity.h
 imp_env.o : imp_env.h
+imp_coord.o : imp_coord.h
 imp_base.o utils.o : utils.h
 imp_base.o : imp_base.h imp_entity.h indexstruct.hpp
+
 
 ##
 ## Unittests, independent of any mode

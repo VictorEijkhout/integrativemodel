@@ -91,9 +91,23 @@ mpi_env.o : mpi_env.h ${IMPCODEDIR}/imp_env.h
 ${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
 	cd ${IMPCODEDIR} && make imp_env.o
 #
+# coordinate
+#
+NEW_TESTS := unittest_coord
+COORD_OBJS := ${IMPCODEDIR}/imp_coord.o ${ENV_OBJS}
+unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
+	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
+	  unittest_main.o $@.o \
+	  ${COORD_OBJS} \
+	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
+	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
+	  ${LIBCXX}
+${IMPCODEDIR}/imp_coord.o : ${IMPCODEDIR}/imp_coord.cxx ${IMPCODEDIR}/imp_coord.h
+	cd ${IMPCODEDIR} && make imp_coord.o
+#
 # architecture and decomposition
 #
-NEW_TESTS := unittest_decomp
+NEW_TESTS := ${NEW_TESTS} unittest_decomp
 DECOMP_OBJS := mpi_decomp.o ${IMPCODEDIR}/imp_decomp.o ${ENV_OBJS}
 unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
@@ -106,6 +120,17 @@ mpi_decomp.o : mpi_decomp.h ${IMPCODEDIR}/imp_decomp.h
 ${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
 	cd ${IMPCODEDIR} && make imp_decomp.o
 
+info ::
+	@echo "make newtests : do new unit tests"
+.PHONY: newtests
+newtests :
+	for t in ${NEW_TESTS} ; do \
+	    make $$t && mpiexec -n 4 $$t \
+	; done
+
+#
+# old rules
+#
 ${patsubst %,%.o,${UNITTESTS}} : \
     ${IMPCODEDIR}/unittest_functions.h ${IMPCODEDIR}/imp_functions.h ${IMPCODEDIR}/indexstruct.hpp \
     mpi_base.h ../imp/imp_base.h mpi_ops.h ../imp/imp_ops.h mpi_static_vars.h
