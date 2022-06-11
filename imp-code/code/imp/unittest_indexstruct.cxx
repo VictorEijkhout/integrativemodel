@@ -221,7 +221,6 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
   }
 }
 
-#if 0
 TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
 
   shared_ptr<indexstruct<index_int,1>> i1,i2,i3,i4;
@@ -396,6 +395,7 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
   }
 }
 
+#if 0
 TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
   shared_ptr<indexstruct<index_int,1>> i1,i2,ifinal;
   shared_ptr<composite_indexstruct<index_int,1>> icomp;
