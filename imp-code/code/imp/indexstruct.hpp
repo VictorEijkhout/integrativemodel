@@ -29,27 +29,23 @@ using fmt::to_string;
 #include "utils.h"
 
 // forward definitions
-template<int d>
+template<typename I,int d>
 class empty_indexstruct;
-template<int d>
+template<typename I,int d>
 class strided_indexstruct;
-template<int d>
+template<typename I,int d>
 class contiguous_indexstruct;
-template<int d>
+template<typename I,int d>
 class indexed_indexstruct;
-template<int d>
+template<typename I,int d>
 class composite_indexstruct;
-template<int d>
+template<typename I,int d>
 class ioperator;
-template<int d>
+template<typename I,int d>
 class sigma_operator;
 // hm.
-template<int d>
+template<typename I,int d>
 class parallel_indexstruct;
-template<int d>
-class domain_coordinate;
-template<int d>
-class domain_coordinate1d;
 
 /****************
  ****************
@@ -63,10 +59,8 @@ class domain_coordinate1d;
 //! Sometimes we don't know what an indexstruct is.
 enum class indexstruct_status { KNOWN, UNKNOWN };
 
-template<int d>
-class indexstructure;
-template<int d>
-class indexstruct : public std::enable_shared_from_this<indexstruct<d>> {
+template<typename I,int d>
+class indexstruct : public std::enable_shared_from_this<indexstruct<I,d>> {
 protected:
   indexstruct_status known_status{indexstruct_status::KNOWN};
 public:
@@ -79,112 +73,112 @@ public:
   virtual bool is_composite()  const { return 0; };
   virtual std::string type_as_string() const { return std::string("none"); };
   int type_as_int() const;
-  virtual void reserve( index_int s ) { return; };
+  virtual void reserve( I s ) { return; };
   void report_unimplemented( const char *c ) const;
 
   /*
    * Statistics
    */
-  virtual index_int first_index() const {
+  virtual I first_index() const {
     report_unimplemented("first_index"); return 0; };
-  virtual index_int last_index()  const{
+  virtual I last_index()  const{
     report_unimplemented("last_index"); return 0; };
-  virtual index_int local_size()  const {
+  virtual I local_size()  const {
     report_unimplemented("local_size"); return 0; };
-  index_int volume() const { return local_size(); };
-  index_int outer_size() const { return last_index()-first_index()+1; };
+  I volume() const { return local_size(); };
+  I outer_size() const { return last_index()-first_index()+1; };
   virtual int stride() const { throw(std::string("Indexstruct has no stride")); };
-  virtual bool equals( std::shared_ptr<indexstruct<d>> idx ) const;
+  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const;
   
-  virtual index_int find( index_int idx ) const { throw(std::string("Can not be found")); };
-  index_int location_of( std::shared_ptr<indexstruct<d>> inner ) const {
+  virtual I find( I idx ) const { throw(std::string("Can not be found")); };
+  I location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
     return find(inner->first_index()); };
   //! Test for element containment; this can not be const because of optimizations.
-  virtual bool contains_element( index_int idx ) const { return false; };
-  bool contains_element_in_range(index_int idx) const;
-  virtual bool contains( std::shared_ptr<indexstruct<d>> idx ) const {
+  virtual bool contains_element( I idx ) const { return false; };
+  bool contains_element_in_range(I idx) const;
+  virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const {
     report_unimplemented("contains"); return false; };
-  virtual bool disjoint( std::shared_ptr<indexstruct<d>> idx );
-  virtual int can_incorporate( index_int v ) { return 0; } //!< Is this a wise default?
-  virtual index_int get_ith_element( const index_int i ) const {
+  virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx );
+  virtual int can_incorporate( I v ) { return 0; } //!< Is this a wise default?
+  virtual I get_ith_element( const I i ) const {
     throw(std::string("Get ith: not implemented")); };
 
   /*
    * Operations that yield a new indexstruct
    */
-  virtual std::shared_ptr<indexstruct<d>> make_clone() const {
+  virtual std::shared_ptr<indexstruct<I,d>> make_clone() const {
     throw(std::string("make_clone: Not implemented")); };
-  virtual std::shared_ptr<indexstruct<d>> simplify() {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); }; //shared_from_this();
+  virtual std::shared_ptr<indexstruct<I,d>> simplify() {
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this();
   //! \todo try the shared_from_this again
-  virtual std::shared_ptr<indexstruct<d>> force_simplify() const {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); }; //shared_from_this();
-  virtual std::shared_ptr<indexstruct<d>> over_simplify() {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); }; //shared_from_this();
-  virtual std::shared_ptr<indexstruct<d>> add_element( const index_int idx ) {
+  virtual std::shared_ptr<indexstruct<I,d>> force_simplify() const {
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this();
+  virtual std::shared_ptr<indexstruct<I,d>> over_simplify() {
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this();
+  virtual std::shared_ptr<indexstruct<I,d>> add_element( const I idx ) {
     throw(std::string("add_element: Not implemented")); };
-  virtual void addin_element( const index_int idx ) {
+  virtual void addin_element( const I idx ) {
     throw(std::string("add_element: Not implemented")); };
-  virtual std::shared_ptr<indexstruct<d>> translate_by( index_int shift ) {
+  virtual std::shared_ptr<indexstruct<I,d>> translate_by( I shift ) {
     report_unimplemented("translate_by"); return nullptr; };
-  virtual bool has_intersect( std::shared_ptr<indexstruct<d>> idx ) {
+  virtual bool has_intersect( std::shared_ptr<indexstruct<I,d>> idx ) {
     report_unimplemented("has_intersect"); return false; };
 
   // union and intersection
-  virtual std::shared_ptr<indexstruct<d>> struct_union( std::shared_ptr<indexstruct<d>> idx ) {
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ) {
     throw(fmt::format("shared struct_union: Not implemented for {}",type_as_string())); };
-  virtual std::shared_ptr<indexstruct<d>> struct_union( indexstruct* idx ) {
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( indexstruct* idx ) {
     return struct_union( idx->make_clone() ); };
-  //return struct_union( std::shared_ptr<indexstruct<d>>{idx->make_clone()} ); };
-  virtual std::shared_ptr<indexstruct<d>> split( std::shared_ptr<indexstruct<d>> idx ) {
+  //return struct_union( std::shared_ptr<indexstruct<I,d>>{idx->make_clone()} ); };
+  virtual std::shared_ptr<indexstruct<I,d>> split( std::shared_ptr<indexstruct<I,d>> idx ) {
     throw(fmt::format("shared split: Not implemented for {}",type_as_string())); };
-  virtual std::shared_ptr<indexstruct<d>> intersect( std::shared_ptr<indexstruct<d>> idx ) {
+  virtual std::shared_ptr<indexstruct<I,d>> intersect( std::shared_ptr<indexstruct<I,d>> idx ) {
     report_unimplemented("intersect"); return nullptr; };
 
   //! \todo make a variant that takes idx by const reference: it is often constructed ad-hoc
-  virtual std::shared_ptr<indexstruct<d>> minus( std::shared_ptr<indexstruct<d>> idx ) const {
+  virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const {
     report_unimplemented("minus"); return nullptr; };
-  virtual std::shared_ptr<indexstruct<d>> truncate_left( index_int i );
-  virtual std::shared_ptr<indexstruct<d>> truncate_right( index_int i );
-  virtual std::shared_ptr<indexstruct<d>> relativize_to( std::shared_ptr<indexstruct<d>>,bool=false) {
+  virtual std::shared_ptr<indexstruct<I,d>> truncate_left( I i );
+  virtual std::shared_ptr<indexstruct<I,d>> truncate_right( I i );
+  virtual std::shared_ptr<indexstruct<I,d>> relativize_to( std::shared_ptr<indexstruct<I,d>>,bool=false) {
     report_unimplemented("relativize_to"); return nullptr; };
-  virtual std::shared_ptr<indexstruct<d>> convert_to_indexed() const {
+  virtual std::shared_ptr<indexstruct<I,d>> convert_to_indexed() const {
     report_unimplemented("convert_to_indexed"); return nullptr; };
-  virtual int can_merge_with_type( std::shared_ptr<indexstruct<d>> idx) { return 0; };
+  virtual int can_merge_with_type( std::shared_ptr<indexstruct<I,d>> idx) { return 0; };
 
   // operate
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator &op ) const {
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ) const {
     throw(fmt::format("ioperate: Not implemented for struct type <<{}>>",type_as_string())); };
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator &&op ) const {
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &&op ) const {
     throw(fmt::format("ioperate rv: Not implemented for type <<{}>>",type_as_string())); };
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator&,index_int,index_int) const;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d>&,I,I) const;
 
-  virtual std::shared_ptr<indexstruct<d>> operate( const sigma_operator &op ) const {
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const sigma_operator<I,d> &op ) const {
     throw(fmt::format("sigma operate: Not implemented for struct type <<{}>>",type_as_string()));
   };
-  virtual std::shared_ptr<indexstruct<d>> operate( const sigma_operator &op, index_int lo,index_int hi ) const;
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator&,std::shared_ptr<indexstruct<d>> ) const;
-  virtual std::shared_ptr<indexstruct<d>> operate
-      ( const sigma_operator&,std::shared_ptr<indexstruct<d>> outer ) const;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const sigma_operator<I,d> &op, I lo,I hi ) const;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d>&,std::shared_ptr<indexstruct<I,d>> ) const;
+  virtual std::shared_ptr<indexstruct<I,d>> operate
+      ( const sigma_operator<I,d>&,std::shared_ptr<indexstruct<I,d>> outer ) const;
 
   // Iterable functions
 protected:
   int current_iterate{-1},last_iterate{-2};
-  std::function< index_int(index_int) > ith_iterate
-    { [] (index_int i) -> index_int { fmt::print("No ith_iterate defined\n"); return 0; } };
+  std::function< I(I) > ith_iterate
+    { [] (I i) -> I { fmt::print("No ith_iterate defined\n"); return 0; } };
 public:
-  virtual indexstruct& begin() {
-    ith_iterate = [&] (int i) -> index_int { return get_ith_element(i); };
+  virtual indexstruct<I,d>& begin() {
+    ith_iterate = [&] (int i) -> I { return get_ith_element(i); };
     init_cur(); return *this;
   }
-  virtual indexstruct& end() { last_iterate = -1; return *this; }
+  virtual indexstruct<I,d>& end() { last_iterate = -1; return *this; }
   // the next 4 need to be pure virtual
   virtual void init_cur() { current_iterate = 0; last_iterate = -1; };
   virtual bool operator!=( indexstruct idx ) {
     //fmt::print("Comparing {} to {}\n",current_iterate,idx.last_iterate);
     return current_iterate<idx.last_iterate;
   };
-  virtual index_int operator*() { return ith_iterate(current_iterate); };
+  virtual I operator*() { return ith_iterate(current_iterate); };
   virtual void operator++() { current_iterate++; };
 
   // Stuff
@@ -193,62 +187,62 @@ public:
   virtual void debug_off() {};
 };
 
-template<int d>
-class unknown_indexstruct : public indexstruct {
+template<typename I,int d>
+class unknown_indexstruct : public indexstruct<I,d> {
 public:
-  unknown_indexstruct() : indexstruct() {
-    known_status = indexstruct_status::UNKNOWN;
+  unknown_indexstruct() : indexstruct<I,d>() {
+    this->known_status = indexstruct_status::UNKNOWN;
   };
   virtual std::string as_string() const override { return std::string("unknown"); };
 };
 
-template<int d>
-class empty_indexstruct : public indexstruct {
+template<typename I,int d>
+class empty_indexstruct : public indexstruct<I,d> {
 public:
   virtual bool is_empty( ) const override { return true; };
   virtual std::string type_as_string() const override { return std::string("empty"); };
-  virtual index_int local_size() const override { return 0; };
-  virtual std::shared_ptr<indexstruct<d>> make_clone() const override {
-    return std::shared_ptr<indexstruct<d>>{ new empty_indexstruct() }; };
-  virtual std::shared_ptr<indexstruct<d>> add_element( const index_int idx ) override;
-  virtual index_int first_index() const override {
+  virtual I local_size() const override { return 0; };
+  virtual std::shared_ptr<indexstruct<I,d>> make_clone() const override {
+    return std::shared_ptr<indexstruct<I,d>>{ new empty_indexstruct() }; };
+  virtual std::shared_ptr<indexstruct<I,d>> add_element( const I idx ) override;
+  virtual I first_index() const override {
     throw(std::string("No first index for empty")); };
-  virtual index_int last_index()  const override {
+  virtual I last_index()  const override {
     throw(std::string("No last index for empty")); };
-  virtual index_int get_ith_element( const index_int i ) const override {
+  virtual I get_ith_element( const I i ) const override {
     throw(fmt::format("Can not get ith <<{}>> in empty",i)); };
-  virtual std::shared_ptr<indexstruct<d>> translate_by( index_int shift ) override {
+  virtual std::shared_ptr<indexstruct<I,d>> translate_by( I shift ) override {
     return this->make_clone(); };
-  virtual bool has_intersect( std::shared_ptr<indexstruct<d>> idx ) override { return false; };
-  virtual std::shared_ptr<indexstruct<d>> relativize_to( std::shared_ptr<indexstruct<d>>,bool=false) override{
-    return std::shared_ptr<indexstruct<d>>( new empty_indexstruct() );
+  virtual bool has_intersect( std::shared_ptr<indexstruct<I,d>> idx ) override { return false; };
+  virtual std::shared_ptr<indexstruct<I,d>> relativize_to( std::shared_ptr<indexstruct<I,d>>,bool=false) override{
+    return std::shared_ptr<indexstruct<I,d>>( new empty_indexstruct() );
   };
-  virtual std::shared_ptr<indexstruct<d>> minus( std::shared_ptr<indexstruct<d>> idx ) const override {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); }; //shared_from_this(); };
-  virtual std::shared_ptr<indexstruct<d>> truncate_left( index_int i ) override {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); }; //shared_from_this(); };
-  virtual std::shared_ptr<indexstruct<d>> truncate_right( index_int i ) override {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); }; //shared_from_this(); };
+  virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const override {
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this(); };
+  virtual std::shared_ptr<indexstruct<I,d>> truncate_left( I i ) override {
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this(); };
+  virtual std::shared_ptr<indexstruct<I,d>> truncate_right( I i ) override {
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this(); };
 
   //! Operating on empty struct give the struct itself.
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator &op ) const override {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); };
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator &&op ) const override {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); };
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator&,index_int,index_int )
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ) const override {
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); };
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &&op ) const override {
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); };
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d>&,I,I )
     const override {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); };
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); };
 
-  virtual std::shared_ptr<indexstruct<d>> operate( const sigma_operator &op ) const override {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); };
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const sigma_operator<I,d> &op ) const override {
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); };
   //! Operating on empty struct give the struct itself.
-  virtual std::shared_ptr<indexstruct<d>> operate( const sigma_operator &op, index_int lo,index_int hi )
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const sigma_operator<I,d> &op, I lo,I hi )
     const override {
-    return std::shared_ptr<indexstruct<d>>( make_clone() ); };
+    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); };
 
-  virtual std::shared_ptr<indexstruct<d>> struct_union( std::shared_ptr<indexstruct<d>> idx ) override;
-  virtual int can_merge_with_type( std::shared_ptr<indexstruct<d>> idx) override { return 1; };
-  virtual bool equals( std::shared_ptr<indexstruct<d>> idx ) const override {
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ) override;
+  virtual int can_merge_with_type( std::shared_ptr<indexstruct<I,d>> idx) override { return 1; };
+  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override {
     return idx->is_empty(); };
   virtual std::string as_string() const override { return std::string("empty"); };
 
@@ -256,20 +250,22 @@ public:
    * Iterator functions
    */
 public:
-  virtual void init_cur() override { current_iterate = 0; last_iterate = local_size(); };
-  virtual indexstruct& end() override { last_iterate = local_size(); return *this; }
+  virtual void init_cur() override {
+    this->current_iterate = 0; this->last_iterate = local_size(); };
+  virtual indexstruct<I,d>& end() override {
+    this->last_iterate = local_size(); return *this; }
   // virtual empty_indexstruct& begin() override { return *this; };
   // virtual empty_indexstruct& end() override { return *this; };
   // virtual bool operator!=( indexstruct rr ) override { return 0; };
   // virtual void operator++() override { return; };
 };
 
-template<int d>
-class strided_indexstruct : public indexstruct {
+template<typename I,int d>
+class strided_indexstruct : public indexstruct<I,d> {
 protected:
-  index_int first,last, stride_amount{1};
+  I first,last, stride_amount{1};
 public:
-  strided_indexstruct(const index_int f,const index_int l,const int s)
+  strided_indexstruct(const I f,const I l,const int s)
     : first(f),last(l),stride_amount(s) { //cur(f) {
     last -= (last-first)%stride_amount; // make sure last is actually included
   };
@@ -277,37 +273,37 @@ public:
   /*
    * Statistics
    */
-  index_int first_index() const override { return first; };
-  index_int last_index()  const override { return last; };
-  index_int local_size()  const override { return (last-first+stride_amount-1)/stride_amount+1; };
+  I first_index() const override { return first; };
+  I last_index()  const override { return last; };
+  I local_size()  const override { return (last-first+stride_amount-1)/stride_amount+1; };
   virtual int stride() const override { return stride_amount; };
   virtual bool is_strided() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("strided"); };
-  virtual index_int find( index_int idx ) const override;
-  virtual bool contains_element( index_int idx ) const override;
-  virtual index_int get_ith_element( const index_int i ) const override;
-  virtual int can_incorporate( index_int v ) override {
+  virtual I find( I idx ) const override;
+  virtual bool contains_element( I idx ) const override;
+  virtual I get_ith_element( const I i ) const override;
+  virtual int can_incorporate( I v ) override {
     return v==first-stride_amount || v==last+stride_amount; };
   //  virtual bool contains( indexstruct *idx ) override;
-  virtual bool contains( std::shared_ptr<indexstruct<d>> idx ) const override;
+  virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
   //  virtual bool disjoint( indexstruct *idx ) override;
-  virtual bool disjoint( std::shared_ptr<indexstruct<d>> idx ) override;
-  virtual bool equals( std::shared_ptr<indexstruct<d>> idx ) const override;
+  virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) override;
+  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override;
 
   /*
    * Operations that yield a new indexstruct
    */
-  virtual std::shared_ptr<indexstruct<d>> convert_to_indexed() const override;
-  virtual std::shared_ptr<indexstruct<d>> make_clone() const override {
-    return std::shared_ptr<indexstruct<d>>{ new strided_indexstruct(first,last,stride_amount) };
+  virtual std::shared_ptr<indexstruct<I,d>> convert_to_indexed() const override;
+  virtual std::shared_ptr<indexstruct<I,d>> make_clone() const override {
+    return std::shared_ptr<indexstruct<I,d>>{ new strided_indexstruct(first,last,stride_amount) };
   };
-  virtual std::shared_ptr<indexstruct<d>> add_element( const index_int idx ) override;
-  virtual std::shared_ptr<indexstruct<d>> translate_by( index_int shift ) override;
-  virtual bool has_intersect( std::shared_ptr<indexstruct<d>> idx ) override;
-  virtual std::shared_ptr<indexstruct<d>> intersect( std::shared_ptr<indexstruct<d>> idx ) override;
-  virtual std::shared_ptr<indexstruct<d>> minus( std::shared_ptr<indexstruct<d>> idx ) const override;
-  virtual std::shared_ptr<indexstruct<d>> relativize_to( std::shared_ptr<indexstruct<d>>,bool=false) override;
-  virtual std::shared_ptr<indexstruct<d>> struct_union( std::shared_ptr<indexstruct<d>> idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> add_element( const I idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> translate_by( I shift ) override;
+  virtual bool has_intersect( std::shared_ptr<indexstruct<I,d>> idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> intersect( std::shared_ptr<indexstruct<I,d>> idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> relativize_to( std::shared_ptr<indexstruct<I,d>>,bool=false) override;
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ) override;
   // virtual int can_merge_with_type(indexstruct *idx) override {
   //   strided_indexstruct *strided = dynamic_cast<strided_indexstruct*>(idx);
   //   if (strided!=nullptr) { // strided & strided
@@ -316,7 +312,7 @@ public:
   // 	strided->first<=last+stride_amount && strided->last>=first-stride_amount;
   //   } else return 0;
   // };
-  virtual int can_merge_with_type( std::shared_ptr<indexstruct<d>> idx) override {
+  virtual int can_merge_with_type( std::shared_ptr<indexstruct<I,d>> idx) override {
     strided_indexstruct *strided = dynamic_cast<strided_indexstruct*>(idx.get());
     if (strided!=nullptr) { // strided & strided
       return stride_amount==strided->stride_amount &&
@@ -324,14 +320,15 @@ public:
 	strided->first<=last+stride_amount && strided->last>=first-stride_amount;
     } else return 0;
   };
-  virtual std::shared_ptr<indexstruct<d>> split( std::shared_ptr<indexstruct<d>> idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> split( std::shared_ptr<indexstruct<I,d>> idx ) override;
 
   /*
    * Iterator functions
    */
-  virtual indexstruct& end() override { last_iterate = local_size(); return *this; }
+  virtual indexstruct<I,d>& end() override {
+    this->last_iterate = local_size(); return *this; }
   virtual void init_cur() override {
-    current_iterate = 0; last_iterate = local_size();
+    this->current_iterate = 0; this->last_iterate = local_size();
     //fmt::print("Setting last iterate to {}\n",last_iterate);
   };
 // protected:
@@ -343,57 +340,58 @@ public:
 //   strided_indexstruct& end() { return *this; }
 //   bool operator!=( indexstruct rr ) override { return cur <= last /*rr.last_index()*/; }
 //   void operator++() { cur += stride_amount; }
-//   index_int operator*() const { return cur; }
+//   I operator*() const { return cur; }
 
   /*
    * Operate
    */
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator &op ) const override;
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator &&op ) const override;
-  virtual std::shared_ptr<indexstruct<d>> operate( const sigma_operator &op ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &&op ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const sigma_operator<I,d> &op ) const override;
 
   virtual std::string as_string() const override {
     return fmt::format("strided: [{}-by{}--{}]",first,stride_amount,last); };
 };
 
-template<int d>
-class contiguous_indexstruct : public strided_indexstruct {
+template<typename I,int d>
+class contiguous_indexstruct : public strided_indexstruct<I,d> {
 public:
-  contiguous_indexstruct(const index_int s,const index_int l) : strided_indexstruct(s,l,1) {};
-  contiguous_indexstruct(const index_int f) : contiguous_indexstruct(f,f) {};
-  ~contiguous_indexstruct() {};
+  contiguous_indexstruct(const I s,const I l)
+    : strided_indexstruct<I,d>(s,l,1) {};
+  contiguous_indexstruct(const I f)
+    : contiguous_indexstruct<I,d>(f,f) {};
   virtual bool is_contiguous() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("contiguous"); };
-  std::shared_ptr<indexstruct<d>> make_clone() const override {
-    return std::shared_ptr<indexstruct<d>>{ new contiguous_indexstruct(first,last) };
+  std::shared_ptr<indexstruct<I,d>> make_clone() const override {
+    return std::shared_ptr<indexstruct<I,d>>{ new contiguous_indexstruct(this->first,this->last) };
   };
   virtual std::string as_string() const override {
-    return fmt::format("contiguous: [{}--{}]",first,last); };
+    return fmt::format("contiguous: [{}--{}]",this->first,this->last); };
 };
 
 /*!
   An indexed indexstruct contains a standard vector of indices.
  */
-template<int d>
-class indexed_indexstruct : public indexstruct {
+template<typename I,int d>
+class indexed_indexstruct : public indexstruct<I,d> {
 private:
-  std::vector<index_int> indices;
+  std::vector<I> indices;
 public:
   indexed_indexstruct() {}; //!< Create an empty indexed struct
-  indexed_indexstruct( const index_int len,const index_int *idxs );
-  indexed_indexstruct( const std::vector<index_int> idxs ) {
+  indexed_indexstruct( const I len,const I *idxs );
+  indexed_indexstruct( const std::vector<I> idxs ) {
     for ( auto i : idxs ) indices.push_back(i);
   };
-  indexed_indexstruct( strided_indexstruct *cont ) {
-    index_int s = cont->stride();
-    for (index_int idx = cont->first_index(); idx<=cont->last_index(); idx+=s)
+  indexed_indexstruct( strided_indexstruct<I,d> *cont ) {
+    I s = cont->stride();
+    for (I idx = cont->first_index(); idx<=cont->last_index(); idx+=s)
       indices.push_back(idx); };
   ~indexed_indexstruct() {};
   bool is_indexed() const override { return true; };
-  virtual std::shared_ptr<indexstruct<d>> simplify() override;
-  virtual std::shared_ptr<indexstruct<d>> force_simplify() const override;
+  virtual std::shared_ptr<indexstruct<I,d>> simplify() override;
+  virtual std::shared_ptr<indexstruct<I,d>> force_simplify() const override;
   virtual std::string type_as_string() const override { return std::string("indexed"); };
-  virtual void reserve( index_int s ) override { indices.reserve(s); };
+  virtual void reserve( I s ) override { indices.reserve(s); };
 
   /*
    * Iterator functions
@@ -404,72 +402,74 @@ public:
 //   indexed_indexstruct& begin() { init_cur(); return *this; };
 //   indexed_indexstruct& end() { return *this; };
 //   virtual void init_cur() override { cur = 0; };
-  virtual void init_cur() override { current_iterate = 0; last_iterate = local_size(); };
-  virtual indexstruct& end() override { last_iterate = local_size(); return *this; }
-  // indexed_indexstruct& begin_at_value(index_int v) {
+  virtual void init_cur() override {
+    this->current_iterate = 0; this->last_iterate = local_size(); };
+  virtual indexstruct<I,d>& end() override {
+    this->last_iterate = local_size(); return *this; }
+  // indexed_indexstruct& begin_at_value(I v) {
   //   if (cur>=indices.size() || indices[cur]>v) cur = 0;
   //   return *this; }
   // bool operator!=( indexstruct rr ) override { return cur<rr.local_size(); };
   // void operator++() override { cur += 1; };
-  // index_int operator*() override { return indices[cur]; }
+  // I operator*() override { return indices[cur]; }
   //  int search_loc() { return cur; };
 
   /*
    * Statistics
    */
-  index_int first_index() const override {
+  I first_index() const override {
     if (indices.size()==0) throw(std::string("Can not ask first for empty indexed"));
     return indices.at(0); };
-  index_int last_index() const override {
+  I last_index() const override {
     if (indices.size()==0) throw(std::string("Can not ask last for empty indexed"));
     return indices.at(indices.size()-1); };
-  index_int local_size() const override { return indices.size(); };
-  virtual index_int find( index_int idx ) const override {
+  I local_size() const override { return indices.size(); };
+  virtual I find( I idx ) const override {
     for (int i=0; i<indices.size(); i++)
       if (indices[i]==idx) return i;
     // for (auto loc=this->begin_at_value(idx); loc!=this->end(); ++loc)
     //   if (*loc==idx) return loc.search_loc();
     throw(std::string("Index to find is out of range"));
   };
-  virtual bool contains_element( index_int idx ) const override {
+  virtual bool contains_element( I idx ) const override {
     if (indices.size()==0) return false;
     for (int i=0; i<indices.size(); i++)
       if (indices[i]==idx) return true;
     return false;
   };
-  virtual index_int get_ith_element( const index_int i ) const override;
+  virtual I get_ith_element( const I i ) const override;
   bool is_strided_between_indices(int,int,int&) const;
   //  virtual bool contains( indexstruct *idx ) override;
-  virtual bool contains( std::shared_ptr<indexstruct<d>> idx ) const override;
-  virtual int can_incorporate( index_int v ) override { return 1; } //!< We can always add an index.
+  virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
+  virtual int can_incorporate( I v ) override { return 1; } //!< We can always add an index.
   //  virtual bool disjoint( indexstruct *idx ) override;
-  virtual bool disjoint( std::shared_ptr<indexstruct<d>> idx ) override;
-  virtual bool equals( std::shared_ptr<indexstruct<d>> idx ) const override;
+  virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) override;
+  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override;
 
   /*
    * Operations that yield a new indexstruct
    */
-  virtual std::shared_ptr<indexstruct<d>> make_clone() const override {
-    return std::shared_ptr<indexstruct<d>>{ new indexed_indexstruct(indices) }; };
-  virtual std::shared_ptr<indexstruct<d>> convert_to_indexed() const override {
-    return std::shared_ptr<indexstruct<d>>( this->make_clone() ); }; //shared_from_this(); };
-  virtual std::shared_ptr<indexstruct<d>> add_element( const index_int idx ) override;
-  virtual void addin_element( const index_int idx ) override;
-  virtual std::shared_ptr<indexstruct<d>> translate_by( index_int shift ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> make_clone() const override {
+    return std::shared_ptr<indexstruct<I,d>>{ new indexed_indexstruct(indices) }; };
+  virtual std::shared_ptr<indexstruct<I,d>> convert_to_indexed() const override {
+    return std::shared_ptr<indexstruct<I,d>>( this->make_clone() ); }; //shared_from_this(); };
+  virtual std::shared_ptr<indexstruct<I,d>> add_element( const I idx ) override;
+  virtual void addin_element( const I idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> translate_by( I shift ) override;
 
-  virtual std::shared_ptr<indexstruct<d>> minus( std::shared_ptr<indexstruct<d>> idx ) const override;
-  virtual std::shared_ptr<indexstruct<d>> relativize_to( std::shared_ptr<indexstruct<d>>,bool=false) override;
-  virtual std::shared_ptr<indexstruct<d>> struct_union( std::shared_ptr<indexstruct<d>> idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> relativize_to( std::shared_ptr<indexstruct<I,d>>,bool=false) override;
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ) override;
   // virtual int can_merge_with_type(indexstruct *idx) override {
   //   return idx->is_indexed(); };
-  virtual int can_merge_with_type( std::shared_ptr<indexstruct<d>> idx) override {
+  virtual int can_merge_with_type( std::shared_ptr<indexstruct<I,d>> idx) override {
     return idx->is_indexed(); };
-  virtual std::shared_ptr<indexstruct<d>> intersect( std::shared_ptr<indexstruct<d>> idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> intersect( std::shared_ptr<indexstruct<I,d>> idx ) override;
 
   /*
    * Operate
    */
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator &op ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ) const override;
 
   virtual std::string as_string() const override { fmt::memory_buffer w;
     format_to(w.end(),"indexed: {}:[",indices.size());
@@ -482,17 +482,17 @@ public:
   The components are disjoint, but not necessarily sorted.
   \todo the structs vector should not be a pointer
 */
-template<int d>
-class composite_indexstruct : public indexstruct {
+template<typename I,int d>
+class composite_indexstruct : public indexstruct<I,d> {
 private:
-  std::vector<std::shared_ptr<indexstruct<d>>> structs;
+  std::vector<std::shared_ptr<indexstruct<I,d>>> structs;
 public:
   composite_indexstruct() {};
   virtual bool is_composite() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("composite"); };
-  void push_back( std::shared_ptr<indexstruct<d>> idx );
-  const std::vector<std::shared_ptr<indexstruct<d>>> &get_structs() const { return structs; };
-  virtual std::shared_ptr<indexstruct<d>> make_clone() const override;
+  void push_back( std::shared_ptr<indexstruct<I,d>> idx );
+  const std::vector<std::shared_ptr<indexstruct<I,d>>> &get_structs() const { return structs; };
+  virtual std::shared_ptr<indexstruct<I,d>> make_clone() const override;
 
   /*
    * Statistics
@@ -500,34 +500,36 @@ public:
   virtual bool is_empty() const override {
     for (auto s : structs )
       if (!s->is_empty()) return false; return true; };
-  virtual index_int first_index() const override;
-  virtual index_int last_index()  const override;
-  virtual index_int local_size()  const override;
+  virtual I first_index() const override;
+  virtual I last_index()  const override;
+  virtual I local_size()  const override;
 
-  virtual bool contains_element( index_int idx ) const override;
-  virtual bool contains( std::shared_ptr<indexstruct<d>> idx ) const override;
-  virtual index_int find( index_int idx ) const override ;
-  virtual index_int get_ith_element( const index_int i ) const override;
-  virtual std::shared_ptr<indexstruct<d>> struct_union( std::shared_ptr<indexstruct<d>> ) override;
-  virtual std::shared_ptr<indexstruct<d>> intersect( std::shared_ptr<indexstruct<d>> idx ) override;
-  virtual std::shared_ptr<indexstruct<d>> convert_to_indexed() const override;
-  virtual std::shared_ptr<indexstruct<d>> force_simplify() const override;
-  virtual std::shared_ptr<indexstruct<d>> over_simplify() override;
-  virtual std::shared_ptr<indexstruct<d>> relativize_to( std::shared_ptr<indexstruct<d>>,bool=false) override ;
-  virtual std::shared_ptr<indexstruct<d>> minus( std::shared_ptr<indexstruct<d>> idx ) const override;
+  virtual bool contains_element( I idx ) const override;
+  virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
+  virtual I find( I idx ) const override ;
+  virtual I get_ith_element( const I i ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> intersect( std::shared_ptr<indexstruct<I,d>> idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> convert_to_indexed() const override;
+  virtual std::shared_ptr<indexstruct<I,d>> force_simplify() const override;
+  virtual std::shared_ptr<indexstruct<I,d>> over_simplify() override;
+  virtual std::shared_ptr<indexstruct<I,d>> relativize_to( std::shared_ptr<indexstruct<I,d>>,bool=false) override ;
+  virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const override;
   //  virtual bool disjoint( indexstruct *idx ) override;
-  virtual bool disjoint( std::shared_ptr<indexstruct<d>> idx ) override;
-  virtual bool equals( std::shared_ptr<indexstruct<d>> idx ) const override;
+  virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) override;
+  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override;
 
-  virtual std::shared_ptr<indexstruct<d>> operate( const ioperator &op ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ) const override;
 
   virtual std::string as_string() const override;
 
   /*
    * Iterator functions
    */
-  virtual void init_cur() override { current_iterate = 0; last_iterate = local_size(); };
-  virtual indexstruct& end() override { last_iterate = local_size(); return *this; }
+  virtual void init_cur() override {
+    this->current_iterate = 0; this->last_iterate = local_size(); };
+  virtual indexstruct<I,d>& end() override {
+    this->last_iterate = local_size(); return *this; }
 // protected:
 //   int cur_struct = 0;
 // public:
@@ -536,7 +538,7 @@ public:
 //   composite_indexstruct& end() override { return *this; };
 //   virtual bool operator!=( indexstruct rr ) override;
 //   void operator++() override;
-//   index_int operator*() override { return *( *structs.at(cur_struct).get() ); };
+//   I operator*() override { return *( *structs.at(cur_struct).get() ); };
 };
 
 /****************
@@ -553,25 +555,25 @@ enum class iop_type {INVALID, NONE, SHIFT_REL,SHIFT_ABS, MULT, DIV, CONTDIV, FUN
  of the allowed operations.
  \todo change the function to int->int
 */
-template<int d>
+template<typename I, int d>
 class ioperator {
 protected:
   iop_type type{iop_type::INVALID};
   int mod{0}, baseop{0};
-  index_int by{0};
-  std::function< index_int(index_int) > func;
+  I by{0};
+  std::function< I(I) > func;
 public:
   //! This constructor is  needed for the derived classes
   ioperator() {};
   ioperator( std::string op );
-  ioperator( std::string op,index_int amt );
+  ioperator( std::string op,I amt );
   //! In the most literal interpretation, we operate an actual function pointer.
-  ioperator( index_int(*f)(index_int) ) { type = iop_type::FUNC; func = f; };
-  ioperator( std::function< index_int(index_int) > f ) { type = iop_type::FUNC; func = f; };
-  index_int operate( index_int ) const;
-  index_int operate( index_int, index_int ) const;
-  index_int inverse_operate( index_int ) const;
-  index_int inverse_operate( index_int, index_int ) const;
+  ioperator( I(*f)(I) ) { type = iop_type::FUNC; func = f; };
+  ioperator( std::function< I(I) > f ) { type = iop_type::FUNC; func = f; };
+  I operate( I ) const;
+  I operate( I, I ) const;
+  I inverse_operate( I ) const;
+  I inverse_operate( I, I ) const;
   bool is_none_op()        const { return type==iop_type::NONE; };
   bool is_shift_op()       const {
     return type==iop_type::SHIFT_REL || type==iop_type::SHIFT_ABS; };
@@ -586,7 +588,7 @@ public:
   bool is_div_op()         const { return type==iop_type::DIV; };
   bool is_contdiv_op()     const { return type==iop_type::CONTDIV; };
   bool is_function_op()    const { return type==iop_type::FUNC; };
-  index_int amount() const { return by; };
+  I amount() const { return by; };
   std::string type_string() const {
     if (type==iop_type::INVALID) return "INVALID";
     if (type==iop_type::NONE) return "NONE";
@@ -603,202 +605,259 @@ public:
   int get_dimension() const { return dim; };
 };
 
-template<int d>
-class shift_operator : public ioperator {
+template<typename I,int d>
+class shift_operator : public ioperator<I,d> {
 public:
-  shift_operator( index_int n,bool relative=true )
-    : ioperator() {
+  shift_operator( I n,bool relative=true )
+    : ioperator<I,d>() {
     if (relative)
-      type = iop_type::SHIFT_REL;
+      this->type = iop_type::SHIFT_REL;
     else
-      type = iop_type::SHIFT_ABS;
-    by = n; };
-  shift_operator( int d,index_int n ) : shift_operator(n) { dim = d; };
+      this->type = iop_type::SHIFT_ABS;
+    this->by = n; };
+  //  shift_operator( int d,I n ) : shift_operator(n) { dim = d; };
 };
 
-template<int d>
-class mult_operator : public ioperator {
+template<typename I,int d>
+class mult_operator : public ioperator<I,d> {
 public:
-  mult_operator( index_int n )
-    : ioperator() {
-    type = iop_type::MULT;
-    by = n; };
+  mult_operator( I n )
+    : ioperator<I,d>() {
+    this->type = iop_type::MULT;
+    this->by = n; };
 };
 
-template<int d>
+template<typename I,int d>
 class multi_indexstruct;
-
-//! A domain coordinate is a domain point. \todo make templated coordinate class
-template<int d>
-class domain_coordinate {
-private:
-  std::vector<index_int> coordinates;
-public:
-  domain_coordinate() {}; // in case we need a default constructor
-  // Create an empty domain_coordinate object of given dimension
-  domain_coordinate(int dim);
-  //! Create from std vector
-  domain_coordinate( std::vector<index_int> ic ) { coordinates = ic; };
-  domain_coordinate( std::vector<int> ic ) { int dim = ic.size();
-    coordinates = std::vector<index_int>(dim);
-    for (int i=0; i<dim; i++)
-      coordinates.at(i) = ic.at(i);
-  };
-  // Copy constructor
-  domain_coordinate( domain_coordinate *other );
-
-  // basic stats and manipulation
-  int get_dimensionality() const; int get_same_dimensionality(int) const;
-  void reserve(int n) { coordinates.reserve(n); };
-  index_int &at(int i) { return coordinates.at(i); };
-  index_int sub(int i) const { return coordinates.at(i); };
-  void set(int d,index_int v) { coordinates.at(d) = v; };
-  index_int coord(int d) const;
-  //! \todo make by reference
-  std::vector<index_int> data() const { return coordinates; };
-  index_int volume() const;
-
-  index_int linear_location_in( domain_coordinate,domain_coordinate ) const;
-  index_int linear_location_in( domain_coordinate*,domain_coordinate* ) const;
-  index_int linear_location_in( domain_coordinate farcorner ) const;
-  index_int linear_location_in( domain_coordinate *farcorner ) const;
-  index_int linear_location_in( std::shared_ptr<multi_indexstruct> bigstruct ) const;
-  index_int linear_location_in( const multi_indexstruct &bigstruct ) const;
-
-  // operators
-  // bool operator==( domain_coordinate &other ) const; VLE don't work with denotations
-  // bool operator!=( domain_coordinate &other ) const;
-  bool operator==( const domain_coordinate &&other ) const;
-  bool operator==( const domain_coordinate &other ) const;
-  bool operator!=( const domain_coordinate other ) const;
-  domain_coordinate operator+(index_int i) const;
-  domain_coordinate operator+(const domain_coordinate i) const;
-  domain_coordinate operator-(index_int i) const;
-  domain_coordinate operator-(const domain_coordinate i) const;
-  domain_coordinate operator*(index_int i) const;
-  domain_coordinate operator/(index_int i) const;
-  domain_coordinate operator%(index_int i) const;
-  bool operator<(domain_coordinate other) const;
-  bool operator>(domain_coordinate other) const;
-  bool operator<=(domain_coordinate other) const;
-  bool operator>=(domain_coordinate other) const;
-  domain_coordinate *negate();
-  const domain_coordinate operate( const ioperator& ) const ;
-  domain_coordinate *operate_p( const ioperator& ) const;
-  //!\todo can we make this by reference?
-  index_int operator[](int id) const {
-    if (id<0 || id>=get_dimensionality())
-      throw(fmt::format("Wrong dimension {} to get from coordinate <<{}>>",id,as_string()));
-    auto cid = coordinates[id]; return cid;
-  };
-  //! \todo const ref !
-  void min_with(const domain_coordinate&); void max_with(const domain_coordinate&);
-  //void min_with(domain_coordinate*); void max_with(domain_coordinate*);
-  bool equals( domain_coordinate *other );
-  bool is_zero();
-  std::string as_string() const { fmt::memory_buffer w;
-    format_to(w.end(),"["); for ( auto i : coordinates ) format_to(w.end(),"{},",i);
-    format_to(w.end(),"]"); return to_string(w); };
-
-  bool is_on_left_face(int d,std::shared_ptr<multi_indexstruct>) const;
-  bool is_on_right_face(int d,std::shared_ptr<multi_indexstruct>) const;
-
-  // iterating
-protected:
-  index_int iterator{-1};
-public:
-  domain_coordinate& begin() { iterator = 0; return *this; };
-  domain_coordinate& end() { return *this; };
-  bool operator!=( domain_coordinate ps ) { return iterator<coordinates.size()-1; };
-  void operator++() { iterator++; };
-  //  index_int operator[](int d) { return coordinates[d]; };
-  index_int operator*() const {
-    if (iterator<0)
-      throw(fmt::format("dereferincing iterator {} in {}",iterator,as_string()));
-    index_int v = coordinates[iterator];
-    //printf("deref domain coord @%d to %d\n",iterator,v);
-    return v;
-  };
-};
-
-//! \todo this needs to be a singleton class
-template<int d>
-class domain_coordinate_zero : public domain_coordinate {
-public:
-  domain_coordinate_zero(int dim) : domain_coordinate(dim) {
-    for (int id=0; id<dim; id++) set(id,0.); };
-};
-
-template<int d>
-class domain_coordinate_allones : public domain_coordinate {
-public:
-  domain_coordinate_allones(int dim) : domain_coordinate(dim) {
-    for (int id=0; id<dim; id++) set(id,1.); };
-};
-
-//! Wrap a single index_int into a one-d \ref domain_coordinate.
-template<int d>
-class domain_coordinate1d : public domain_coordinate {
-public:
-  domain_coordinate1d( index_int i ) : domain_coordinate(1) {
-    set(0,i); };
-};
 
 /*!
   A sigma operator takes a point and gives a structure;
 */
-template<int d>
+template<typename I,int d>
 class sigma_operator {
 protected:
-  std::function< std::shared_ptr<indexstruct<d>>(index_int) > func;
+  std::function< std::shared_ptr<indexstruct<I,d>>(I) > func;
   bool lambda_i{false};
-  std::function< std::shared_ptr<indexstruct<d>>( const indexstruct& ) > sfunc;
+  std::function< std::shared_ptr<indexstruct<I,d>>( const indexstruct<I,d>& ) > sfunc;
   bool lambda_s{false};
-  //  std::shared_ptr<ioperator> point_func{nullptr};
-  ioperator point_func;
+  ioperator<I,d> point_func;
   bool lambda_p{false};
 public:
   //! Default creator
   sigma_operator() {};
   //! Create from function pointer
-  sigma_operator( std::shared_ptr<indexstruct<d>>(*f)(index_int) ) {
+  sigma_operator( std::shared_ptr<indexstruct<I,d>>(*f)(I) ) {
     func = f; lambda_i = true; };
   //! Create from point lambda
-  sigma_operator( std::function< std::shared_ptr<indexstruct<d>>(index_int) > f ) {
+  sigma_operator( std::function< std::shared_ptr<indexstruct<I,d>>(I) > f ) {
     func = f; lambda_i = true; };
   //! Create from struct lambda
-  sigma_operator( std::function< std::shared_ptr<indexstruct<d>>(const indexstruct&) > f ) {
+  sigma_operator( std::function< std::shared_ptr<indexstruct<I,d>>(const indexstruct<I,d>&) > f ) {
     sfunc = f; lambda_s = true; };
   //! Create from ioperator
-  sigma_operator( std::shared_ptr<ioperator> f ) {
+  sigma_operator( std::shared_ptr<ioperator<I,d>> f ) {
     fmt::print("please no sigma from pointer to iop\n");
     point_func = *(f.get()); lambda_p = true; };
   //! Create from ioperator
-  sigma_operator( ioperator f ) {
+  sigma_operator( ioperator<I,d> f ) {
     point_func = f; lambda_p = true; };
   //! Create from scalar lambda \todo this should be the pointfunc?
-  sigma_operator( std::function< index_int(index_int) > f ) {
+  sigma_operator( std::function< I(I) > f ) {
     printf("You sure this is not the pointfunc?\n");
-    func = [f] ( index_int i ) -> std::shared_ptr<indexstruct<d>> {
-      return std::shared_ptr<indexstruct<d>>{new contiguous_indexstruct( f(i) )};
+    func = [f] ( I i ) -> std::shared_ptr<indexstruct<I,d>> {
+      return std::shared_ptr<indexstruct<I,d>>{new contiguous_indexstruct<I,d>( f(i) )};
     };
     lambda_i = true;
   };
   //! Does this produce a single point?
   bool is_point_operator() const { return lambda_p; };
   bool is_struct_operator() const { return lambda_s; };
-  std::shared_ptr<indexstruct<d>> struct_apply( const indexstruct &i) const { return sfunc(i); };
-  const ioperator &point_operator() const {
+  std::shared_ptr<indexstruct<I,d>> struct_apply( const indexstruct<I,d>& i) const {
+    return sfunc(i); };
+  const ioperator<I,d> &point_operator() const {
     if (!is_point_operator()) throw(std::string("Is not point operator"));
     return point_func; };
-  std::shared_ptr<indexstruct<d>> operate( index_int i ) const;
-  std::shared_ptr<indexstruct<d>> operate( std::shared_ptr<indexstruct<d>> idx ) const;
+  std::shared_ptr<indexstruct<I,d>> operate( I i ) const;
+  std::shared_ptr<indexstruct<I,d>> operate( std::shared_ptr<indexstruct<I,d>> idx ) const;
   std::string as_string() const;
 };
 
-template<int d>
+/*
+ * And here is the PIMPL class!
+ */
+
+template<typename I,int d>
+class indexstructure {
+private:
+  std::shared_ptr<indexstruct<I,d>> strct{nullptr};
+  indexstruct_status known_status{indexstruct_status::KNOWN};
+public:
+  indexstructure() {
+    strct = std::shared_ptr<indexstruct<I,d>>( new unknown_indexstruct<I,d>() );
+  };
+  //! \todo get rid of this, and onl accept references
+  indexstructure( std::shared_ptr<indexstruct<I,d>> idx ) {
+    strct = idx->make_clone();
+    //fmt::print("from shared ptr: idx={}\n",strct->as_string());
+  };
+  indexstructure( contiguous_indexstruct<I,d> c )
+    : indexstructure<I,d>( std::shared_ptr<indexstruct<I,d>>( new contiguous_indexstruct<I,d>(c) ) ) {};
+  // indexstructure( contiguous_indexstruct<I,d> &&c )
+  //   : indexstructure<I,d>( std::shared_ptr<indexstruct<I,d>>( new contiguous_indexstruct<I,d>(c) ) ) {};
+  indexstructure( strided_indexstruct<I,d> c )
+    : indexstructure<I,d>( std::shared_ptr<indexstruct<I,d>>( new strided_indexstruct<I,d>(c) ) )    {};
+  indexstructure( indexed_indexstruct<I,d> c )
+    : indexstructure<I,d>( std::shared_ptr<indexstruct<I,d>>( new indexed_indexstruct<I,d>(c) ) )    {};
+  indexstructure( composite_indexstruct<I,d> c )
+    : indexstructure<I,d>( std::shared_ptr<indexstruct<I,d>>( new composite_indexstruct<I,d>(c) ) )  {
+    fmt::print("composite type=<{}> strct composite: <{}> this composite: <{}>\n",
+	       strct->type_as_string(),strct->is_composite(),is_composite());
+  };
+  
+  bool is_known()             const {
+    return strct->is_known(); };
+  virtual bool is_empty( )     const {
+    return strct->is_empty(); };
+  virtual bool is_contiguous() const {
+    //fmt::print("test contiguous {}\n",strct->as_string());
+    return strct->is_contiguous(); };
+  virtual bool is_strided()    const {
+    return strct->is_strided(); };
+  virtual bool is_indexed()    const {
+    return strct->is_indexed(); };
+  virtual bool is_composite()  const {
+    return strct->is_composite(); };
+  virtual std::string type_as_string()       const {
+    return strct->type_as_string(); };
+  virtual void reserve( I s )              {
+    return strct->reserve(s); };
+  void report_unimplemented( const char *c ) const {
+    return strct->report_unimplemented(c); };
+
+  /*
+   * Multi
+   */
+  void push_back( contiguous_indexstruct<I,d> &&idx );
+
+  /*
+   * Statistics
+   */
+  virtual I first_index() const {
+    return strct->first_index(); };
+  virtual I last_index()  const{
+    return strct->last_index(); };
+  virtual I local_size()  const {
+    return strct->local_size(); };
+  I volume() const {
+    return strct->volume(); };
+  I outer_size() const {
+    return strct->outer_size(); };
+  virtual int stride() const {
+    return strct->stride(); };
+  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const {
+    return strct->equals(idx); };
+  virtual bool operator==( std::shared_ptr<indexstruct<I,d>> idx ) const {
+    return strct->equals(idx); };
+  virtual bool equals( indexstructure &idx ) const {
+    return strct->equals(idx.strct); };
+  
+  virtual I find( I idx ) {
+    return strct->find(idx); };
+  I location_of( std::shared_ptr<indexstruct<I,d>> inner ) {
+    return strct->location_of(inner); };
+  I location_of( indexstructure &inner ) {
+    return strct->location_of(inner.strct); };
+  I location_of( indexstructure &&inner ) {
+    return strct->location_of(inner.strct); };
+  virtual bool contains_element( I idx ) const {
+    return strct->contains_element(idx); };
+  bool contains_element_in_range(I idx) const;
+  virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) {
+    return strct->contains(idx); };
+  virtual bool contains( indexstructure &idx ) const {
+    return strct->contains(idx.strct); };
+  virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) {
+    return strct->disjoint(idx); };
+  virtual bool disjoint( indexstructure &idx ) {
+    return strct->disjoint(idx.strct); };
+  virtual bool disjoint( indexstructure &&idx ) {
+    return strct->disjoint(idx.strct); };
+  virtual int can_incorporate( I v ) {
+    return strct->can_incorporate(v); };
+  virtual I get_ith_element( const I i ) const {
+    return strct->get_ith_element(i); };
+
+  /*
+   * Operations that yield a new indexstruct
+   */
+  void simplify() { strct = strct->simplify(); };
+  void force_simplify() { strct = strct->force_simplify(); };
+  void over_simplify() { strct = strct->over_simplify(); };
+  void add_element( const I idx ) { strct = strct->add_element(idx); };
+  void addin_element( const I idx ) { strct->addin_element(idx); };
+  void translate_by( I shift ) { strct = strct->translate_by(shift); };
+  bool has_intersect( std::shared_ptr<indexstruct<I,d>> idx ) {
+    return strct->has_intersect(idx); };
+
+  // union and intersection
+  auto struct_union( indexstructure &idx ) {
+    return indexstructure(strct->struct_union(idx.strct)); };
+  auto struct_union( indexstructure &&idx ) {
+    return indexstructure(strct->struct_union(idx.strct)); };
+  void split( std::shared_ptr<indexstruct<I,d>> idx ) { strct = strct->split(idx); };
+  indexstructure split( indexstructure &idx ) {
+    return indexstructure(strct->split(idx.strct)); };
+  indexstructure intersect( std::shared_ptr<indexstruct<I,d>> idx ) {
+    return indexstructure( strct->intersect(idx) ); };
+  indexstructure intersect( indexstructure &idx ) {
+    return indexstructure( strct->intersect(idx.strct) ); };
+
+  indexstructure minus( std::shared_ptr<indexstruct<I,d>> idx ) {
+    return indexstructure(strct->minus(idx)); };
+  indexstructure minus( indexstructure &idx ) {
+    return indexstructure(strct->minus(idx.strct)); };
+  void truncate_left( I i ) { strct = strct->truncate_left(i); };
+  void truncate_right( I i ) { strct = strct->truncate_right(i); };
+  void relativize_to( std::shared_ptr<indexstruct<I,d>> idx ) { strct = strct->relativize_to(idx); };
+  void relativize_to( indexstructure &idx ) { strct = strct->relativize_to(idx.strct); };
+  void convert_to_indexed() { strct = strct->convert_to_indexed(); };
+
+  // operate
+  auto operate( const ioperator<I,d> &op ) { return indexstructure(strct->operate(op)); };
+  auto operate( const ioperator<I,d> &&op ) { return indexstructure(strct->operate(op)); };
+  auto operate( const ioperator<I,d> &op,I i0,I i1) {
+    return indexstructure(strct->operate(op,i0,i1)); };
+
+  auto operate( const sigma_operator<I,d> &op ) { return indexstructure(strct->operate(op)); };
+  auto operate( const sigma_operator<I,d> &op, I lo,I hi ){
+    return indexstructure(strct->operate(op,lo,hi)); };
+  auto operate( const ioperator<I,d> &op,std::shared_ptr<indexstruct<I,d>> outer ) {
+    return indexstructure(strct->operate(op,outer)); };
+  auto operate( const sigma_operator<I,d> &op,std::shared_ptr<indexstruct<I,d>> outer ) {
+    return indexstructure(strct->operate(op,outer)); };
+
+#if 0
+  // Iterable functions
+  virtual indexstruct& begin() { init_cur(); return *this; }
+  // the next 4 need to be pure virtual
+  virtual void init_cur() {};
+  virtual indexstruct& end() override { last_iterate = local_size(); return *this; }
+  virtual bool operator!=( indexstruct idx ) { //printf("default test\n");
+    return 0; };
+  virtual I operator*() { return -1; };
+  virtual void operator++() { return; };
+#endif
+  
+  // Stuff
+  std::string as_string() const;
+  virtual void debug_on() {};
+  virtual void debug_off() {};
+};
+
+#if 0
+template<typename I,int d>
 class multi_indexstruct;
-template<int d>
+template<typename I,int d>
 class multi_sigma_operator_implementation {
 protected:
   int dim{-1};
@@ -819,173 +878,27 @@ public:
     throw(fmt::format("Can not get operator in dim {}",id)); };
 };
 
-/*!
-  Multi-dimensional sigma operator: give a \ref multi_indexstruct from a \ref domain_coordinate.
-  Cases:
-  - an array of \ref sigma_operator 
-  - a single function pointer multi_indexstruct -> multi_indexstruct
-  - a function processor_coordinate -> processor_coordinate, 
-    which is to be applied all over the domain; in practice to first & last index
-    \todo use coordinate& instead of pointer
-*/
-template<int d>
-class multi_sigma_operator {
-protected:
-  int opdim{-1};
-  // pointer to private implementation
-  std::shared_ptr<multi_sigma_operator_implementation> operator_implementation{nullptr};
-public:
-  //! Default constructor
-  multi_sigma_operator() {};
-  //! Construct with dimension
-  multi_sigma_operator( int d ) { opdim = d; };
-  int get_dimensionality() const;
-  int get_same_dimensionality(int dim) const;
-
-  // constructor from list of sigma operators
-  multi_sigma_operator( std::vector<ioperator> ops );
-  multi_sigma_operator( std::vector<sigma_operator> ops );
-  multi_sigma_operator( sigma_operator op )
-    : multi_sigma_operator( std::vector<sigma_operator>{op} ) {};
-
-  // constructor from coordinate operator
-  multi_sigma_operator
-  ( int dim, std::function< domain_coordinate(const domain_coordinate&) > f );
-
-  // constructor from coordinate-to-struct operator
-  multi_sigma_operator
-  ( int dim,std::function< std::shared_ptr<multi_indexstruct>(const domain_coordinate&) > f );
-  //( int dim,std::shared_ptr<multi_indexstruct>(*)(const domain_coordinate&) );
-
-  // constructor from struct to struct
-  multi_sigma_operator
-  ( int dim,std::function< std::shared_ptr<multi_indexstruct>(const multi_indexstruct&) > f );
-  //( int dim,std::shared_ptr<multi_indexstruct>(*)(const multi_indexstruct&) );
-    
-  // What type are we?
-  bool is_single_operator() const {
-    return operator_implementation->is_single_operator(); };
-  bool is_point_operator() const {
-    return operator_implementation->is_point_operator(); };
-  bool is_coord_struct_operator() const {
-    return operator_implementation->is_coord_struct_operator(); };
-  // operating is implementation dependent
-  std::shared_ptr<multi_indexstruct> operate( const domain_coordinate &point ) const {
-    return operator_implementation->operate(point); };
-  std::shared_ptr<multi_indexstruct> operate( const multi_indexstruct &idx ) const {
-    return operator_implementation->operate(idx); };
-  std::shared_ptr<multi_indexstruct> operate( std::shared_ptr<const multi_indexstruct> idx ) const {
-    return operate( *(idx.get()) ); };
-  std::shared_ptr<multi_indexstruct> operate( std::shared_ptr<multi_indexstruct> idx ) const {
-    return operate( *(idx.get()) ); };
-  // get one dimension
-  sigma_operator get_operator(int id) const {
-    return operator_implementation->get_operator(id); };
-
-protected:
-  iop_type type{iop_type::INVALID};
-public:
-  bool is_shift_op()       const {
-    return type==iop_type::SHIFT_REL || type==iop_type::SHIFT_ABS; };
-  //! For functionally defined operators, the user can set the type.
-  void set_is_shift_op() { type = iop_type::SHIFT_ABS; };
-};
-
-// vector of sigma operators
-template<int d>
-class multi_sigma_operator_impl_vector : public multi_sigma_operator_implementation {
-protected:
-  std::vector<sigma_operator> operators;
-public:
-  multi_sigma_operator_impl_vector( std::vector<sigma_operator> ops );
-  multi_sigma_operator_impl_vector( std::vector<ioperator> ops );
-  // implementation of pure virtual functions
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const domain_coordinate &point ) const override;
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const multi_indexstruct &idx ) const override;
-  virtual bool is_point_operator() const override { return true; };
-  virtual sigma_operator get_operator(int id) const override { return operators.at(id); };
-};
-
-/*!
-  Implementation of the multi_sigma_operator_implementation 
-  through coordinate operator
- */
-template<int d>
-class multi_sigma_operator_impl_coord : public multi_sigma_operator_implementation {
-protected:
-  std::function< domain_coordinate(const domain_coordinate&) >    coord_oper{nullptr};
-public:
-  multi_sigma_operator_impl_coord
-      ( int dim,std::function<domain_coordinate(const domain_coordinate&)> f )
-    : multi_sigma_operator_implementation(dim),coord_oper(f) {
-  };
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const domain_coordinate &point ) const override;
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const multi_indexstruct &idx ) const override;
-  virtual bool is_point_operator() const override { return true; };
-};
-
-// coordinate-to-struct operator
-template<int d>
-class multi_sigma_operator_impl_sigma : public multi_sigma_operator_implementation {
-protected:
-  std::function< std::shared_ptr<multi_indexstruct>(const domain_coordinate&) >
-                                                                  sigma_oper{nullptr};
-public:
-  multi_sigma_operator_impl_sigma
-  ( int dim, std::function< std::shared_ptr<multi_indexstruct>(const domain_coordinate&) > f )
-    : multi_sigma_operator_implementation(dim),sigma_oper(f) {
-  };
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const domain_coordinate &point ) const override;
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const multi_indexstruct &idx ) const override;
-  virtual bool is_coord_struct_operator() const override { return true; };
-};
-
-// struct to struct
-template<int d>
-class multi_sigma_operator_impl_struct : public multi_sigma_operator_implementation {
-protected:
-  std::function
-    < std::shared_ptr<multi_indexstruct>(const multi_indexstruct&) >struct_oper{nullptr};
-public:
-  multi_sigma_operator_impl_struct
-  ( int dim,
-    std::function< std::shared_ptr<multi_indexstruct>(const multi_indexstruct&) > f )
-    : multi_sigma_operator_implementation(dim) {
-    struct_oper = f ; };
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const domain_coordinate &point ) const override;
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const multi_indexstruct &idx ) const override;
-  virtual bool is_single_operator() const override { return true; };
-};
-
-template<int d>
+template<typename I,int d>
 class multi_ioperator;
 /*!
   We have limited support for multi-dimensional indexstructs.
   \todo lose the dim parameter
 */
-template<int d>
+template<typename I,int d>
 class multi_indexstruct : public std::enable_shared_from_this<multi_indexstruct> {
 protected:
   int dim{-1};
-  std::vector< std::shared_ptr<indexstruct<d>> > components;
+  std::vector< std::shared_ptr<indexstruct<I,d>> > components;
 public:
   std::vector< std::shared_ptr<multi_indexstruct> > multi;
 public:
   multi_indexstruct() {}; 
   multi_indexstruct(int);
-  multi_indexstruct(std::shared_ptr<indexstruct<d>>);
+  multi_indexstruct(std::shared_ptr<indexstruct<I,d>>);
   multi_indexstruct(domain_coordinate);
   multi_indexstruct(domain_coordinate,domain_coordinate);
-  multi_indexstruct( std::vector< std::shared_ptr<indexstruct<d>> > );
-  multi_indexstruct( std::vector<index_int> sizes );
+  multi_indexstruct( std::vector< std::shared_ptr<indexstruct<I,d>> > );
+  multi_indexstruct( std::vector<I> sizes );
 
   bool is_uninitialized() const { return dim<0; };
   bool is_multi() const { return multi.size()>0; };
@@ -1017,9 +930,9 @@ public:
   const std::shared_ptr<multi_indexstruct> enclosing_structure() const;
 
 protected:
-  mutable index_int stored_volume{-1};
+  mutable I stored_volume{-1};
 public:
-  index_int volume() const;
+  I volume() const;
 
 protected:
   mutable std::shared_ptr<domain_coordinate> stored_first_index{nullptr};
@@ -1031,16 +944,16 @@ public:
   const domain_coordinate &local_size_r() const;
   domain_coordinate *stride() const;
   // 1d cases
-  index_int first_index(int d) const { return components.at(d)->first_index(); };
-  index_int last_index(int d)  const { return components.at(d)->last_index(); };
-  index_int local_size(int d)  const { return components.at(d)->local_size(); };
+  I first_index(int d) const { return components.at(d)->first_index(); };
+  I last_index(int d)  const { return components.at(d)->last_index(); };
+  I local_size(int d)  const { return components.at(d)->local_size(); };
   std::vector<domain_coordinate> get_corners() const;
 
   /*
    * Data manipulation
    */
-  void set_component( int, std::shared_ptr<indexstruct<d>> );
-  std::shared_ptr<indexstruct<d>> get_component(int) const;
+  void set_component( int, std::shared_ptr<indexstruct<I,d>> );
+  std::shared_ptr<indexstruct<I,d>> get_component(int) const;
   //  bool contains_element( const domain_coordinate *i );
   bool contains_element( const domain_coordinate &i ) const;
   bool contains_element( const domain_coordinate &&i ) const;
@@ -1049,19 +962,19 @@ public:
   bool equals( std::shared_ptr<multi_indexstruct> ) const;
   bool operator==( const multi_indexstruct& ) const;
 
-  index_int linear_location_of( std::shared_ptr<multi_indexstruct> ) const;
-  index_int linear_location_in( std::shared_ptr<multi_indexstruct> ) const;
-  index_int linear_location_in( const multi_indexstruct& ) const;
-  index_int linear_location_of( domain_coordinate * ) const;
+  I linear_location_of( std::shared_ptr<multi_indexstruct> ) const;
+  I linear_location_in( std::shared_ptr<multi_indexstruct> ) const;
+  I linear_location_in( const multi_indexstruct& ) const;
+  I linear_location_of( domain_coordinate * ) const;
   domain_coordinate *location_of( std::shared_ptr<multi_indexstruct> inner ) const;
-  index_int linearfind( index_int i );
+  I linearfind( I i );
   domain_coordinate linear_offsets(std::shared_ptr<multi_indexstruct> ) const;
 
   /*
    * Operations
    */
-  std::shared_ptr<multi_indexstruct> operate( const ioperator &op ) const;
-  std::shared_ptr<multi_indexstruct> operate( const ioperator &&op ) const;
+  std::shared_ptr<multi_indexstruct> operate( const ioperator<I,d> &op ) const;
+  std::shared_ptr<multi_indexstruct> operate( const ioperator<I,d> &&op ) const;
   // VLE lose!
   std::shared_ptr<multi_indexstruct> operate( multi_ioperator* ) const;
   std::shared_ptr<multi_indexstruct> operate
@@ -1071,17 +984,17 @@ public:
   // end lose
   std::shared_ptr<multi_indexstruct> operate( const multi_sigma_operator& ) const;
   std::shared_ptr<multi_indexstruct> operate
-      ( const ioperator&,std::shared_ptr<multi_indexstruct> ) const;
+      ( const ioperator<I,d>&,std::shared_ptr<multi_indexstruct> ) const;
   std::shared_ptr<multi_indexstruct> operate
-      ( const ioperator&,const multi_indexstruct& ) const;
-  void translate_by(int d,index_int amt);
+      ( const ioperator<I,d>&,const multi_indexstruct& ) const;
+  void translate_by(int d,I amt);
 
   std::shared_ptr<multi_indexstruct> struct_union( std::shared_ptr<multi_indexstruct>);
   bool can_union_in_place(std::shared_ptr<multi_indexstruct> other,int &diff) const;
   std::shared_ptr<multi_indexstruct> struct_union_in_place
       (std::shared_ptr<multi_indexstruct> other,int diff);
   std::shared_ptr<multi_indexstruct> minus( std::shared_ptr<multi_indexstruct>,bool=false ) const;
-  std::shared_ptr<multi_indexstruct> split_along_dim(int,std::shared_ptr<indexstruct<d>>) const;
+  std::shared_ptr<multi_indexstruct> split_along_dim(int,std::shared_ptr<indexstruct<I,d>>) const;
   std::shared_ptr<multi_indexstruct> intersect( std::shared_ptr<multi_indexstruct> );
   std::shared_ptr<multi_indexstruct> intersect( const multi_indexstruct& );
   std::shared_ptr<multi_indexstruct> force_simplify(bool=false) const;
@@ -1090,7 +1003,7 @@ public:
    * Ranging
    */
 protected:
-  index_int cur_linear{0};
+  I cur_linear{0};
   domain_coordinate cur_coord;
 public:
   multi_indexstruct &begin();
@@ -1102,12 +1015,12 @@ public:
 };
 
 //! A multi_indexstruct with all components unknown
-template<int d>
+template<typename I,int d>
 class unknown_multi_indexstruct : public multi_indexstruct {
 public:
   unknown_multi_indexstruct( int dim ) : multi_indexstruct(dim) {
     for (int id=0; id<dim; id++)
-      set_component( id, std::shared_ptr<indexstruct<d>>( new unknown_indexstruct() ) );
+      set_component( id, std::shared_ptr<indexstruct<I,d>>( new unknown_indexstruct() ) );
   };
 };
 
@@ -1116,12 +1029,12 @@ public:
   For now there are no specific methods for this class.
   \todo write a unit test for being empty
 */
-template<int d>
+template<typename I,int d>
 class empty_multi_indexstruct : public multi_indexstruct {
 public:
   empty_multi_indexstruct( int dim ) : multi_indexstruct(dim) {
     for (int id=0; id<dim; id++)
-      set_component( id, std::shared_ptr<indexstruct<d>>( new empty_indexstruct() ) );
+      set_component( id, std::shared_ptr<indexstruct<I,d>>( new empty_indexstruct() ) );
   };
 };
 
@@ -1130,7 +1043,7 @@ public:
   For now there are no specific methods for this class.
   \todo write a unit test for being contiguous
 */
-template<int d>
+template<typename I,int d>
 class contiguous_multi_indexstruct : public multi_indexstruct {
 public:
   contiguous_multi_indexstruct( const domain_coordinate first ) :
@@ -1141,7 +1054,7 @@ public:
     int dim = first.get_same_dimensionality(last.get_dimensionality());
     for (int id=0; id<dim; id++)
       set_component
-	( id, std::shared_ptr<indexstruct<d>>
+	( id, std::shared_ptr<indexstruct<I,d>>
 	  ( new contiguous_indexstruct(first.coord(id),last.coord(id)) ) );
   };
 };
@@ -1151,7 +1064,7 @@ public:
   For now there are no specific methods for this class.
   \todo write a unit test for being strided
 */
-template<int d>
+template<typename I,int d>
 class strided_multi_indexstruct : public multi_indexstruct {
 public:
   strided_multi_indexstruct( domain_coordinate first,domain_coordinate last,int stride ) :
@@ -1159,17 +1072,17 @@ public:
     int dim = first.get_same_dimensionality( last.get_dimensionality() );
     for (int id=0; id<dim; id++)
       set_component
-	( id, std::shared_ptr<indexstruct<d>>
+	( id, std::shared_ptr<indexstruct<I,d>>
 	  ( new strided_indexstruct(first.coord(id),last.coord(id),stride) ) );
   };
 };
 
 /*! A vector of \ref ioperator objects.
  */
-template<int d>
+template<typename I,int d>
 class multi_ioperator {
 protected:
-  std::vector<ioperator /*std::shared_ptr<ioperator>*/ > operators;
+  std::vector<ioperator<I,d> /*std::shared_ptr<ioperator<I,d>>*/ > operators;
   bool operator_based{false};
   std::function< domain_coordinate*(domain_coordinate*) > pointf; bool point_based{false};
 public:
@@ -1236,11 +1149,11 @@ public:
   };
 };
 
-template<int d>
+template<typename I,int d>
 class multi_shift_operator : public multi_ioperator {
 public:
   multi_shift_operator(int d) : multi_ioperator(d) {};
-  multi_shift_operator( std::vector<index_int> shifts )
+  multi_shift_operator( std::vector<I> shifts )
     : multi_ioperator(shifts.size()) {
     for (int id=0; id<shifts.size(); id++) {
       set_operator(id,shift_operator(shifts[id]));
@@ -1254,7 +1167,7 @@ public:
   This is mostly for notational convenience.
   \todo make this an array of std::shared_ptr's; has to wait for \ref signature_function::add_sigma_oper to accept shared pointers.
 */
-template<int d>
+template<typename I,int d>
 class stencil_operator {
   std::vector<multi_shift_operator*> ops;
   int dim{0};
@@ -1264,14 +1177,14 @@ public:
   void add(int i,int j) {
     if (dim!=2)
       throw(fmt::format("Stencil operator dimensionality defined as {}",dim));
-    ops.push_back( new multi_shift_operator(std::vector<index_int>{i,j}) );
+    ops.push_back( new multi_shift_operator(std::vector<I>{i,j}) );
   };
   void add(int i,int j,int k) {
     if (dim!=3)
       throw(fmt::format("Stencil operator dimensionality defined as {}",dim));
-    ops.push_back( new multi_shift_operator(std::vector<index_int>{i,j,k}) );
+    ops.push_back( new multi_shift_operator(std::vector<I>{i,j,k}) );
   };
-  void add( const std::vector<index_int> &offset ) {
+  void add( const std::vector<I> &offset ) {
     if(dim!=offset.size())
       throw(fmt::format("Offset dimensionality {} incompatible with {}",offset.size(),dim));
     ops.push_back( new multi_shift_operator(offset) );
@@ -1285,178 +1198,7 @@ public:
   int get_dimensionality() const { return dim; };
 };
 
-/*
- * And here is the PIMPL class!
- */
-
-template<int d>
-class indexstructure {
-private:
-  std::shared_ptr<indexstruct<d>> strct{nullptr};
-  indexstruct_status known_status{indexstruct_status::KNOWN};
-public:
-  indexstructure() {
-    strct = std::shared_ptr<indexstruct<d>>( new unknown_indexstruct() );};
-  //! \todo get rid of this, and onl accept references
-  indexstructure( std::shared_ptr<indexstruct<d>> idx ) {
-    strct = idx->make_clone();
-    //fmt::print("from shared ptr: idx={}\n",strct->as_string());
-  };
-  indexstructure( contiguous_indexstruct &c )
-    : indexstructure( std::shared_ptr<indexstruct<d>>( new contiguous_indexstruct(c) ) ) {};
-  indexstructure( contiguous_indexstruct &&c )
-    : indexstructure( std::shared_ptr<indexstruct<d>>( new contiguous_indexstruct(c) ) ) {};
-  indexstructure( strided_indexstruct &&c )
-    : indexstructure( std::shared_ptr<indexstruct<d>>( new strided_indexstruct(c) ) )    {};
-  indexstructure( indexed_indexstruct &&c )
-    : indexstructure( std::shared_ptr<indexstruct<d>>( new indexed_indexstruct(c) ) )    {};
-  indexstructure( composite_indexstruct &&c )
-    : indexstructure( std::shared_ptr<indexstruct<d>>( new composite_indexstruct(c) ) )  {
-    fmt::print("composite type=<{}> strct composite: <{}> this composite: <{}>\n",
-	       strct->type_as_string(),strct->is_composite(),is_composite());
-  };
-  
-  bool is_known()             const {
-    return strct->is_known(); };
-  virtual bool is_empty( )     const {
-    return strct->is_empty(); };
-  virtual bool is_contiguous() const {
-    //fmt::print("test contiguous {}\n",strct->as_string());
-    return strct->is_contiguous(); };
-  virtual bool is_strided()    const {
-    return strct->is_strided(); };
-  virtual bool is_indexed()    const {
-    return strct->is_indexed(); };
-  virtual bool is_composite()  const {
-    return strct->is_composite(); };
-  virtual std::string type_as_string()       const {
-    return strct->type_as_string(); };
-  virtual void reserve( index_int s )              {
-    return strct->reserve(s); };
-  void report_unimplemented( const char *c ) const {
-    return strct->report_unimplemented(c); };
-
-  /*
-   * Multi
-   */
-  void push_back( contiguous_indexstruct &&idx );
-
-  /*
-   * Statistics
-   */
-  virtual index_int first_index() const {
-    return strct->first_index(); };
-  virtual index_int last_index()  const{
-    return strct->last_index(); };
-  virtual index_int local_size()  const {
-    return strct->local_size(); };
-  index_int volume() const {
-    return strct->volume(); };
-  index_int outer_size() const {
-    return strct->outer_size(); };
-  virtual int stride() const {
-    return strct->stride(); };
-  virtual bool equals( std::shared_ptr<indexstruct<d>> idx ) const {
-    return strct->equals(idx); };
-  virtual bool operator==( std::shared_ptr<indexstruct<d>> idx ) const {
-    return strct->equals(idx); };
-  virtual bool equals( indexstructure &idx ) const {
-    return strct->equals(idx.strct); };
-  
-  virtual index_int find( index_int idx ) {
-    return strct->find(idx); };
-  index_int location_of( std::shared_ptr<indexstruct<d>> inner ) {
-    return strct->location_of(inner); };
-  index_int location_of( indexstructure &inner ) {
-    return strct->location_of(inner.strct); };
-  index_int location_of( indexstructure &&inner ) {
-    return strct->location_of(inner.strct); };
-  virtual bool contains_element( index_int idx ) const {
-    return strct->contains_element(idx); };
-  bool contains_element_in_range(index_int idx) const;
-  virtual bool contains( std::shared_ptr<indexstruct<d>> idx ) {
-    return strct->contains(idx); };
-  virtual bool contains( indexstructure &idx ) const {
-    return strct->contains(idx.strct); };
-  virtual bool disjoint( std::shared_ptr<indexstruct<d>> idx ) {
-    return strct->disjoint(idx); };
-  virtual bool disjoint( indexstructure &idx ) {
-    return strct->disjoint(idx.strct); };
-  virtual bool disjoint( indexstructure &&idx ) {
-    return strct->disjoint(idx.strct); };
-  virtual int can_incorporate( index_int v ) {
-    return strct->can_incorporate(v); };
-  virtual index_int get_ith_element( const index_int i ) const {
-    return strct->get_ith_element(i); };
-
-  /*
-   * Operations that yield a new indexstruct
-   */
-  void simplify() { strct = strct->simplify(); };
-  void force_simplify() { strct = strct->force_simplify(); };
-  void over_simplify() { strct = strct->over_simplify(); };
-  void add_element( const index_int idx ) { strct = strct->add_element(idx); };
-  void addin_element( const index_int idx ) { strct->addin_element(idx); };
-  void translate_by( index_int shift ) { strct = strct->translate_by(shift); };
-  bool has_intersect( std::shared_ptr<indexstruct<d>> idx ) {
-    return strct->has_intersect(idx); };
-
-  // union and intersection
-  auto struct_union( indexstructure &idx ) {
-    return indexstructure(strct->struct_union(idx.strct)); };
-  auto struct_union( indexstructure &&idx ) {
-    return indexstructure(strct->struct_union(idx.strct)); };
-  void split( std::shared_ptr<indexstruct<d>> idx ) { strct = strct->split(idx); };
-  indexstructure split( indexstructure &idx ) {
-    return indexstructure(strct->split(idx.strct)); };
-  indexstructure intersect( std::shared_ptr<indexstruct<d>> idx ) {
-    return indexstructure( strct->intersect(idx) ); };
-  indexstructure intersect( indexstructure &idx ) {
-    return indexstructure( strct->intersect(idx.strct) ); };
-
-  indexstructure minus( std::shared_ptr<indexstruct<d>> idx ) {
-    return indexstructure(strct->minus(idx)); };
-  indexstructure minus( indexstructure &idx ) {
-    return indexstructure(strct->minus(idx.strct)); };
-  void truncate_left( index_int i ) { strct = strct->truncate_left(i); };
-  void truncate_right( index_int i ) { strct = strct->truncate_right(i); };
-  void relativize_to( std::shared_ptr<indexstruct<d>> idx ) { strct = strct->relativize_to(idx); };
-  void relativize_to( indexstructure &idx ) { strct = strct->relativize_to(idx.strct); };
-  void convert_to_indexed() { strct = strct->convert_to_indexed(); };
-
-  // operate
-  auto operate( const ioperator &op ) { return indexstructure(strct->operate(op)); };
-  auto operate( const ioperator &&op ) { return indexstructure(strct->operate(op)); };
-  auto operate( const ioperator &op,index_int i0,index_int i1) {
-    return indexstructure(strct->operate(op,i0,i1)); };
-
-  auto operate( const sigma_operator &op ) { return indexstructure(strct->operate(op)); };
-  auto operate( const sigma_operator &op, index_int lo,index_int hi ){
-    return indexstructure(strct->operate(op,lo,hi)); };
-  auto operate( const ioperator &op,std::shared_ptr<indexstruct<d>> outer ) {
-    return indexstructure(strct->operate(op,outer)); };
-  auto operate( const sigma_operator &op,std::shared_ptr<indexstruct<d>> outer ) {
-    return indexstructure(strct->operate(op,outer)); };
-
-#if 0
-  // Iterable functions
-  virtual indexstruct& begin() { init_cur(); return *this; }
-  // the next 4 need to be pure virtual
-  virtual void init_cur() {};
-  virtual indexstruct& end() override { last_iterate = local_size(); return *this; }
-  virtual bool operator!=( indexstruct idx ) { //printf("default test\n");
-    return 0; };
-  virtual index_int operator*() { return -1; };
-  virtual void operator++() { return; };
-#endif
-  
-  // Stuff
-  std::string as_string() const;
-  virtual void debug_on() {};
-  virtual void debug_off() {};
-};
-
-template<int d>
+template<typename I,int d>
 class multi_indexstructure {
 private:
   std::shared_ptr<multi_indexstruct> strct{nullptr};
@@ -1481,5 +1223,274 @@ public:
   //   } else
   //     throw(std::string("Operator= not for this type"));
   // };
+
+#endif
+#endif
+
+/*
+ * OLD CODE
+ */
+#if 0
+//! A domain coordinate is a domain point. \todo make templated coordinate class
+template<typename I,int d>
+class domain_coordinate {
+private:
+  std::vector<I> coordinates;
+public:
+  domain_coordinate() {}; // in case we need a default constructor
+  // Create an empty domain_coordinate object of given dimension
+  domain_coordinate(int dim);
+  //! Create from std vector
+  domain_coordinate( std::vector<I> ic ) { coordinates = ic; };
+  domain_coordinate( std::vector<int> ic ) { int dim = ic.size();
+    coordinates = std::vector<I>(dim);
+    for (int i=0; i<dim; i++)
+      coordinates.at(i) = ic.at(i);
+  };
+  // Copy constructor
+  domain_coordinate( domain_coordinate *other );
+
+  // basic stats and manipulation
+  int get_dimensionality() const; int get_same_dimensionality(int) const;
+  void reserve(int n) { coordinates.reserve(n); };
+  I &at(int i) { return coordinates.at(i); };
+  I sub(int i) const { return coordinates.at(i); };
+  void set(int id,I v) { coordinates.at(id) = v; };
+  I coord(int id) const;
+  //! \todo make by reference
+  std::vector<I> data() const { return coordinates; };
+  I volume() const;
+
+  I linear_location_in( domain_coordinate,domain_coordinate ) const;
+  I linear_location_in( domain_coordinate*,domain_coordinate* ) const;
+  I linear_location_in( domain_coordinate farcorner ) const;
+  I linear_location_in( domain_coordinate *farcorner ) const;
+  I linear_location_in( std::shared_ptr<multi_indexstruct> bigstruct ) const;
+  I linear_location_in( const multi_indexstruct &bigstruct ) const;
+
+  // operators
+  // bool operator==( domain_coordinate &other ) const; VLE don't work with denotations
+  // bool operator!=( domain_coordinate &other ) const;
+  bool operator==( const domain_coordinate &&other ) const;
+  bool operator==( const domain_coordinate &other ) const;
+  bool operator!=( const domain_coordinate other ) const;
+  domain_coordinate operator+(I i) const;
+  domain_coordinate operator+(const domain_coordinate i) const;
+  domain_coordinate operator-(I i) const;
+  domain_coordinate operator-(const domain_coordinate i) const;
+  domain_coordinate operator*(I i) const;
+  domain_coordinate operator/(I i) const;
+  domain_coordinate operator%(I i) const;
+  bool operator<(domain_coordinate other) const;
+  bool operator>(domain_coordinate other) const;
+  bool operator<=(domain_coordinate other) const;
+  bool operator>=(domain_coordinate other) const;
+  domain_coordinate *negate();
+  const domain_coordinate operate( const ioperator<I,d>& ) const ;
+  domain_coordinate *operate_p( const ioperator<I,d>& ) const;
+  //!\todo can we make this by reference?
+  I operator[](int id) const {
+    if (id<0 || id>=get_dimensionality())
+      throw(fmt::format("Wrong dimension {} to get from coordinate <<{}>>",id,as_string()));
+    auto cid = coordinates[id]; return cid;
+  };
+  //! \todo const ref !
+  void min_with(const domain_coordinate&); void max_with(const domain_coordinate&);
+  //void min_with(domain_coordinate*); void max_with(domain_coordinate*);
+  bool equals( domain_coordinate *other );
+  bool is_zero();
+  std::string as_string() const { fmt::memory_buffer w;
+    format_to(w.end(),"["); for ( auto i : coordinates ) format_to(w.end(),"{},",i);
+    format_to(w.end(),"]"); return to_string(w); };
+
+  bool is_on_left_face(int d,std::shared_ptr<multi_indexstruct>) const;
+  bool is_on_right_face(int d,std::shared_ptr<multi_indexstruct>) const;
+
+  // iterating
+protected:
+  I iterator{-1};
+public:
+  domain_coordinate& begin() { iterator = 0; return *this; };
+  domain_coordinate& end() { return *this; };
+  bool operator!=( domain_coordinate ps ) { return iterator<coordinates.size()-1; };
+  void operator++() { iterator++; };
+  //  I operator[](int d) { return coordinates[d]; };
+  I operator*() const {
+    if (iterator<0)
+      throw(fmt::format("dereferincing iterator {} in {}",iterator,as_string()));
+    I v = coordinates[iterator];
+    //printf("deref domain coord @%d to %d\n",iterator,v);
+    return v;
+  };
+};
+
+//! \todo this needs to be a singleton class
+template<typename I,int d>
+class domain_coordinate_zero : public domain_coordinate {
+public:
+  domain_coordinate_zero(int dim) : domain_coordinate(dim) {
+    for (int id=0; id<dim; id++) set(id,0.); };
+};
+
+template<typename I,int d>
+class domain_coordinate_allones : public domain_coordinate {
+public:
+  domain_coordinate_allones(int dim) : domain_coordinate(dim) {
+    for (int id=0; id<dim; id++) set(id,1.); };
+};
+
+//! Wrap a single I into a one-d \ref domain_coordinate.
+template<typename I,int d>
+class domain_coordinate1d : public domain_coordinate {
+public:
+  domain_coordinate1d( I i ) : domain_coordinate(1) {
+    set(0,i); };
+};
+
+/*!
+  Multi-dimensional sigma operator: give a \ref multi_indexstruct from a \ref domain_coordinate.
+  Cases:
+  - an array of \ref sigma_operator 
+  - a single function pointer multi_indexstruct -> multi_indexstruct
+  - a function processor_coordinate -> processor_coordinate, 
+    which is to be applied all over the domain; in practice to first & last index
+    \todo use coordinate& instead of pointer
+*/
+template<typename I,int d>
+class multi_sigma_operator {
+protected:
+  int opdim{-1};
+  // pointer to private implementation
+  std::shared_ptr<multi_sigma_operator_implementation> operator_implementation{nullptr};
+public:
+  //! Default constructor
+  multi_sigma_operator() {};
+  //! Construct with dimension
+  multi_sigma_operator( int d ) { opdim = d; };
+  int get_dimensionality() const;
+  int get_same_dimensionality(int dim) const;
+
+  // constructor from list of sigma operators
+  multi_sigma_operator( std::vector<ioperator<I,d>> ops );
+  multi_sigma_operator( std::vector<sigma_operator> ops );
+  multi_sigma_operator( sigma_operator op )
+    : multi_sigma_operator( std::vector<sigma_operator>{op} ) {};
+
+  // constructor from coordinate operator
+  multi_sigma_operator
+  ( int dim, std::function< domain_coordinate(const domain_coordinate&) > f );
+
+  // constructor from coordinate-to-struct operator
+  multi_sigma_operator
+  ( int dim,std::function< std::shared_ptr<multi_indexstruct>(const domain_coordinate&) > f );
+  //( int dim,std::shared_ptr<multi_indexstruct>(*)(const domain_coordinate&) );
+
+  // constructor from struct to struct
+  multi_sigma_operator
+  ( int dim,std::function< std::shared_ptr<multi_indexstruct>(const multi_indexstruct&) > f );
+  //( int dim,std::shared_ptr<multi_indexstruct>(*)(const multi_indexstruct&) );
+    
+  // What type are we?
+  bool is_single_operator() const {
+    return operator_implementation->is_single_operator(); };
+  bool is_point_operator() const {
+    return operator_implementation->is_point_operator(); };
+  bool is_coord_struct_operator() const {
+    return operator_implementation->is_coord_struct_operator(); };
+  // operating is implementation dependent
+  std::shared_ptr<multi_indexstruct> operate( const domain_coordinate &point ) const {
+    return operator_implementation->operate(point); };
+  std::shared_ptr<multi_indexstruct> operate( const multi_indexstruct &idx ) const {
+    return operator_implementation->operate(idx); };
+  std::shared_ptr<multi_indexstruct> operate( std::shared_ptr<const multi_indexstruct> idx ) const {
+    return operate( *(idx.get()) ); };
+  std::shared_ptr<multi_indexstruct> operate( std::shared_ptr<multi_indexstruct> idx ) const {
+    return operate( *(idx.get()) ); };
+  // get one dimension
+  sigma_operator get_operator(int id) const {
+    return operator_implementation->get_operator(id); };
+
+protected:
+  iop_type type{iop_type::INVALID};
+public:
+  bool is_shift_op()       const {
+    return type==iop_type::SHIFT_REL || type==iop_type::SHIFT_ABS; };
+  //! For functionally defined operators, the user can set the type.
+  void set_is_shift_op() { type = iop_type::SHIFT_ABS; };
+};
+
+// vector of sigma operators
+template<typename I,int d>
+class multi_sigma_operator_impl_vector : public multi_sigma_operator_implementation {
+protected:
+  std::vector<sigma_operator> operators;
+public:
+  multi_sigma_operator_impl_vector( std::vector<sigma_operator> ops );
+  multi_sigma_operator_impl_vector( std::vector<ioperator<I,d>> ops );
+  // implementation of pure virtual functions
+  virtual std::shared_ptr<multi_indexstruct> operate
+      ( const domain_coordinate &point ) const override;
+  virtual std::shared_ptr<multi_indexstruct> operate
+      ( const multi_indexstruct &idx ) const override;
+  virtual bool is_point_operator() const override { return true; };
+  virtual sigma_operator get_operator(int id) const override { return operators.at(id); };
+};
+
+/*!
+  Implementation of the multi_sigma_operator_implementation 
+  through coordinate operator
+ */
+template<typename I,int d>
+class multi_sigma_operator_impl_coord : public multi_sigma_operator_implementation {
+protected:
+  std::function< domain_coordinate(const domain_coordinate&) >    coord_oper{nullptr};
+public:
+  multi_sigma_operator_impl_coord
+      ( int dim,std::function<domain_coordinate(const domain_coordinate&)> f )
+    : multi_sigma_operator_implementation(dim),coord_oper(f) {
+  };
+  virtual std::shared_ptr<multi_indexstruct> operate
+      ( const domain_coordinate &point ) const override;
+  virtual std::shared_ptr<multi_indexstruct> operate
+      ( const multi_indexstruct &idx ) const override;
+  virtual bool is_point_operator() const override { return true; };
+};
+
+// coordinate-to-struct operator
+template<typename I,int d>
+class multi_sigma_operator_impl_sigma : public multi_sigma_operator_implementation {
+protected:
+  std::function< std::shared_ptr<multi_indexstruct>(const domain_coordinate&) >
+                                                                  sigma_oper{nullptr};
+public:
+  multi_sigma_operator_impl_sigma
+  ( int dim, std::function< std::shared_ptr<multi_indexstruct>(const domain_coordinate&) > f )
+    : multi_sigma_operator_implementation(dim),sigma_oper(f) {
+  };
+  virtual std::shared_ptr<multi_indexstruct> operate
+      ( const domain_coordinate &point ) const override;
+  virtual std::shared_ptr<multi_indexstruct> operate
+      ( const multi_indexstruct &idx ) const override;
+  virtual bool is_coord_struct_operator() const override { return true; };
+};
+
+// struct to struct
+template<typename I,int d>
+class multi_sigma_operator_impl_struct : public multi_sigma_operator_implementation {
+protected:
+  std::function
+    < std::shared_ptr<multi_indexstruct>(const multi_indexstruct&) >struct_oper{nullptr};
+public:
+  multi_sigma_operator_impl_struct
+  ( int dim,
+    std::function< std::shared_ptr<multi_indexstruct>(const multi_indexstruct&) > f )
+    : multi_sigma_operator_implementation(dim) {
+    struct_oper = f ; };
+  virtual std::shared_ptr<multi_indexstruct> operate
+      ( const domain_coordinate &point ) const override;
+  virtual std::shared_ptr<multi_indexstruct> operate
+      ( const multi_indexstruct &idx ) const override;
+  virtual bool is_single_operator() const override { return true; };
+};
 
 #endif

@@ -22,6 +22,22 @@ class distribution;
 class object;
 class task;
 
+template<int d>
+class parallel_structure {
+protected:
+  coordinate<int,d> procs;
+  coordinate<index_int,d> points;
+  std::vector< std::shared_ptr<indexstruct> > structs;
+public:
+  parallel_structure( const coordinate<int,d>& );
+  parallel_structure& from_global( const coordinate<index_int,d>& );
+  std::shared_ptr<indexstruct> get_processor_structure(int p) const;
+  parallel_structure<d> operate( ioperator<d,index_int> ) const;
+  indexstruct<index_int,d> enclosing_structure() const;
+};
+
+#if 0
+
 /****
  **** Architecture
  ****/
@@ -35,22 +51,6 @@ public:
     : endpoint( coordinate<int,d>(np) ) {
   };
 };
-
-template<int d>
-class parallel_structure {
-protected:
-  coordinate<int,d> procs;
-  coordinate<index_int,d> points;
-  std::vector< std::shared_ptr<indexstruct> > structs;
-public:
-  parallel_structure( const coordinate<int,d>& );
-  parallel_structure& from_global( const coordinate<index_int,d>& );
-  std::shared_ptr<indexstruct> get_processor_structure(int p) const;
-  parallel_structure<d> operate( ioperator ) const;
-  coordinate<index_int,d> enclosing_structure() const;
-};
-
-#if 0
 
 /*!
   Collective strategy
