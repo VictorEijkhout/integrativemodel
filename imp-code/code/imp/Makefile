@@ -16,6 +16,7 @@ info ::
 include Make.inc
 include Make.common
 CXXFLAGS = ${CXX_OPTFLAGS}
+CPPSTANDARD = 20
 
 ##
 ## Library stuff
@@ -46,7 +47,7 @@ imp_base.o : imp_base.h imp_entity.h indexstruct.hpp
 
 UNITTESTS = unittest_indexstruct
 .SECONDEXPANSION:
-unittest_indexstruct : unittest_indexstruct.o unittest_main.o indexstruct.o
+unittest_indexstruct : unittest_indexstruct.o unittest_main.o indexstruct.o imp_coord.o
 	${CXX_LINKER} ${CXXFLAGS} ${CXXUNITFLAGS} \
 	    -o $@ $^ \
 	    -L${CATCH_LIB} -lCatch2Main -lCatch2 \

@@ -23,8 +23,8 @@ public :
 
   // basic manipulation
   constexpr int dimensionality() const { return d; }
-  I &at(int i);
-  const I &at(int i) const;
+  I &at(int i); const I &at(int i) const;
+  I &operator[](int i); const I &operator[](int i) const;
   I span() const;
   bool before( const coordinate<I,d>& ) const;
   I linear( const coordinate<I,d>& ) const;
@@ -57,7 +57,26 @@ public :
 #endif
   
   // operators
-  //  coordinate<I,d> operator*(index_int i);
+  coordinate<I,d> operator+( coordinate<I,d> ) const;
+  coordinate<I,d> operator-( coordinate<I,d> ) const;
+  coordinate<I,d> operator%( I ) const;
+  coordinate<I,d> operator+( I ) const;
+  coordinate<I,d> operator-( I ) const;
+  coordinate<I,d> operator*( I ) const;
+  coordinate<I,d> operator/( I ) const;
+// #include <compare>
+//   auto operator<=>( coordinate<I,d> ) const {
+//     return std::accumulate( coordinates.begin(),coordinates.end(),
+// 		       []( I x,I y) { return x<=>y; } );
+//   };
+  bool operator<=( coordinate<I,d> other ) const {
+    bool r{true};
+    for (int id=0; id<d; id++)
+      r = r and coordinates[id]<=other.coordinates[id];
+    return r;
+  };
+  bool operator==( coordinate<I,d> ) const;
+  bool operator==( I ) const;
 
   // iterating
 protected:

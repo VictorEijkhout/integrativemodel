@@ -33,6 +33,12 @@ using std::vector;
  ****************/
 
 template<typename I,int d>
+I outer_volume() const {
+  auto outer_vector = last_index()-first_index()+1;
+  return outer_vector.span();
+};
+
+template<typename I,int d>
 int indexstruct<I,d>::type_as_int() const {
   if (is_empty()) return 1;
   else if (is_contiguous()) return 2;
@@ -145,9 +151,51 @@ shared_ptr<indexstruct<I,d>> empty_indexstruct<I,d>::struct_union
   return idx;
 };
 
+template<typename I,int d>
+contiguous_indexstruct<I,d>::contiguous_indexstruct
+        ( const std::array<I,d> s,const std::array<I,d> l )
+  : strided_indexstruct<I,d>(s,l,1) {};
+
+template<typename I,int d>
+virtual std::string as_string() const {
+  return fmt::format("contiguous: [{}--{}]",this->first[0],this->last[0]);
+};
+
 /****
  **** Strided indexstruct
  ****/
+
+/*
+ * Constructors
+ */
+template<typename I,int d>
+strided_indexstruct<I,d>::strided_indexstruct(const I f,const I l,const int s)
+  : first(f),last(l),stride_amount(s) {
+  last -= (last-first)%stride_amount; // make sure last is actually included
+};
+
+template<typename I,int d>
+strided_indexstruct<I,d>::strided_indexstruct
+        (const std::array<I,d> f,const std::array<I,d>  l,const int s)
+	  : first(f[0]),last(l[0]),stride_amount(s) {
+  last -= (last-first)%stride_amount; // make sure last is actually included
+};
+
+template<typename I,int d>
+strided_indexstruct<I,d>::strided_indexstruct
+        (const coordinate<I,d> f,const coordinate<I,d>  l,const int s)
+	  : first(f),last(l),stride_amount(s) {
+  last -= (last-first)%stride_amount; // make sure last is actually included
+};
+
+/*
+ * stuff
+ */
+template<typename I,int d>
+I strided_indexstruct<I,d>::outer_volume()  const override {
+  auto outer_vector = (last_index()-first_index()+stride_amount-1)/stride_amount+1;
+  return outer_vector.volume();
+};
 
 template<typename I,int d>
 bool strided_indexstruct<I,d>::equals( shared_ptr<indexstruct<I,d>> idx ) const {
@@ -186,7 +234,7 @@ bool strided_indexstruct<I,d>::contains_element( I idx ) const {
 };
 
 template<typename I,int d>
-I strided_indexstruct<I,d>::find( I idx ) const {
+I strided_indexstruct<I,d>::find( coordinate<I,d> idx ) const {
   if (!contains_element(idx))
     throw(fmt::format("Index {} to find is out of range <<{}>>",idx,this->as_string()));
   return (idx-first)/stride_amount;
@@ -194,16 +242,27 @@ I strided_indexstruct<I,d>::find( I idx ) const {
 
 template<typename I,int d>
 I strided_indexstruct<I,d>::get_ith_element( const I i ) const {
-  if (i<0 || i>=local_size())
+  if (i<0 || i>=volume())
     throw(fmt::format("Index {} out of range for {}",i,as_string()));
   return first+i*stride_amount;
 };
 
 template<typename I,int d>
+bool strided_indexstruct<I,d>::can_merge_with_type
+        ( std::shared_ptr<indexstruct<I,d>> idx) {
+  strided_indexstruct *strided = dynamic_cast<strided_indexstruct*>(idx.get());
+  if (strided!=nullptr) { // strided & strided
+    return stride_amount==strided->stride_amount &&
+      first%stride_amount==strided->first%strided->stride_amount &&
+      strided->first<=last+stride_amount && first-stride_amount<=strided->last;
+  } else return 0;
+};
+
+template<typename I,int d>
 bool strided_indexstruct<I,d>::contains( shared_ptr<indexstruct<I,d>> idx ) const {
-  if (idx->local_size()==0) return true;
-  if (this->local_size()==0) return false;
-  if (idx->local_size()==1)
+  if (idx->volume()==0) return true;
+  if (this->volume()==0) return false;
+  if (idx->volume()==1)
     return contains_element( idx->first_index() );
 
   /*
@@ -237,6 +296,12 @@ bool strided_indexstruct<I,d>::contains( shared_ptr<indexstruct<I,d>> idx ) cons
 
   throw(std::string("unimplemented strided contains case"));
 };
+
+template<typename I,int d>
+std::string strided_indexstruct<I,d>::as_string() const {
+  return fmt::format("strided: [{}-by{}--{}]",first[0],stride_amount,last[0]);
+};
+
 
 /*! Disjointness test for strided.
   \todo bunch of unimplemented cases \todo unittest for indexed csae
@@ -293,7 +358,7 @@ bool strided_indexstruct<I,d>::has_intersect( shared_ptr<indexstruct<I,d>> idx )
 	else
 	  return true;
       }
-    } else if (idx->local_size()<local_size()) { // case of different strides, `this' s/b small
+    } else if (idx->volume()<volume()) { // case of different strides, `this' s/b small
       return idx->has_intersect(this->shared_from_this());
     } else { // case of different strides
       return true;
@@ -346,7 +411,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::intersect
 	  return shared_ptr<indexstruct<I,d>>
 	    ( make_shared<strided_indexstruct<I,d>>(mn,mx,stride_amount) );
       }
-    } else if (idx->local_size()<local_size()) { // case of different strides, `this' s/b small
+    } else if (idx->volume()<volume()) { // case of different strides, `this' s/b small
       return idx->intersect(this->shared_from_this());
     } else { // case of different strides
       auto rstruct = shared_ptr<indexstruct<I,d>>( make_shared<empty_indexstruct<I,d>>() );
@@ -516,7 +581,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::relativize_to
     throw(fmt::format("Need containment for relativize {} to {}",
                       this->as_string(),idx->as_string()));
   }
-  if (local_size()==1)
+  if (volume()==1)
     return shared_ptr<indexstruct<I,d>>{
       make_shared<contiguous_indexstruct<I,d>>( idx->find( first_index() ) ) };
 
@@ -565,7 +630,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::relativize_to
 	auto rstruct = relativize_to(istruct);
 	return rstruct->operate( shift_operator<I,d>(shift) );
       }
-      shift += istruct->local_size();
+      shift += istruct->volume();
     }
     // general case
     auto rel = shared_ptr<indexstruct<I,d>>( make_shared<empty_indexstruct<I,d>>() );
@@ -585,7 +650,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::relativize_to
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::convert_to_indexed() const {
   auto indexed = shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>() );
-  indexed->reserve( local_size() );
+  indexed->reserve( volume() );
   auto this_copy = *this;
   for (auto v : this_copy)
     indexed = indexed->add_element(v);
@@ -614,7 +679,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
 	return shared_ptr<indexstruct<I,d>>{make_shared<contiguous_indexstruct<I,d>>(mn,mx)};
       else
 	return shared_ptr<indexstruct<I,d>>{make_shared<strided_indexstruct<I,d>>(mn,mx,stride_amount)};
-    } else if (local_size()<5 && idx->local_size()<5) {
+    } else if (volume()<5 && idx->volume()<5) {
       auto indexed = convert_to_indexed();
       return indexed->struct_union( idx->convert_to_indexed() );
     } else {
@@ -693,6 +758,19 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::split
  **** Indexed indexstruct
  ****/
 template<typename I,int d>
+indexed_indexstruct<I,d>::indexed_indexstruct( const vector<coordinate<I,d>> idxs )
+  : indices(idxs) {
+};
+
+template<typename I>
+indexed_indexstruct<I,d>::indexed_indexstruct( const vector<I> idxs )
+  : indices( vector<coordinate<I,1>>(idxs.size()) ) {
+  for ( int i=0; i<indices.size(); i++ ) {
+    indices.at(i) = coordinate<I,1>( idxs.at(i) );
+  }
+};
+
+template<typename I,int d>
 indexed_indexstruct<I,d>::indexed_indexstruct( const I len,const I *idxs ) {
   indices.reserve(len);
   I iold;
@@ -748,7 +826,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::translate_by( I shift ) {
 //! See if we can turn in indexed into contiguous, but cautiously.
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::simplify() {
-  if (this->local_size()>SMALLBLOCKSIZE)
+  if (this->volume()>SMALLBLOCKSIZE)
     return force_simplify();
   else
     return this->make_clone();
@@ -761,15 +839,15 @@ template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
   try {
     if (0) {
-    } else if (this->local_size()==0) {
+    } else if (this->volume()==0) {
       return shared_ptr<indexstruct<I,d>>( make_shared<empty_indexstruct<I,d>>() );
-    } else if (this->local_size()==this->outer_size()) {
+    } else if (this->volume()==this->outer_volume()) {
       // easy simplification to contiguous
       return
 	shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(first_index(),last_index()) );
     } else {
       //    throw(string("arbitrary throw"));	
-      int ileft = 0, iright = this->local_size()-1;
+      int ileft = 0, iright = this->volume()-1;
       // try detect strided
       int stride;
       if (is_strided_between_indices(ileft,iright,stride)) {
@@ -866,7 +944,7 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices(int ileft,int iright,i
 
 template<typename I,int d>
 I indexed_indexstruct<I,d>::get_ith_element( const I i ) const {
-  if (i<0 || i>=this->local_size())
+  if (i<0 || i>=this->volume())
     throw(fmt::format("Index {} out of range for {}",i,as_string()));
   return indices[i];
 };
@@ -903,8 +981,8 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::intersect
 //! \todo lose those clones
 template<typename I,int d>
 bool indexed_indexstruct<I,d>::contains( shared_ptr<indexstruct<I,d>> idx ) const {
-  if (idx->local_size()==0) return true;
-  if (this->local_size()==0) return false;
+  if (idx->volume()==0) return true;
+  if (this->volume()==0) return false;
 
   /*
    * Case : contains strided
@@ -961,7 +1039,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::minus
     for (auto v : indices)
       if (!idx->contains_element(v))
 	indexminus = indexminus->add_element(v);
-    if (indexminus->local_size()==0)
+    if (indexminus->volume()==0)
       return shared_ptr<indexstruct<I,d>>(make_shared<empty_indexstruct<I,d>>());
     else
       return indexminus;
@@ -975,7 +1053,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::minus
     for (auto v : indices)
       if (!idx->contains_element(v))
 	indexminus = indexminus->add_element(v);
-    if (indexminus->local_size()==0)
+    if (indexminus->volume()==0)
       return shared_ptr<indexstruct<I,d>>(make_shared<empty_indexstruct<I,d>>());
     else
       return indexminus;
@@ -1076,7 +1154,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::struct_union
    */
   strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) {
-    if (strided->local_size()<SMALLBLOCKSIZE) {
+    if (strided->volume()<SMALLBLOCKSIZE) {
       auto indexed = this->make_clone();
       int s = strided->stride();
       for (auto i : *strided)
@@ -1153,31 +1231,33 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::make_clone() const {
 };
 
 template<typename I,int d>
-I composite_indexstruct<I,d>::first_index() const {
-  if (structs.size()==0)
-    throw(std::string("Can not get first from empty composite"));
-  I f = structs.at(0)->first_index();
-  for (auto s : structs)
-    f = MIN(f,s->first_index());
-  return f;
+coordinate<I,d> composite_indexstruct<I,d>::first_index() const {
+  throw("composite first index");
+  // if (structs.size()==0)
+  //   throw(std::string("Can not get first from empty composite"));
+  // I f = structs.at(0)->first_index();
+  // for (auto s : structs)
+  //   f = MIN(f,s->first_index());
+  // return f;
 };
 
 template<typename I,int d>
-I composite_indexstruct<I,d>::last_index() const {
-  if (structs.size()==0)
-    throw(std::string("Can not get last from empty composite"));
-  I f = structs.at(0)->last_index();
-  for (auto s : structs)
-    f = MAX(f,s->last_index());
-  return f;
+coordinate<I,d>I composite_indexstruct<I,d>::last_index() const {
+  throw("composite last index");
+  // if (structs.size()==0)
+  //   throw(std::string("Can not get last from empty composite"));
+  // I f = structs.at(0)->last_index();
+  // for (auto s : structs)
+  //   f = MAX(f,s->last_index());
+  // return f;
 };
 
 template<typename I,int d>
-I composite_indexstruct<I,d>::local_size() const {
+I composite_indexstruct<I,d>::volume() const {
   I siz=0;
   for (auto s : structs) {
     //printf("localsize: struct@%d\n",(long)(s.get()));
-    siz += s->local_size();
+    siz += s->volume();
   }
   return siz;
 };
@@ -1185,7 +1265,7 @@ I composite_indexstruct<I,d>::local_size() const {
 //! \todo I have my doubts
 template<typename I,int d>
 I composite_indexstruct<I,d>::get_ith_element( const I i ) const {
-  if (i>=local_size())
+  if (i>=volume())
     throw(fmt::format("Requested index {} out of bounds for {}",i,as_string()));
   if (structs.size()==1)
     return structs.at(0)->get_ith_element(i);
@@ -1199,8 +1279,8 @@ I composite_indexstruct<I,d>::get_ith_element( const I i ) const {
 	print("WARNING composite not in increasing order: {}\n",as_string());
       start_check = sf;
     }
-    if (ilocal>=s->local_size())
-      ilocal -= s->local_size();
+    if (ilocal>=s->volume())
+      ilocal -= s->volume();
     else
       return s->get_ith_element(ilocal);
   }
@@ -1272,7 +1352,7 @@ bool composite_indexstruct<I,d>::contains_element( I idx ) const {
 };
 
 template<typename I,int d>
-I composite_indexstruct<I,d>::find( I idx ) const {
+I composite_indexstruct<I,d>::find( coordinate<I,d> idx ) const {
   I
     first = structs[0]->first_index(),
     accumulate = 0;
@@ -1283,7 +1363,7 @@ I composite_indexstruct<I,d>::find( I idx ) const {
     if (s->contains_element(idx)) {
       return accumulate+s->find(idx);
     } else
-      accumulate += s->local_size();
+      accumulate += s->volume();
   }
   throw(format("Could not find {} in <<{}>>",idx,as_string()));
 };
@@ -1352,7 +1432,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::struct_union
   }
 
   // try to merge with existing indexed
-  if (idx->local_size()==1) {
+  if (idx->volume()==1) {
     //print("  merge single point {}\n",idx->as_string());
     bool was_merged{false};
     auto composite = shared_ptr<composite_indexstruct>( make_shared<composite_indexstruct<I,d>>() );
@@ -1518,7 +1598,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::force_simplify() const 
 	for (int is=0; is<ns; is++) {
 	  if (is!=an_ind) {
 	    auto istruct = structs.at(is);
-	    for (int ii=0; ii<indexed->local_size(); ii++) {
+	    for (int ii=0; ii<indexed->volume(); ii++) {
 	      auto i = indexed->get_ith_element(ii);
 	      can_merge = structs.at(is)->can_incorporate(i);
 	      if (can_merge) goto do_merge;
@@ -1540,7 +1620,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::force_simplify() const 
 		istruct = istruct->struct_union(i_struct);
 		indexed = indexed->minus(i_struct);
 	      } else ii++;
-	      if (ii>=indexed->local_size()) break;
+	      if (ii>=indexed->volume()) break;
 	    }
 	    //print("push {}\n",istruct->as_string());
 	    composite->push_back(istruct);
@@ -1638,7 +1718,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::over_simplify() {
       for (int js=0; js<structs.size(); js++) {
 	auto jstruct = structs[js];
 	if (is==js) continue;
-	if (jstruct->is_contiguous() || jstruct->local_size()==1) {
+	if (jstruct->is_contiguous() || jstruct->volume()==1) {
 	  if (istruct->last_index()==jstruct->first_index()-2) {
 	    s1 = is; s2 = js; gap = true; }
 	  if (jstruct->last_index()==istruct->first_index()-2) {
@@ -1885,6 +1965,16 @@ I ioperator<I,d>::inverse_operate( I i, I m ) const {
   }
 };
 
+template<typename I,int d>
+std::string strided_indexstruct<I,d>::as_string() const {
+  fmt::memory_buffer w;
+  format_to(w.end(),"indexed: {}:[",indices.size());
+  for (auto i : indices)
+    format_to(w.end(),"{},",i[0]);
+  format_to(w.end(),"]");
+  return to_string(w);
+}
+
 /****
  **** Operate on indexstructs
  ****/
@@ -1929,7 +2019,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
   } else if (op.is_function_op()) {
     auto rstruct = shared_ptr<indexstruct<I,d>>{ make_shared<indexed_indexstruct<I,d>>() };
     //for (auto i : *this) { VLE `this' is modified, which contradicts the const
-    for (I ii=0; ii<local_size(); ii++) {
+    for (I ii=0; ii<volume(); ii++) {
       I i = get_ith_element(ii);
       rstruct = rstruct->add_element( op.operate(i) );
     }
@@ -1979,7 +2069,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
   } else if (op.is_function_op()) {
     auto rstruct = shared_ptr<indexstruct<I,d>>{ make_shared<indexed_indexstruct<I,d>>() };
     //for (auto i : *this) { VLE `this' is modified, which contradicts the const
-    for (int ii=0; ii<local_size(); ii++) {
+    for (int ii=0; ii<volume(); ii++) {
       I i = get_ith_element(ii);
       rstruct = rstruct->add_element( op.operate(i) );
     }
@@ -2013,7 +2103,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const sigma_oper
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::operate( const ioperator<I,d>& op ) const {
   auto shifted = shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>() );
-  shifted->reserve(this->local_size());
+  shifted->reserve(this->volume());
   if (op.is_shift_op()) {
     for (I i=0; i<indices.size(); i++)
       shifted->add_element( op.operate( indices[i] ) );
@@ -2226,7 +2316,7 @@ void multi_indexstruct<I,d>::set_component( int d, shared_ptr<indexstruct<I,d>> 
     throw(fmt::format("Component dimension index {} out of bounds 0--{}",d,dim));
   components.at(d) = cmp;
   if (cmp->is_known())
-    stored_local_size.set(d,cmp->local_size());
+    stored_local_size.set(d,cmp->volume());
   set_needs_recomputing();
 };
 
@@ -2250,7 +2340,7 @@ I multi_indexstruct<I,d>::volume() const {
     I s = 1;
     try {
       for ( auto c : components ) {
-	auto ss = c->local_size();
+	auto ss = c->volume();
 	//print("component {} size {}\n",c->as_string(),ss);
 	s *= ss;
       }
@@ -2263,7 +2353,7 @@ I multi_indexstruct<I,d>::volume() const {
 
 //! Return a vector of local sizes \todo can we do this and the next bunch without a star?
 template<typename I,int d>
-const domain_coordinate &multi_indexstruct<I,d>::local_size_r() const {
+const domain_coordinate &multi_indexstruct<I,d>::volume_r() const {
   if (multi.size()>0) throw(std::string("local_size_r needs multi"));
   return stored_local_size;
 };
@@ -3604,6 +3694,20 @@ shared_ptr<multi_indexstruct> multi_sigma_operator::operate
 
 template class indexstructure<int,1>;
 template class indexstructure<index_int,1>;
+
+template class contiguous_indexstruct<int,1>;
+template class contiguous_indexstruct<index_int,1>;
+template class strided_indexstruct<int,1>;
+template class strided_indexstruct<index_int,1>;
+template class indexed_indexstruct<int,1>;
+template class indexed_indexstruct<index_int,1>;
+
+template class contiguous_indexstruct<int,2>;
+template class contiguous_indexstruct<index_int,2>;
+template class strided_indexstruct<int,2>;
+template class strided_indexstruct<index_int,2>;
+template class indexed_indexstruct<int,2>;
+template class indexed_indexstruct<index_int,2>;
 
 template class ioperator<int,1>;
 template class ioperator<int,2>;

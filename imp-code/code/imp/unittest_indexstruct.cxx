@@ -20,16 +20,24 @@
 
 #include "catch2/catch_all.hpp"
 
+#include "imp_coord.h"
 #include "indexstruct.hpp"
-using fmt::memory_buffer;
-using fmt::format;
-using fmt::print;
-using fmt::format_to;
-using fmt::to_string;
 
-using std::shared_ptr;
+using fmt::memory_buffer;
+using fmt::format,fmt::print,fmt::format_to,fmt::to_string;
+using std::shared_ptr,std::make_shared;
 using std::string;
-using std::vector;
+using std::vector,std::array;
+
+TEST_CASE( "coordinates" ) {
+  coordinate<int,1> justfive( 5 );
+  CHECK( justfive.dimensionality()==1 );
+  CHECK( justfive[0]==5 );
+
+  coordinate<int,2> twofives( {5,5} );
+  CHECK( twofives.dimensionality()==2 );
+  CHECK( twofives[0]==5 );
+}
 
 TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
 
@@ -38,12 +46,13 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
   SECTION( "basic construction" ) {
     // type testing
     SECTION( "contiguous" ) {
-      i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(0,5) );
+      i1 = shared_ptr<indexstruct<index_int,1>>
+	( make_shared<contiguous_indexstruct<index_int,1>>(0,5) );
       CHECK( i1->is_contiguous() );
       CHECK( !i1->is_indexed() );
-      CHECK( i1->first_index()==0 );
-      CHECK( i1->last_index()==5 );
-      CHECK( i1->local_size()==6 );
+      CHECK( ( i1->first_index()==0 ) );
+      CHECK( ( ( i1->last_index()==5 ) ) );
+      CHECK( i1->volume()==6 );
       CHECK( i1->stride()==1 );
       CHECK( i1->find(0)==0 );
       CHECK( i1->find(5)==5 );
@@ -53,9 +62,9 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
       //REQUIRE_NOTHROW( ii = indexstructure(i1) );
       CHECK( ii.is_contiguous() );
       CHECK( !ii.is_indexed() );
-      CHECK( ii.first_index()==0 );
-      CHECK( ii.last_index()==5 );
-      CHECK( ii.local_size()==6 );
+      CHECK( ( ii.first_index()==0 ) );
+      CHECK( ( ( ii.last_index()==5 ) ) );
+      CHECK( ii.volume()==6 );
       CHECK( ii.stride()==1 );
       CHECK( ii.find(0)==0 );
       CHECK( ii.find(5)==5 );
@@ -63,27 +72,27 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
     }
     SECTION( "by accretion" ) {
       i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(2,5) );
-      CHECK( i1->local_size()==4 );
-      CHECK( i1->first_index()==2 );
-      CHECK( i1->last_index()==5 );
+      CHECK( i1->volume()==4 );
+      CHECK( ( i1->first_index()==2 ) );
+      CHECK( ( i1->last_index()==5 ) );
       REQUIRE_NOTHROW( i1 = i1->add_element(3) );
-      CHECK( i1->local_size()==4 );
-      CHECK( i1->first_index()==2 );
-      CHECK( i1->last_index()==5 );
+      CHECK( i1->volume()==4 );
+      CHECK( ( i1->first_index()==2 ) );
+      CHECK( ( i1->last_index()==5 ) );
       REQUIRE_NOTHROW( i1 = i1->add_element(5) );
-      CHECK( i1->local_size()==4 );
-      CHECK( i1->first_index()==2 );
-      CHECK( i1->last_index()==5 );
+      CHECK( i1->volume()==4 );
+      CHECK( ( i1->first_index()==2 ) );
+      CHECK( ( i1->last_index()==5 ) );
       REQUIRE_NOTHROW( i1 = i1->add_element(6) );
       CHECK( i1->is_contiguous() );
-      CHECK( i1->local_size()==5 );
-      CHECK( i1->first_index()==2 );
-      CHECK( i1->last_index()==6 );
+      CHECK( i1->volume()==5 );
+      CHECK( ( i1->first_index()==2 ) );
+      CHECK( ( i1->last_index()==6 ) );
       REQUIRE_NOTHROW( i1 = i1->add_element(1) );
       CHECK( i1->is_contiguous() );
-      CHECK( i1->local_size()==6 );
-      CHECK( i1->first_index()==1 );
-      CHECK( i1->last_index()==6 );
+      CHECK( i1->volume()==6 );
+      CHECK( ( i1->first_index()==1 ) );
+      CHECK( ( i1->last_index()==6 ) );
       REQUIRE_NOTHROW( i1 = i1->add_element(9) );
       CHECK( !i1->is_strided() );
     }
@@ -91,8 +100,8 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
       i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(1,7) );
       CHECK( i1->is_contiguous() );
       CHECK( !i1->is_indexed() );
-      CHECK( i1->first_index()==1 );
-      CHECK( i1->last_index()==7 );
+      CHECK( ( i1->first_index()==1 ) );
+      CHECK( ( i1->last_index()==7 ) );
       CHECK( i1->stride()==1 );
       REQUIRE_THROWS( i1->find(0) );
     }
@@ -101,9 +110,9 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
       CHECK( i1->is_strided() );
       CHECK( !i1->is_contiguous() );
       CHECK( !i1->is_indexed() );
-      CHECK( i1->first_index()==2 );
-      CHECK( i1->last_index()==6 );
-      CHECK( i1->local_size()==3 );
+      CHECK( ( i1->first_index()==2 ) );
+      CHECK( ( i1->last_index()==6 ) );
+      CHECK( i1->volume()==3 );
       CHECK( i1->stride()==2 );
       CHECK( i1->find(2)==0 );
       REQUIRE_THROWS( i1->find(3) );
@@ -120,9 +129,9 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
       CHECK( !i1->is_contiguous() );
       CHECK( i1->is_strided() );
       CHECK( !i1->is_indexed() );
-      CHECK( i1->first_index()==4 );
-      CHECK( i1->last_index()==6 );
-      CHECK( i1->local_size()==2 );
+      CHECK( ( i1->first_index()==4 ) );
+      CHECK( ( i1->last_index()==6 ) );
+      CHECK( i1->volume()==2 );
       CHECK( i1->stride()==2 );
 
       i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(4,6) );
@@ -161,9 +170,9 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
       CHECK( i1->is_strided() );
       CHECK( !i1->is_contiguous() );
       CHECK( !i1->is_indexed() );
-      CHECK( i1->first_index()==5 );
-      CHECK( i1->last_index()==7 );
-      CHECK( i1->local_size()==2 );
+      CHECK( ( i1->first_index()==5 ) );
+      CHECK( ( i1->last_index()==7 ) );
+      CHECK( i1->volume()==2 );
       CHECK( i1->stride()==2 );
     }
 
@@ -172,9 +181,9 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
       CHECK( !i1->is_contiguous() );
       CHECK( i1->is_strided() );
       CHECK( !i1->is_indexed() );
-      CHECK( i1->first_index()==2 );
-      CHECK( i1->last_index()==4 );
-      CHECK( i1->local_size()==2 );
+      CHECK( ( i1->first_index()==2 ) );
+      CHECK( ( i1->last_index()==4 ) );
+      CHECK( i1->volume()==2 );
       CHECK( i1->stride()==2 );
     }
 
@@ -183,9 +192,9 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
       CHECK( i1->is_strided() );
       CHECK( !i1->is_contiguous() );
       CHECK( !i1->is_indexed() );
-      CHECK( i1->first_index()==-1 );
-      CHECK( i1->last_index()==1 );
-      CHECK( i1->local_size()==2 );
+      CHECK( ( i1->first_index()==-1 ) );
+      CHECK( ( i1->last_index()==1 ) );
+      CHECK( i1->volume()==2 );
       CHECK( i1->stride()==2 );
     }
   }
@@ -193,13 +202,13 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
     
     i1 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(7,15) };
     REQUIRE_NOTHROW( i2 = i1->make_clone() );
-    CHECK( i2->first_index()==7 );
-    CHECK( i2->last_index()==15 );
+    CHECK( ( i2->first_index()==7 ) );
+    CHECK( ( i2->last_index()==15 ) );
     REQUIRE_NOTHROW( i1 = i1->translate_by(1) );
-    CHECK( i1->first_index()==8 );
-    CHECK( i1->last_index()==16 );
-    CHECK( i2->first_index()==7 );
-    CHECK( i2->last_index()==15 );  
+    CHECK( ( i1->first_index()==8 ) );
+    CHECK( ( i1->last_index()==16 ) );
+    CHECK( ( i2->first_index()==7 ) );
+    CHECK( ( i2->last_index()==15 ) );  
   }
   SECTION( "find in contiguous" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(8,12) };
@@ -221,65 +230,76 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
   }
 }
 
+TEST_CASE( "contiguous 2d" ) {
+  shared_ptr< indexstruct<int,2> > i1;
+  REQUIRE_NOTHROW( i1 = shared_ptr< indexstruct<int,2> >
+		   ( new contiguous_indexstruct<int,2>( {0,0},{4,5} ) ) );
+  // ( make_shared< contiguous_indexstruct<int,2> >( {0,0},{4,5} ) ) );
+}
+
 TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
 
   shared_ptr<indexstruct<index_int,1>> i1,i2,i3,i4;
 
   SECTION( "basic construction" ) {
     SECTION( "correct" ) {
-      int len=3; index_int idx[3] = {1,2,4};
-      i1 = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(len,idx) );
+      int len=3; vector<index_int> idx{1,2,4};
+      CHECK_NOTHROW( i1 = shared_ptr<indexstruct<index_int,1>>
+		     ( new indexed_indexstruct<index_int,1>(idx) ) );
       CHECK( !i1->is_contiguous() );
       CHECK( i1->is_indexed() );
-      CHECK( i1->first_index()==1 );
-      CHECK( i1->last_index()==4 );
-      CHECK( i1->local_size()==len );
+      CHECK( ( i1->first_index()==1 ) );
+      CHECK( ( i1->last_index()==4 ) );
+      CHECK( i1->volume()==len );
     }
 
     SECTION( "unsorted throws an error" ) {
-      int len=4; index_int idx[4] = {1,2,6,4};
-      CHECK_THROWS( i1 = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(len,idx) ) );
+      int len=4; vector<index_int> idx{1,2,6,4};
+      CHECK_THROWS( i1 = shared_ptr<indexstruct<index_int,1>>
+		    ( new indexed_indexstruct<index_int,1>(idx) ) );
     }
 
     SECTION( "negative indices allowed" ) {
-      int len=3; index_int idx[3] = {-1,2,4};
-      i1 = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(len,idx) );
+      int len=3; vector<index_int> idx{-1,2,4};
+      CHECK_NOTHROW( i1 = shared_ptr<indexstruct<index_int,1>>
+		     ( new indexed_indexstruct<index_int,1>(idx) ) );
       CHECK( !i1->is_contiguous() );
       CHECK( i1->is_indexed() );
-      CHECK( i1->first_index()==-1 );
-      CHECK( i1->last_index()==4 );
-      CHECK( i1->local_size()==len );
-      indexstruct<index_int,1>ure ii(i1);
+      CHECK( ( i1->first_index()==-1 ) );
+      CHECK( ( i1->last_index()==4 ) );
+      CHECK( i1->volume()==len );
+
+      indexstructure<index_int,1> ii(i1);
       //REQUIRE_NOTHROW( ii = indexstructure(i1) );
       CHECK( !ii.is_contiguous() );
       CHECK( ii.is_indexed() );
-      CHECK( ii.first_index()==-1 );
-      CHECK( ii.last_index()==4 );
-      CHECK( ii.local_size()==len );
+      CHECK( ( ii.first_index()==-1 ) );
+      CHECK( ( ii.last_index()==4 ) );
+      CHECK( ii.volume()==len );
     }
 
     SECTION( "gradual construction" ) {
-      int len=3; index_int idx[3] = {4,9,20};
-      auto i1 = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(len,idx) );
-      CHECK( i1->local_size()==3 );
-      CHECK( i1->first_index()==4 );
-      CHECK( i1->last_index()==20 );
+      int len=3; vector<index_int> idx{4,9,20};
+      auto i1 = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(idx) );
+      CHECK( i1->volume()==3 );
+      CHECK( ( i1->first_index()==4 ) );
+      CHECK( ( i1->last_index()==20 ) );
       REQUIRE_NOTHROW( i1 = i1->add_element(9) );
-      CHECK( i1->local_size()==3 );
-      CHECK( i1->first_index()==4 );
-      CHECK( i1->last_index()==20 );
+      CHECK( i1->volume()==3 );
+      CHECK( ( i1->first_index()==4 ) );
+      CHECK( ( i1->last_index()==20 ) );
       REQUIRE_NOTHROW( i1 = i1->add_element(30) );
-      CHECK( i1->local_size()==4 );
-      CHECK( i1->first_index()==4 );
-      CHECK( i1->last_index()==30 );
+      CHECK( i1->volume()==4 );
+      CHECK( ( i1->first_index()==4 ) );
+      CHECK( ( i1->last_index()==30 ) );
       REQUIRE_NOTHROW( i1 = i1->add_element(1) );
-      CHECK( i1->local_size()==5 );
-      CHECK( i1->first_index()==1 );
-      CHECK( i1->last_index()==30 );
+      CHECK( i1->volume()==5 );
+      CHECK( ( i1->first_index()==1 ) );
+      CHECK( ( i1->last_index()==30 ) );
       REQUIRE_NOTHROW( i1 = i1->add_element(10) );
-      CHECK( i1->local_size()==6 );
-      CHECK( i1->first_index()==1 );
-      CHECK( i1->last_index()==30 );
+      CHECK( i1->volume()==6 );
+      CHECK( ( i1->first_index()==1 ) );
+      CHECK( ( i1->last_index()==30 ) );
     }
     SECTION( "construction and simplify" ) {
       auto i1 =
@@ -326,16 +346,16 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
   }
 
   SECTION( "striding and operations" ) {
-    int len=5; index_int idx[5] = {1,2,4,7,9};
+    int len=5; vector<index_int> idx{1,2,4,7,9};
     shared_ptr<indexstruct<index_int,1>> i1;
-    REQUIRE_NOTHROW( i1 = shared_ptr<indexstruct<index_int,1>>{ new indexed_indexstruct<index_int,1>(len,idx) } );
+    REQUIRE_NOTHROW( i1 = shared_ptr<indexstruct<index_int,1>>{ new indexed_indexstruct<index_int,1>(idx) } );
 
     SECTION( "basic stride tests" ) {
       CHECK( !i1->is_contiguous() );
       CHECK( i1->is_indexed() );
-      CHECK( i1->first_index()==1 );
-      CHECK( i1->last_index()==9 );
-      CHECK( i1->local_size()==len );
+      CHECK( ( i1->first_index()==1 ) );
+      CHECK( ( i1->last_index()==9 ) );
+      CHECK( i1->volume()==len );
 
       CHECK( !i1->contains_element(0) );
       CHECK( i1->contains_element(1) );
@@ -357,23 +377,23 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
       REQUIRE_NOTHROW( i1 = i1->translate_by(1) );
       CHECK( !i1->is_contiguous() );
       CHECK( i1->is_indexed() );
-      CHECK( i1->first_index()==2 );
-      CHECK( i1->last_index()==10 );
-      CHECK( i1->local_size()==len );
+      CHECK( ( i1->first_index()==2 ) );
+      CHECK( ( i1->last_index()==10 ) );
+      CHECK( i1->volume()==len );
     }
 
     SECTION( "translation through zero" ) {
       REQUIRE_NOTHROW( i1 = i1->translate_by(-2) );
       CHECK( !i1->is_contiguous() );
       CHECK( i1->is_indexed() );
-      CHECK( i1->first_index()==-1 );
-      CHECK( i1->last_index()==7 );
-      CHECK( i1->local_size()==len );
+      CHECK( ( i1->first_index()==-1 ) );
+      CHECK( ( i1->last_index()==7 ) );
+      CHECK( i1->volume()==len );
     }
   }
   SECTION( "find in indexed" ) {
-    int len=5; index_int idx[5] = {1,2,4,7,9};
-    REQUIRE_NOTHROW( i1 = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(len,idx) ) );
+    int len=5; vector<index_int> idx{1,2,4,7,9};
+    REQUIRE_NOTHROW( i1 = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(idx) ) );
 
     auto
       i2 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(2,4,2) ),
@@ -383,7 +403,7 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
     CHECK( loc==1 );
     REQUIRE_NOTHROW( loc = i1->location_of(i3) );
     CHECK( loc==3 );
-    indexstruct<index_int,1>ure ii(i1);
+    indexstructure<index_int,1> ii(i1);
     //REQUIRE_NOTHROW( ii = indexstructure(i1) );
     REQUIRE_NOTHROW( loc = ii.location_of(i2) );
     CHECK( loc==1 );
@@ -395,7 +415,6 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
   }
 }
 
-#if 0
 TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
   shared_ptr<indexstruct<index_int,1>> i1,i2,ifinal;
   shared_ptr<composite_indexstruct<index_int,1>> icomp;
@@ -419,9 +438,9 @@ TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
     }
     REQUIRE_NOTHROW( ifinal = icomp->make_clone() );
     CHECK( !ifinal->is_contiguous() );
-    CHECK( ifinal->first_index()==3 );
-    CHECK( ifinal->last_index()==12 );
-    CHECK( ifinal->local_size()==6 );
+    CHECK( ( ifinal->first_index()==3 ) );
+    CHECK( ( ifinal->last_index()==12 ) );
+    CHECK( ifinal->volume()==6 );
   }
   SECTION( "tricky composite simplify with indexed" ) {
     auto i1 = shared_ptr<composite_indexstruct<index_int,1>>( new composite_indexstruct<index_int,1>() );
@@ -547,8 +566,8 @@ TEST_CASE( "enumerating indexstruct<index_int,1>s","[10]" ) {
   SECTION( "strided" ) {
     shared_ptr<indexstruct<index_int,1>> idx;
     REQUIRE_NOTHROW( idx = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(3,10,2) ) );
-    CHECK( idx->first_index()==3 );
-    CHECK( idx->last_index()==9 );
+    CHECK( ( idx->first_index()==3 ) );
+    CHECK( ( idx->last_index()==9 ) );
     int value = 3, count = 0;
     SECTION( "traditional" ) {
       for (auto i=idx->begin(); i!=idx->end(); ++i) {
@@ -566,9 +585,9 @@ TEST_CASE( "enumerating indexstruct<index_int,1>s","[10]" ) {
     }
   }
   SECTION( "indexed" ) {
-    index_int *ar = new index_int[4]{2,3,5,8};
+    vector<index_int> ar{2,3,5,8};
     shared_ptr<indexstruct<index_int,1>> idx;
-    REQUIRE_NOTHROW( idx = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(4,ar) ) );
+    REQUIRE_NOTHROW( idx = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(ar) ) );
     count = 0;
     SECTION( "traditional" ) {
       for (auto i=idx->begin(); i!=idx->end(); ++i) {
@@ -594,7 +613,7 @@ TEST_CASE( "enumerating indexstruct<index_int,1>s","[10]" ) {
     REQUIRE_NOTHROW( icomp = shared_ptr<indexstruct<index_int,1>>{ i1->make_clone() } );
     REQUIRE_NOTHROW( icomp = icomp->struct_union(i2) );
     CHECK( icomp->is_composite() );
-    CHECK( icomp->local_size()==20 );
+    CHECK( icomp->volume()==20 );
     cnt = 0; const char *path;
     SECTION( "traditional" ) { path = "traditional";
       for ( indexstruct<index_int,1> i=icomp->begin(); i!=icomp->end(); ++i ) {
@@ -618,42 +637,42 @@ TEST_CASE( "indexstruct<index_int,1> intersections","[indexstruct<index_int,1>][
   shared_ptr<indexstruct<index_int,1>> i1,i2,i3,i4;
   SECTION( "first cont" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(1,10) };
-    indexstruct<index_int,1>ure I1( contiguous_indexstruct<index_int,1>(1,10) );
+    indexstructure<index_int,1> I1( contiguous_indexstruct<index_int,1>(1,10) );
     SECTION( "cont-cont" ) {
       i2 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(5,12) };
       REQUIRE_NOTHROW( i3 = i1->intersect(i2) );
       REQUIRE( i3!=nullptr );
       CHECK( i3->is_contiguous() );
-      CHECK( i3->first_index()==5 );
-      CHECK( i3->last_index()==10 );
+      CHECK( ( i3->first_index()==5 ) );
+      CHECK( ( i3->last_index()==10 ) );
       CHECK( !i1->contains(i2) );
       CHECK( i1->contains(i3) );
       CHECK( i2->contains(i3) );
 
-      indexstruct<index_int,1>ure I2( contiguous_indexstruct<index_int,1>(5,12) ), I3;
+      indexstructure<index_int,1> I2( contiguous_indexstruct<index_int,1>(5,12) ), I3;
       REQUIRE_NOTHROW( I3 = I1.intersect(I2) );
       CHECK( I3.is_contiguous() );
-      CHECK( I3.first_index()==5 );
-      CHECK( I3.last_index()==10 );
+      CHECK( ( I3.first_index()==5 ) );
+      CHECK( ( I3.last_index()==10 ) );
 
       i2 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(10,12) };
       REQUIRE_NOTHROW( i3 = i1->intersect(i2) );
       REQUIRE( i3!=nullptr );
       CHECK( i3->is_contiguous() );
-      CHECK( i3->first_index()==10 );
-      CHECK( i3->last_index()==10 );
+      CHECK( ( i3->first_index()==10 ) );
+      CHECK( ( i3->last_index()==10 ) );
       CHECK( !i1->contains(i2) );
       CHECK( i1->contains(i3) );
       CHECK( i2->contains(i3) );
       REQUIRE_THROWS( i4 = i2->relativize_to(i1) );
       REQUIRE_NOTHROW( i4 = i3->relativize_to(i1) ); // [10,10] in [1,10] is [9,9]
       CHECK( i4->is_contiguous() );
-      CHECK( i4->first_index()==9 );
-      CHECK( i4->last_index()==9 );
+      CHECK( ( i4->first_index()==9 ) );
+      CHECK( ( i4->last_index()==9 ) );
       REQUIRE_NOTHROW( i4 = i3->relativize_to(i2) );
       CHECK( i4->is_contiguous() );
-      CHECK( i4->first_index()==0 );
-      CHECK( i4->last_index()==0 );
+      CHECK( ( i4->first_index()==0 ) );
+      CHECK( ( i4->last_index()==0 ) );
 
       i2 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(11,12) };
       REQUIRE_NOTHROW( i3 = i1->intersect(i2) );
@@ -663,30 +682,30 @@ TEST_CASE( "indexstruct<index_int,1> intersections","[indexstruct<index_int,1>][
       i3 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(8,14,2) );
       REQUIRE_NOTHROW( i4 = i2->relativize_to(i3) );
       CHECK( i4->stride()==1 );
-      CHECK( i4->local_size()==2 );
-      CHECK( i4->first_index()==1 );
-      CHECK( i4->last_index()==2 );
+      CHECK( i4->volume()==2 );
+      CHECK( ( i4->first_index()==1 ) );
+      CHECK( ( i4->last_index()==2 ) );
     }
     SECTION( "cont-idx" ) {
-      int len=3; index_int idx[3] = {4,8,11};
-      i2 = shared_ptr<indexstruct<index_int,1>>{ new indexed_indexstruct<index_int,1>(len,idx) };
+      int len=3; vector<index_int> idx{4,8,11};
+      i2 = shared_ptr<indexstruct<index_int,1>>{ new indexed_indexstruct<index_int,1>(idx) };
       REQUIRE_NOTHROW( i3 = i1->intersect(i2) );
       REQUIRE( !i3->is_empty() );
       CHECK( i3->is_indexed() );
-      CHECK( i3->first_index()==4 );
-      CHECK( i3->last_index()==8 );
+      CHECK( ( i3->first_index()==4 ) );
+      CHECK( ( i3->last_index()==8 ) );
       CHECK( !i1->contains(i2) );
       CHECK( i1->contains(i3) );
       CHECK( i2->contains(i3) );
       REQUIRE_THROWS( i2->relativize_to(i1) );
 
-      len=3; index_int idxs[3] = {4,8,10}; 
-      i2 = shared_ptr<indexstruct<index_int,1>>{ new indexed_indexstruct<index_int,1>(len,idxs) };
+      len=3; vector<index_int> idxs{4,8,10}; 
+      i2 = shared_ptr<indexstruct<index_int,1>>{ new indexed_indexstruct<index_int,1>(idxs) };
       REQUIRE_NOTHROW( i3 = i1->intersect(i2) ); // [1,10] & [4,8,10] => i3 = [4,8,10]
       REQUIRE( !i3->is_empty() );
       CHECK( i3->is_indexed() );
-      CHECK( i3->first_index()==4 );
-      CHECK( i3->last_index()==10 );
+      CHECK( ( i3->first_index()==4 ) );
+      CHECK( ( i3->last_index()==10 ) );
       CHECK( i1->contains(i2) );
       CHECK( i1->contains(i3) );
       CHECK( i2->contains(i3) );
@@ -696,31 +715,31 @@ TEST_CASE( "indexstruct<index_int,1> intersections","[indexstruct<index_int,1>][
       REQUIRE_NOTHROW( i4 = i3->relativize_to(i1) ); // [4,8,10] in [1:10] i3 is indexed
 
       CHECK( i4->is_indexed() );
-      CHECK( i4->first_index()==3 );
-      CHECK( i4->last_index()==9 );
+      CHECK( ( i4->first_index()==3 ) );
+      CHECK( ( i4->last_index()==9 ) );
     }
   }
   SECTION( "stride-stride" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>{ new strided_indexstruct<index_int,1>(10,20,2) };
-    CHECK( i1->local_size()==6 );
+    CHECK( i1->volume()==6 );
     i2 = shared_ptr<indexstruct<index_int,1>>{ new strided_indexstruct<index_int,1>(12,14,2) };
     REQUIRE_NOTHROW( i3 = i1->intersect(i2) );
-    CHECK( i3->local_size()==2 );
+    CHECK( i3->volume()==2 );
     CHECK( i3->is_strided() );
     CHECK( i3->stride()==2 );
 
     i2 = shared_ptr<indexstruct<index_int,1>>{ new strided_indexstruct<index_int,1>(12,22,10) };
     REQUIRE_NOTHROW( i3 = i1->intersect(i2) );
-    CHECK( i3->local_size()==1 );
+    CHECK( i3->volume()==1 );
 
     i2 = shared_ptr<indexstruct<index_int,1>>{ new strided_indexstruct<index_int,1>(12,20,4) };
     REQUIRE_NOTHROW( i3 = i1->intersect(i2) );
-    CHECK( i3->local_size()==3 );
+    CHECK( i3->volume()==3 );
     CHECK( i3->is_strided() );
 
     i2 = shared_ptr<indexstruct<index_int,1>>{ new strided_indexstruct<index_int,1>(12,20,5) };
     REQUIRE_NOTHROW( i3 = i1->intersect(i2) );
-    CHECK( i3->local_size()==1 );
+    CHECK( i3->volume()==1 );
 
     i2 = shared_ptr<indexstruct<index_int,1>>{ new strided_indexstruct<index_int,1>(13,20,4) };
     REQUIRE_NOTHROW( i3 = i1->intersect(i2) );
@@ -729,14 +748,14 @@ TEST_CASE( "indexstruct<index_int,1> intersections","[indexstruct<index_int,1>][
   }
   SECTION( "strided-indexed" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>{ new strided_indexstruct<index_int,1>(10,20,10) };
-    CHECK( i1->local_size()==2 );
+    CHECK( i1->volume()==2 );
     i2 = shared_ptr<indexstruct<index_int,1>>{
       new indexed_indexstruct<index_int,1>( vector<index_int>{10,16,20} ) };
-    CHECK( i2->local_size()==3 );
+    CHECK( i2->volume()==3 );
     REQUIRE_NOTHROW( i3 = i1->relativize_to(i2) );
-    CHECK( i3->local_size()==2 );
-    CHECK( i3->first_index()==0 );
-    CHECK( i3->last_index()==2 );
+    CHECK( i3->volume()==2 );
+    CHECK( ( i3->first_index()==0 ) );
+    CHECK( ( i3->last_index()==2 ) );
   }
   SECTION( "idx-idx" ) {
     shared_ptr<indexstruct<index_int,1>> i5{nullptr};
@@ -746,20 +765,20 @@ TEST_CASE( "indexstruct<index_int,1> intersections","[indexstruct<index_int,1>][
       new indexed_indexstruct<index_int,1>( vector<index_int>{3,8,10,11,12} ) };
     REQUIRE_NOTHROW( i4 = i2->intersect(i3) );
     REQUIRE( i4!=nullptr );
-    CHECK( i4->local_size()==2 );
+    CHECK( i4->volume()==2 );
     CHECK( i4->is_indexed() );
-    CHECK( i4->first_index()==8 );
-    CHECK( i4->last_index()==11 );
+    CHECK( ( i4->first_index()==8 ) );
+    CHECK( ( i4->last_index()==11 ) );
     CHECK( !i2->contains(i3) );
     CHECK( i2->contains(i4) );
     CHECK( i3->contains(i4) );
 
-    indexstruct<index_int,1>ure I2(i2), I3(i3), I4;
+    indexstructure<index_int,1> I2(i2), I3(i3), I4;
     REQUIRE_NOTHROW( I4 = I2.intersect(I3) );
-    CHECK( I4.local_size()==2 );
+    CHECK( I4.volume()==2 );
     CHECK( I4.is_indexed() );
-    CHECK( I4.first_index()==8 );
-    CHECK( I4.last_index()==11 );
+    CHECK( ( I4.first_index()==8 ) );
+    CHECK( ( I4.last_index()==11 ) );
 
     REQUIRE_THROWS( i5 = i3->relativize_to(i2) );
     REQUIRE_THROWS( i5 = i2->relativize_to(i3) );
@@ -768,12 +787,12 @@ TEST_CASE( "indexstruct<index_int,1> intersections","[indexstruct<index_int,1>][
     CHECK( i4->is_indexed() );
     REQUIRE_NOTHROW( i5 = i4->relativize_to(i2) ); // [8,11] in indexed:[4,8,11]
     CHECK( i5->is_indexed() );
-    CHECK( i5->first_index()==1 );
-    CHECK( i5->last_index()==2 );
+    CHECK( ( i5->first_index()==1 ) );
+    CHECK( ( i5->last_index()==2 ) );
     REQUIRE_NOTHROW( i5 = i4->relativize_to(i3) ); // [8,11] in [3,8,10,11,12]
     CHECK( i5->is_indexed() );
-    CHECK( i5->first_index()==1 );
-    CHECK( i5->last_index()==3 );
+    CHECK( ( i5->first_index()==1 ) );
+    CHECK( ( i5->last_index()==3 ) );
   }
 }
 
@@ -800,9 +819,9 @@ TEST_CASE( "indexstruct<index_int,1> differences","[indexstruct<index_int,1>][mi
     i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(15,20) );
     SECTION( "one way" ) {
       REQUIRE_NOTHROW( i3 = i1->minus(i2) );
-      CHECK( i3->local_size()==20 );
-      CHECK( i3->first_index()==5 );
-      CHECK( i3->last_index()==30 );
+      CHECK( i3->volume()==20 );
+      CHECK( ( i3->first_index()==5 ) );
+      CHECK( ( i3->last_index()==30 ) );
     }
     SECTION( "other way" ) {
       REQUIRE_NOTHROW( i3 = i2->minus(i1) );
@@ -816,14 +835,14 @@ TEST_CASE( "indexstruct<index_int,1> differences","[indexstruct<index_int,1>][mi
       REQUIRE_NOTHROW( i3 = i1->minus(i2) );
       INFO( i3->as_string() );
       CHECK( i3->is_contiguous() );
-      CHECK( i3->first_index()==5 );
-      CHECK( i3->last_index()==14 );
+      CHECK( ( i3->first_index()==5 ) );
+      CHECK( ( i3->last_index()==14 ) );
     }
     SECTION( "other way" ) {
       REQUIRE_NOTHROW( i3 = i2->minus(i1) );
       CHECK( i3->is_contiguous() );
-      CHECK( i3->first_index()==21 );
-      CHECK( i3->last_index()==30 );
+      CHECK( ( i3->first_index()==21 ) );
+      CHECK( ( i3->last_index()==30 ) );
     }
   }
   SECTION( "contiguous minus contiguous, creating gap" ) {
@@ -831,7 +850,7 @@ TEST_CASE( "indexstruct<index_int,1> differences","[indexstruct<index_int,1>][mi
     i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(11,20) );
     REQUIRE_NOTHROW( i3 = i1->minus(i2) );
     INFO( "resulting i3: " << i3->as_string() );
-    CHECK( i3->local_size()==30 );
+    CHECK( i3->volume()==30 );
     CHECK( !i3->contains_element(11) );
     CHECK( i3->is_composite() );
     composite_indexstruct<index_int,1> *i4;
@@ -841,13 +860,13 @@ TEST_CASE( "indexstruct<index_int,1> differences","[indexstruct<index_int,1>][mi
   }
   SECTION( "strided minus contiguous, creating gap" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(1,41,4) );
-    CHECK( i1->local_size()==11 );
+    CHECK( i1->volume()==11 );
     i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(12,16) ); // this only cuts 1
     REQUIRE_NOTHROW( i3 = i1->minus(i2) );
     INFO( "resulting i3: " << i3->as_string() );
     CHECK( i3->is_composite() );
     CHECK( !i3->contains_element(13) );
-    CHECK( i3->local_size()==10 );
+    CHECK( i3->volume()==10 );
     composite_indexstruct<index_int,1> *i4;
     REQUIRE_NOTHROW( i4 = dynamic_cast<composite_indexstruct<index_int,1>*>(i3.get()) );
     CHECK( i4!=nullptr );
@@ -855,30 +874,30 @@ TEST_CASE( "indexstruct<index_int,1> differences","[indexstruct<index_int,1>][mi
   }
   SECTION( "strided minus contiguous, hitting nothing" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(1,41,4) );
-    CHECK( i1->local_size()==11 );
+    CHECK( i1->volume()==11 );
     i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(14,16)); // this hits nothing: falls between 13-17
     REQUIRE_NOTHROW( i3 = i1->minus(i2) );
     INFO( "resulting i3: " << i3->as_string() );
-    CHECK( i3->local_size()==11 );
+    CHECK( i3->volume()==11 );
     CHECK( i3->is_strided() );
   }
   SECTION( "indexed cont" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>( 4,16,4 ) );
     i1 = i1->convert_to_indexed() ;
     CHECK( i1->is_indexed() );
-    CHECK( i1->first_index()==4 );
-    CHECK( i1->last_index()==16 );
+    CHECK( ( i1->first_index()==4 ) );
+    CHECK( ( i1->last_index()==16 ) );
     i2  = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>( 13,17 ) );
     REQUIRE_NOTHROW( i3 = i1->minus(i2) );
     CHECK( i3->is_indexed() );
-    CHECK( i3->first_index()==4 );
-    CHECK( i3->last_index()==12 );
+    CHECK( ( i3->first_index()==4 ) );
+    CHECK( ( i3->last_index()==12 ) );
 
-    indexstruct<index_int,1>ure I1(strided_indexstruct<index_int,1>( 4,16,4 )), I2(i2), I3;
+    indexstructure<index_int,1> I1(strided_indexstruct<index_int,1>( 4,16,4 )), I2(i2), I3;
     REQUIRE_NOTHROW( I3 = I1.minus(I2) );
-    CHECK( I3.local_size()==3 );
-    CHECK( I3.first_index()==4 );
-    CHECK( I3.last_index()==12 );
+    CHECK( I3.volume()==3 );
+    CHECK( ( I3.first_index()==4 ) );
+    CHECK( ( I3.last_index()==12 ) );
 
   }
   SECTION( "indexed-indexed" ) {
@@ -891,9 +910,9 @@ TEST_CASE( "indexstruct<index_int,1> differences","[indexstruct<index_int,1>][mi
     i2 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>( 16,20,2 ) );
     i2 = shared_ptr<indexstruct<index_int,1>>( i2->convert_to_indexed() );
     REQUIRE_NOTHROW( i3 = i1->minus(i2) );
-    CHECK( i3->local_size()==3 );
-    CHECK( i3->first_index()==4 );
-    CHECK( i3->last_index()==12 );
+    CHECK( i3->volume()==3 );
+    CHECK( ( i3->first_index()==4 ) );
+    CHECK( ( i3->last_index()==12 ) );
   }
 }
 
@@ -905,38 +924,38 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
     CHECK( i1->is_contiguous() );
     CHECK_NOTHROW( i2 = i1->convert_to_indexed() );
     CHECK( i2->is_indexed() );
-    CHECK( i2->first_index()==2 );
-    CHECK( i2->last_index()==2+SMALLBLOCKSIZE-1 );
-    CHECK( i2->local_size()==i1->local_size() );
+    CHECK( ( i2->first_index()==2 ) );
+    CHECK( ( i2->last_index()==2+SMALLBLOCKSIZE-1 ) );
+    CHECK( i2->volume()==i1->volume() );
   }
   SECTION( "convert from stride 2" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>{ new strided_indexstruct<index_int,1>(2,2+2*SMALLBLOCKSIZE-2,2) };
     CHECK_NOTHROW( i2 = i1->convert_to_indexed() );
     CHECK( i2->is_indexed() );
-    CHECK( i2->first_index()==2 );
-    CHECK( i2->last_index()==2+2*SMALLBLOCKSIZE-2 );
-    CHECK( i2->local_size()==i1->local_size() );
+    CHECK( ( i2->first_index()==2 ) );
+    CHECK( ( i2->last_index()==2+2*SMALLBLOCKSIZE-2 ) );
+    CHECK( i2->volume()==i1->volume() );
   }
   SECTION( "cont-cont" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(1,10) };
-    indexstruct<index_int,1>ure I1(contiguous_indexstruct<index_int,1>(1,10));
+    indexstructure<index_int,1> I1(contiguous_indexstruct<index_int,1>(1,10));
     SECTION( "1" ) {
       i2 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(5,12) };
-      indexstruct<index_int,1>ure I2(contiguous_indexstruct<index_int,1>(5,12)), I3;
+      indexstructure<index_int,1> I2(contiguous_indexstruct<index_int,1>(5,12)), I3;
       REQUIRE_NOTHROW( i3 = i1->struct_union(i2) );
       REQUIRE_NOTHROW( I3 = I1.struct_union(I2) );
       REQUIRE( i3!=nullptr );
       CHECK( i3->is_contiguous() );
-      CHECK( i3->first_index()==1 );
-      CHECK( i3->last_index()==12 );
+      CHECK( ( i3->first_index()==1 ) );
+      CHECK( ( i3->last_index()==12 ) );
     }
     SECTION( "2" ) {
       i2 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(11,13) };
       REQUIRE_NOTHROW( i3 = i1->struct_union(i2) );
       REQUIRE( i3!=nullptr );
       CHECK( i3->is_contiguous() );
-      CHECK( i3->first_index()==1 );
-      CHECK( i3->last_index()==13 );
+      CHECK( ( i3->first_index()==1 ) );
+      CHECK( ( i3->last_index()==13 ) );
     }
     SECTION( "3" ) {
       SECTION( "extend right" ) {
@@ -948,11 +967,11 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
 	CHECK( !i3->is_indexed() );
 	CHECK( i3->is_composite() );
 	index_int i1l,i2l;
-	REQUIRE_NOTHROW( i1l = i1->local_size() );
-	REQUIRE_NOTHROW( i2l = i2->local_size() );
-	CHECK( i3->local_size()==(i1l+i2l) );
-	CHECK( i3->first_index()==1 );
-	CHECK( i3->last_index()==13 );
+	REQUIRE_NOTHROW( i1l = i1->volume() );
+	REQUIRE_NOTHROW( i2l = i2->volume() );
+	CHECK( i3->volume()==(i1l+i2l) );
+	CHECK( ( i3->first_index()==1 ) );
+	CHECK( ( i3->last_index()==13 ) );
       }
       SECTION( "extend left" ) {
 	i1 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(1,10) };
@@ -962,71 +981,71 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
 	REQUIRE( i3!=nullptr );
 	CHECK( !i3->is_indexed() );
 	CHECK( i3->is_composite() );
-	CHECK( i3->local_size()==(i1->local_size()+i2->local_size()) );
-	CHECK( i3->first_index()==1 );
-	CHECK( i3->last_index()==14 );
+	CHECK( i3->volume()==(i1->volume()+i2->volume()) );
+	CHECK( ( i3->first_index()==1 ) );
+	CHECK( ( i3->last_index()==14 ) );
       }
     }
   }
   SECTION( "cont-idx giving indexed" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(5,8) };
     i2 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(8,12,2) );
-    CHECK( i2->local_size()==3 );
+    CHECK( i2->volume()==3 );
     REQUIRE_NOTHROW( i2 = i2->convert_to_indexed() );
-    CHECK( i2->local_size()==3 );
+    CHECK( i2->volume()==3 );
     REQUIRE_NOTHROW( i3 = i1->struct_union(i2.get()) ); // [5-8] & [8,10,12] overlap 1
     INFO( "i3 should be [5-8] & [8,10,12]: " << i3->as_string() );
     CHECK( !i3->is_contiguous() );
-    CHECK( i1->local_size()==4 );
-    CHECK( i2->local_size()==3 );
-    CHECK( i3->local_size()==6 );
-    CHECK( i3->first_index()==5 );
-    CHECK( i3->last_index()==12);
+    CHECK( i1->volume()==4 );
+    CHECK( i2->volume()==3 );
+    CHECK( i3->volume()==6 );
+    CHECK( ( i3->first_index()==5 ) );
+    CHECK( ( i3->last_index()==12) );
   }
   SECTION( "cont-idx extending" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(5,11) };
     i2 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(8,12,2) );
-    indexstruct<index_int,1>ure I3,
+    indexstructure<index_int,1> I3,
       I1(contiguous_indexstruct<index_int,1>(5,11)),
       I2(strided_indexstruct<index_int,1>(8,12,2));
-    CHECK( i2->local_size()==3 );
+    CHECK( i2->volume()==3 );
     REQUIRE_NOTHROW( i2 = i2->convert_to_indexed() );
     CHECK( i2->is_indexed() );
-    CHECK( i2->local_size()==3 );
+    CHECK( i2->volume()==3 );
     REQUIRE_NOTHROW( i3 = i1->struct_union(i2.get()) );
     REQUIRE_NOTHROW( I3 = I1.struct_union(I2) );
-    CHECK( i1->local_size()==7 );
+    CHECK( i1->volume()==7 );
     CHECK( i3->is_contiguous() );
-    CHECK( i3->local_size()==8 );
-    CHECK( i3->first_index()==5 );
-    CHECK( i3->last_index()==12);
+    CHECK( i3->volume()==8 );
+    CHECK( ( i3->first_index()==5 ) );
+    CHECK( ( i3->last_index()==12) );
     // VLE do we need this? CHECK( I3.is_contiguous() );
-    CHECK( I3.local_size()==8 );
-    CHECK( I3.first_index()==5 );
-    CHECK( I3.last_index()==12);
+    CHECK( I3.volume()==8 );
+    CHECK( ( I3.first_index()==5 ) );
+    CHECK( ( I3.last_index()==12) );
   }
   SECTION( "cont-idx extending2" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(5,11) };
     i2 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(6,12,2) );
-    CHECK( i2->local_size()==4 );
+    CHECK( i2->volume()==4 );
     REQUIRE_NOTHROW( i2 = i2->convert_to_indexed() );
     CHECK( i2->is_indexed() );
-    CHECK( i2->local_size()==4 );
+    CHECK( i2->volume()==4 );
     REQUIRE_NOTHROW( i3 = i1->struct_union(i2.get()) );
-    CHECK( i1->local_size()==7 );
+    CHECK( i1->volume()==7 );
     CHECK( i3->is_contiguous() );
-    CHECK( i3->local_size()==8 );
-    CHECK( i3->first_index()==5 );
-    CHECK( i3->last_index()==12);
+    CHECK( i3->volume()==8 );
+    CHECK( ( i3->first_index()==5 ) );
+    CHECK( ( i3->last_index()==12) );
   }
   SECTION( "idx-cont" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>{ new strided_indexstruct<index_int,1>(8,12,2) };
     //    i1->convert_to_indexed();
     i2 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(5,8) };
     REQUIRE_NOTHROW( i3 = i1->struct_union(i2) );
-    CHECK( i3->local_size()==6 );
-    CHECK( i3->first_index()==5 );
-    CHECK( i3->last_index()==12);
+    CHECK( i3->volume()==6 );
+    CHECK( ( i3->first_index()==5 ) );
+    CHECK( ( i3->last_index()==12) );
   }
   SECTION( "tricky composite stuff" ) {
     shared_ptr<composite_indexstruct<index_int,1>> icomp;
@@ -1040,8 +1059,8 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
     i1 = icomp->make_clone();
     CHECK( i1->is_composite() );
     vector< shared_ptr<indexstruct<index_int,1>> > members;
-    indexstruct<index_int,1>ure I1;
-    REQUIRE_NOTHROW( I1 = indexstruct<index_int,1>ure(composite_indexstruct<index_int,1>()) );
+    indexstructure<index_int,1> I1;
+    REQUIRE_NOTHROW( I1 = indexstructure<index_int,1>(composite_indexstruct<index_int,1>()) );
     CHECK( I1.is_composite() );
     REQUIRE_NOTHROW( I1.push_back( contiguous_indexstruct<index_int,1>(1,10) ) );
     return;
@@ -1065,13 +1084,13 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
 
 TEST_CASE( "struct disjoint","[23]" ) {
   shared_ptr<indexstruct<index_int,1>> i1,i2;
-  indexstruct<index_int,1>ure I1,I2;
+  indexstructure<index_int,1> I1,I2;
   SECTION( "disjoint strided" ) {
     REQUIRE_NOTHROW( i1 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(1,10,2) ) );
     REQUIRE_NOTHROW( i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(10,20) ) );
     CHECK( i1->disjoint(i2) );
-    REQUIRE_NOTHROW( I1 = indexstruct<index_int,1>ure(strided_indexstruct<index_int,1>(1,10,2)) );
-    REQUIRE_NOTHROW( I2 = indexstruct<index_int,1>ure(contiguous_indexstruct<index_int,1>(10,20)) );
+    REQUIRE_NOTHROW( I1 = indexstructure<index_int,1>(strided_indexstruct<index_int,1>(1,10,2)) );
+    REQUIRE_NOTHROW( I2 = indexstructure<index_int,1>(contiguous_indexstruct<index_int,1>(10,20)) );
     CHECK( I1.disjoint(I2) );
   }
   SECTION( "disjoint strided, interleaved" ) {
@@ -1104,15 +1123,15 @@ TEST_CASE( "struct disjoint","[23]" ) {
     REQUIRE_NOTHROW( i2 = shared_ptr<indexstruct<index_int,1>>
 		     ( new indexed_indexstruct<index_int,1>(vector<index_int>{7,8,10}) ) );
     CHECK_THROWS( i1->disjoint(i2) );
-    REQUIRE_NOTHROW( I1 = indexstruct<index_int,1>ure(indexed_indexstruct<index_int,1>(vector<index_int>{1,3,16})) );
-    REQUIRE_NOTHROW( I2 = indexstruct<index_int,1>ure(indexed_indexstruct<index_int,1>(vector<index_int>{7,8,10})) );
+    REQUIRE_NOTHROW( I1 = indexstructure<index_int,1>(indexed_indexstruct<index_int,1>(vector<index_int>{1,3,16})) );
+    REQUIRE_NOTHROW( I2 = indexstructure<index_int,1>(indexed_indexstruct<index_int,1>(vector<index_int>{7,8,10})) );
     CHECK_THROWS( I1.disjoint(I2) );
   }
 }
 
 TEST_CASE( "struct containment","[24]" ) {
   shared_ptr<indexstruct<index_int,1>> i1,i2,i3;
-  indexstruct<index_int,1>ure I1,I2,I3;
+  indexstructure<index_int,1> I1,I2,I3;
   SECTION( "cont" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(1,10) );
 
@@ -1139,8 +1158,8 @@ TEST_CASE( "struct containment","[24]" ) {
     REQUIRE( i1->contains(i2) );
   }
   SECTION( "idx" ) {
-    int len=5; index_int idx[5] = {1,2,4,6,9};
-    i1 = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(len,idx) );
+    int len=5; vector<index_int> idx{1,2,4,6,9};
+    i1 = shared_ptr<indexstruct<index_int,1>>( new indexed_indexstruct<index_int,1>(idx) );
 
     i2 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(4,4,3) );
     REQUIRE( i1->contains(i2) );
@@ -1160,19 +1179,19 @@ TEST_CASE( "struct containment","[24]" ) {
     i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(2,5) );
     CHECK( i1->contains(i2) );
 
-    I1 = indexstruct<index_int,1>ure(contiguous_indexstruct<index_int,1>(0,10));
-    I1 = I1.struct_union(indexstruct<index_int,1>ure(contiguous_indexstruct<index_int,1>(20,29)));
-    I2 = indexstruct<index_int,1>ure(contiguous_indexstruct<index_int,1>(2,5));
+    I1 = indexstructure<index_int,1>(contiguous_indexstruct<index_int,1>(0,10));
+    I1 = I1.struct_union(indexstructure<index_int,1>(contiguous_indexstruct<index_int,1>(20,29)));
+    I2 = indexstructure<index_int,1>(contiguous_indexstruct<index_int,1>(2,5));
     CHECK( I1.contains(I2) );
 
     i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(22,25) );
     CHECK( i1->contains(i2) );
-    I2 = indexstruct<index_int,1>ure(contiguous_indexstruct<index_int,1>(22,25));
+    I2 = indexstructure<index_int,1>(contiguous_indexstruct<index_int,1>(22,25));
     CHECK( I1.contains(I2) );
 
     i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(8,25) );
     CHECK( !i1->contains(i2) );
-    I2 = indexstruct<index_int,1>ure(contiguous_indexstruct<index_int,1>(8,25));
+    I2 = indexstructure<index_int,1>(contiguous_indexstruct<index_int,1>(8,25));
     CHECK( !I1.contains(I2) );
 
   }
@@ -1181,7 +1200,7 @@ TEST_CASE( "struct containment","[24]" ) {
 TEST_CASE( "struct split","[split][25]" ) {
   SECTION( "contiguous" ) {
     auto i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(10,20) );
-    indexstruct<index_int,1>ure I1(contiguous_indexstruct<index_int,1>(10,20));
+    indexstructure<index_int,1> I1(contiguous_indexstruct<index_int,1>(10,20));
     shared_ptr<indexstruct<index_int,1>> c;
     SECTION( "non intersect" ) {
       auto i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(30,40) );
@@ -1218,11 +1237,11 @@ TEST_CASE( "struct split","[split][25]" ) {
   }
   SECTION( "strided" ) {
     auto i1 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(10,20,2) );
-    indexstruct<index_int,1>ure I1(strided_indexstruct<index_int,1>(10,20,2));
+    indexstructure<index_int,1> I1(strided_indexstruct<index_int,1>(10,20,2));
     shared_ptr<indexstruct<index_int,1>> c;
     SECTION( "non intersect" ) {
       auto i2 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(30,40) );
-      indexstruct<index_int,1>ure I2(contiguous_indexstruct<index_int,1>(30,40)), c;
+      indexstructure<index_int,1> I2(contiguous_indexstruct<index_int,1>(30,40)), c;
       REQUIRE_THROWS( c = i1->split(i2) );
       REQUIRE_THROWS( c = I1.split(I2) );
     }
@@ -1269,117 +1288,117 @@ indexstruct<index_int,1> *itimes2i(index_int i) { return new contiguous_indexstr
 TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) {
   shared_ptr<indexstruct<index_int,1>> i1;
   shared_ptr<indexstruct<index_int,1>> i2;
-  indexstruct<index_int,1>ure I1,I2;
-  ioperator op; 
+  indexstructure<index_int,1> I1,I2;
+  ioperator<index_int,1> op; 
 
   SECTION( "multiply by constant" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(5,10) );
-    I1 = indexstruct<index_int,1>ure(contiguous_indexstruct<index_int,1>(5,10));
-    REQUIRE_NOTHROW( op = ioperator("*2") );
+    I1 = indexstructure<index_int,1>(contiguous_indexstruct<index_int,1>(5,10));
+    REQUIRE_NOTHROW( op = ioperator<index_int,1>("*2") );
     REQUIRE_NOTHROW( i2 = i1->operate(op) );
     REQUIRE_NOTHROW( I2 = I1.operate(op) );
     // printf("i2 s/b strided: <<%s>>\n",i2->as_string().data());
     CHECK( i2->is_strided() );
-    CHECK( i2->first_index()==10 );
-    CHECK( i2->last_index()==20 );
-    CHECK( i2->local_size()==i1->local_size() );
+    CHECK( ( i2->first_index()==10 ) );
+    CHECK( ( i2->last_index()==20 ) );
+    CHECK( i2->volume()==i1->volume() );
     CHECK( i2->stride()==2 );
   }
   SECTION( "multiply range by constant" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(5,10) );
-    REQUIRE_NOTHROW( op = ioperator("x2") );
+    REQUIRE_NOTHROW( op = ioperator<index_int,1>("x2") );
     REQUIRE_NOTHROW( i2 = i1->operate(op) );
     CHECK( i2->is_contiguous() );
-    CHECK( i2->first_index()==10 );
-    CHECK( i2->last_index()==21 );
-    CHECK( i2->local_size()==i1->local_size()*2 );
+    CHECK( ( i2->first_index()==10 ) );
+    CHECK( ( i2->last_index()==21 ) );
+    CHECK( i2->volume()==i1->volume()*2 );
     // CHECK( i2->is_strided() );
     CHECK( i2->stride()==1 );
-    REQUIRE_NOTHROW( I1 = indexstruct<index_int,1>ure(i1) );
+    REQUIRE_NOTHROW( I1 = indexstructure<index_int,1>(i1) );
     REQUIRE_NOTHROW( I2 = I1.operate(op) );
     CHECK( I2.is_contiguous() );
-    CHECK( I2.last_index()==21 );
+    CHECK( ( I2.last_index()==21 ) );
   }
   SECTION( "multiply by function" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(5,10) );
-    REQUIRE_NOTHROW( op = ioperator(&itimes2) );
+    REQUIRE_NOTHROW( op = ioperator<index_int,1>(&itimes2) );
     index_int is2;
     REQUIRE_NOTHROW( is2 = op.operate(1) );
     CHECK( is2==2 );
     
     REQUIRE_NOTHROW( i2 = i1->operate(op) );
     // CHECK( i2->is_strided() ); // VLE can we get this to work?
-    CHECK( i2->first_index()==10 );
-    CHECK( i2->last_index()==20 );
+    CHECK( ( i2->first_index()==10 ) );
+    CHECK( ( i2->last_index()==20 ) );
   }
   SECTION( "shift strided" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(1,10,2) );
-    CHECK( i1->first_index()==1 );
-    CHECK( i1->last_index()==9 );
-    CHECK( i1->local_size()==5 );
+    CHECK( ( i1->first_index()==1 ) );
+    CHECK( ( i1->last_index()==9 ) );
+    CHECK( i1->volume()==5 );
     SECTION( "bump" ) {
-      REQUIRE_NOTHROW( op = ioperator("<=1") );
+      REQUIRE_NOTHROW( op = ioperator<index_int,1>("<=1") );
     }
     SECTION( "mod" ) {
-      REQUIRE_NOTHROW( op = ioperator("<<1") );
+      REQUIRE_NOTHROW( op = ioperator<index_int,1>("<<1") );
     }
     REQUIRE_NOTHROW( i2 = i1->operate(op) );
-    CHECK( i2->first_index()==0 );
-    CHECK( i2->last_index()==8 );
-    CHECK( i2->local_size()==5 );
+    CHECK( ( i2->first_index()==0 ) );
+    CHECK( ( i2->last_index()==8 ) );
+    CHECK( i2->volume()==5 );
   }
   SECTION( "test truncating by itself" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>( 1,10 ) );
     REQUIRE_NOTHROW( i2 = i1->truncate_left(4) );
     CHECK( i2->is_contiguous() );
-    CHECK( i2->first_index()==4 );
+    CHECK( ( i2->first_index()==4 ) );
   }
   SECTION( "shift strided with truncate" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new strided_indexstruct<index_int,1>(0,10,2) );
-    REQUIRE_NOTHROW( op = ioperator("<=1") );
+    REQUIRE_NOTHROW( op = ioperator<index_int,1>("<=1") );
     REQUIRE_NOTHROW( i2 = i1->operate(op,0,100) );
-    CHECK( i2->first_index()==1 );
-    CHECK( i2->last_index()==9 );
-    CHECK( i2->local_size()==5 );
-    REQUIRE_NOTHROW( I1 = indexstruct<index_int,1>ure(i1) );
+    CHECK( ( i2->first_index()==1 ) );
+    CHECK( ( i2->last_index()==9 ) );
+    CHECK( i2->volume()==5 );
+    REQUIRE_NOTHROW( I1 = indexstructure<index_int,1>(i1) );
     REQUIRE_NOTHROW( I2 = I1.operate(op,0,100) );
-    CHECK( I2.local_size()==5 );
+    CHECK( I2.volume()==5 );
   }
 }
 
 TEST_CASE( "division operation","[indexstruct<index_int,1>][operate][31]" ) {
-  shared_ptr<indexstruct<index_int,1>> i1,i2; ioperator op;
+  shared_ptr<indexstruct<index_int,1>> i1,i2; ioperator<index_int,1> op;
 
   SECTION( "simple division" ) {
-    REQUIRE_NOTHROW( op = ioperator("/2") );
+    REQUIRE_NOTHROW( op = ioperator<index_int,1>("/2") );
   
     SECTION( "contiguous1" ) {
       i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(0,10) );
       REQUIRE_NOTHROW( i2 = i1->operate(op) );
-      CHECK( i2->first_index()==0 );
-      CHECK( i2->last_index()==5 );
+      CHECK( ( i2->first_index()==0 ) );
+      CHECK( ( i2->last_index()==5 ) );
     }
     SECTION( "contiguous2" ) {
       i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(0,9) );
       REQUIRE_NOTHROW( i2 = i1->operate(op) );
-      CHECK( i2->first_index()==0 );
-      CHECK( i2->last_index()==4 );
+      CHECK( ( i2->first_index()==0 ) );
+      CHECK( ( i2->last_index()==4 ) );
     }
   }
   SECTION( "contiguous division" ) {
-    REQUIRE_NOTHROW( op = ioperator(":2") );
+    REQUIRE_NOTHROW( op = ioperator<index_int,1>(":2") );
   
     SECTION( "contiguous1" ) {
       i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(0,10) );
       REQUIRE_NOTHROW( i2 = i1->operate(op) );
-      CHECK( i2->first_index()==0 );
-      CHECK( i2->last_index()==4 );
+      CHECK( ( i2->first_index()==0 ) );
+      CHECK( ( i2->last_index()==4 ) );
     }
     SECTION( "contiguous2" ) {
       i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(0,9) );
       REQUIRE_NOTHROW( i2 = i1->operate(op) );
-      CHECK( i2->first_index()==0 );
-      CHECK( i2->last_index()==4 );
+      CHECK( ( i2->first_index()==0 ) );
+      CHECK( ( i2->last_index()==4 ) );
     }
   }
 }
@@ -1390,23 +1409,23 @@ TEST_CASE( "copy indexstruct<index_int,1>","[indexstruct<index_int,1>][copy][42]
   i1 = shared_ptr<indexstruct<index_int,1>>{ new contiguous_indexstruct<index_int,1>(0,10) };
   REQUIRE_NOTHROW( i2 = i1->make_clone() );
   // make a copy
-  CHECK( i1->local_size()==i2->local_size() );
-  CHECK( i1->first_index()==i2->first_index() );
-  CHECK( i1->last_index()==i2->last_index() );
+  CHECK( i1->volume()==i2->volume() );
+  CHECK( ( i1->first_index()==i2->first_index() ) );
+  CHECK( ( i1->last_index()==i2->last_index() ) );
 
   // shift the original
   REQUIRE_NOTHROW( i1 = i1->translate_by(1) );
-  CHECK( i1->local_size()==i2->local_size() );
-  CHECK( i1->first_index()==i2->first_index()+1 );
-  CHECK( i1->last_index()==i2->last_index()+1 );
+  CHECK( i1->volume()==i2->volume() );
+  CHECK( ( i1->first_index()==i2->first_index()+1 ) );
+  CHECK( ( i1->last_index()==i2->last_index()+1 ) );
 }
 
 TEST_CASE( "big shift operators","[operator][shift][43]" ) {
-  ioperator i;
-  i = ioperator("shift",5);
+  ioperator<index_int,1> i;
+  i = ioperator<index_int,1>("shift",5);
   CHECK( i.operate(6)==11 );
   CHECK_NOTHROW( i.operate(-11)==-6 );
-  i = ioperator("shift",-3);
+  i = ioperator<index_int,1>("shift",-3);
   CHECK( i.operate(6)==3 );
   CHECK( i.operate(1)==-2 );
   CHECK_NOTHROW( i.operate(-6)==-2 );  
@@ -1414,61 +1433,61 @@ TEST_CASE( "big shift operators","[operator][shift][43]" ) {
 
 TEST_CASE( "arbitrary shift of indexstruct<index_int,1>","[indexstruct<index_int,1>][shift][44]" ) {
   shared_ptr<indexstruct<index_int,1>> i1,i2;
-  indexstruct<index_int,1>ure I1,I2;
+  indexstructure<index_int,1> I1,I2;
   i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(5,7) );
-  REQUIRE_NOTHROW( I1 = indexstruct<index_int,1>ure(i1) );
+  REQUIRE_NOTHROW( I1 = indexstructure<index_int,1>(i1) );
   SECTION( "shift by" ) {
-    REQUIRE_NOTHROW( i2 = i1->operate( ioperator("shift",7) ) );
-    CHECK( i2->first_index()==12 );
-    CHECK( i2->last_index()==14 );
-    REQUIRE_NOTHROW( I2 = I1.operate( ioperator("shift",7) ) );
-    CHECK( I2.first_index()==12 );
-    CHECK( I2.last_index()==14 );
+    REQUIRE_NOTHROW( i2 = i1->operate( ioperator<index_int,1>("shift",7) ) );
+    CHECK( ( i2->first_index()==12 ) );
+    CHECK( ( i2->last_index()==14 ) );
+    REQUIRE_NOTHROW( I2 = I1.operate( ioperator<index_int,1>("shift",7) ) );
+    CHECK( ( I2.first_index()==12 ) );
+    CHECK( ( I2.last_index()==14 ) );
   }
   SECTION( "shift to" ) {
-    REQUIRE_NOTHROW( i2 = i1->operate( ioperator("shiftto",7) ) );
-    CHECK( i2->first_index()==7 );
-    CHECK( i2->last_index()==9 );
+    REQUIRE_NOTHROW( i2 = i1->operate( ioperator<index_int,1>("shiftto",7) ) );
+    CHECK( ( i2->first_index()==7 ) );
+    CHECK( ( i2->last_index()==9 ) );
   }
 
 }
 
 TEST_CASE( "sigma operator stuff","[50]" ) {
-  sigma_operator sop;
-  //auto times2 = shared_ptr<ioperator>( new ioperator("*2") );
-  ioperator times2("*2");
+  sigma_operator<index_int,1> sop;
+  ioperator<index_int,1> times2("*2");
   auto cont = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(10,20) );
   shared_ptr<indexstruct<index_int,1>> sstruct; const char *path;
   SECTION( "point" ) { path = "operate by point";
-    REQUIRE_NOTHROW( sop = sigma_operator(times2) );
+    REQUIRE_NOTHROW( sop = sigma_operator<index_int,1>(times2) );
   }
   SECTION( "struct" ) { path = "operate by struct";
     REQUIRE_NOTHROW
-      ( sop = sigma_operator
+      ( sop = sigma_operator<index_int,1>
 	( [times2] ( const indexstruct<index_int,1> &i) -> shared_ptr<indexstruct<index_int,1>>
 	  { return i.operate(times2); } ) );
   }
   INFO( "path: " << path );
   REQUIRE_NOTHROW( sstruct = cont->operate(sop) );
-  CHECK( sstruct->first_index()==20 );
-  CHECK( sstruct->last_index()==40 );
-  indexstruct<index_int,1>ure Cont,Sstruct;
-  REQUIRE_NOTHROW( Cont = indexstruct<index_int,1>ure(cont) );
+  CHECK( ( sstruct->first_index()==20 ) );
+  CHECK( ( sstruct->last_index()==40 ) );
+  indexstructure<index_int,1> Cont,Sstruct;
+  REQUIRE_NOTHROW( Cont = indexstructure<index_int,1>(cont) );
   REQUIRE_NOTHROW( Sstruct = Cont.operate(sop) );
-  CHECK( Sstruct.first_index()==20 );
-  CHECK( Sstruct.last_index()==40 );
+  CHECK( ( Sstruct.first_index()==20 ) );
+  CHECK( ( Sstruct.last_index()==40 ) );
 }
 
+#if 0
 TEST_CASE( "create multidimensional by component","[multi][indexstruct<index_int,1>][100]" ) {
   shared_ptr<multi_indexstruct<index_int,1>> mi,mt;
-  multi_indexstruct<index_int,1>ure Mi,Mt;
+  multi_indexstructure<index_int,1> Mi,Mt;
 
   // we can not create zero-dimensional
   REQUIRE_THROWS( mi = shared_ptr<multi_indexstruct<index_int,1>>( new multi_indexstruct<index_int,1>(0) ) );
-  REQUIRE_THROWS( Mi = multi_indexstruct<index_int,1>ure(0) );
+  REQUIRE_THROWS( Mi = multi_indexstructure<index_int,1>(0) );
   // create two-dimensional
   REQUIRE_NOTHROW( mi = shared_ptr<multi_indexstruct<index_int,1>>( new multi_indexstruct<index_int,1>(2) ) );
-  REQUIRE_NOTHROW( Mi = multi_indexstruct<index_int,1>ure(2) );
+  REQUIRE_NOTHROW( Mi = multi_indexstructure<index_int,1>(2) );
   // set two component
   REQUIRE_NOTHROW( mi->set_component
 		   ( 0, shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(2,10) ) ) );
@@ -1993,13 +2012,13 @@ TEST_CASE( "multi-dimensional operations","[multi][120]" ) {
     REQUIRE_NOTHROW( s2 = s1->operate(op) );
     REQUIRE_NOTHROW( i0 = s2->get_component(0) );
     CHECK( i0->is_contiguous() );
-    CHECK( i0->first_index()==12 );
-    CHECK( i0->last_index()==22 );
+    CHECK( ( i0->first_index()==12 ) );
+    CHECK( ( i0->last_index()==22 ) );
     REQUIRE_NOTHROW( i1 = s2->get_component(1) );
     CHECK( !i1->is_contiguous() );
     CHECK( i1->is_strided() );
-    CHECK( i1->first_index()==25 );
-    CHECK( i1->last_index()==50 );
+    CHECK( ( i1->first_index()==25 ) );
+    CHECK( ( i1->last_index()==50 ) );
     CHECK( i1->stride()==5 );
   }
   SECTION( "second dim" ) {
@@ -2007,13 +2026,13 @@ TEST_CASE( "multi-dimensional operations","[multi][120]" ) {
     REQUIRE_NOTHROW( s2 = s1->operate(op) );
     REQUIRE_NOTHROW( i0 = s2->get_component(0) );
     CHECK( i0->is_contiguous() );
-    CHECK( i0->first_index()==10 );
-    CHECK( i0->last_index()==20 );
+    CHECK( ( i0->first_index()==10 ) );
+    CHECK( ( i0->last_index()==20 ) );
     REQUIRE_NOTHROW( i1 = s2->get_component(1) );
     CHECK( !i1->is_contiguous() );
     CHECK( i1->is_strided() );
-    CHECK( i1->first_index()==27 );
-    CHECK( i1->last_index()==52 );
+    CHECK( ( i1->first_index()==27 ) );
+    CHECK( ( i1->last_index()==52 ) );
     CHECK( i1->stride()==5 );
   }
   SECTION( "both dimensions" ) {
@@ -2023,10 +2042,10 @@ TEST_CASE( "multi-dimensional operations","[multi][120]" ) {
     REQUIRE_NOTHROW( s2 = s1->operate(op,s1) );
     REQUIRE_NOTHROW( i0 = s2->get_component(0) );
     REQUIRE_NOTHROW( i1 = s2->get_component(1) );
-    CHECK( i0->first_index()==12 );
-    CHECK( i0->last_index()==20 );
-    CHECK( i1->first_index()==27 );
-    CHECK( i1->last_index()==47 );
+    CHECK( ( i0->first_index()==12 ) );
+    CHECK( ( i0->last_index()==20 ) );
+    CHECK( ( i1->first_index()==27 ) );
+    CHECK( ( i1->last_index()==47 ) );
   }
   SECTION( "operate with truncation" ) {
   }

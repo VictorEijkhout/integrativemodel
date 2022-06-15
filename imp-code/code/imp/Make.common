@@ -29,7 +29,7 @@ CXX_COMPILER_clang = clang++
 CXX_COMPILER = ${CXX_COMPILER_${TACC_FAMILY_COMPILER}}
 CXX_LINKER = ${CXX_COMPILER}
 
-LANGUAGE_LEVEL = 17
+LANGUAGE_LEVEL = 20
 CXX_OPTFLAGS_gcc   = -O${OPTLEVEL} -ggdb -std=c++${LANGUAGE_LEVEL} -Wno-sign-compare -fpermissive
 CXX_OPTFLAGS_intel = -O${OPTLEVEL} -g    -std=c++${LANGUAGE_LEVEL} ${ITACFLAGS} -fno-omit-frame-pointer
 CXX_OPTFLAGS_clang = -O${OPTLEVEL} -g    -std=c++${LANGUAGE_LEVEL} ${ITACFLAGS} -fpermissive

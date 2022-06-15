@@ -58,8 +58,8 @@ array<I,d> endpoint(I s) {
 
 /*
  * Coordinates
+ * constructors
  */
-//! Create an empty coordinate object of given dimension
 //snippet pcoorddim
 template<typename I,int d>
 coordinate<I,d>::coordinate() {
@@ -80,6 +80,9 @@ coordinate<I,d>::coordinate( environment& e )
 };
 //snippet end
 
+/*
+ * Access
+ */
 template<typename I,int d>
 I coordinate<I,d>::span() const {
   I res = 1;
@@ -93,11 +96,88 @@ I coordinate<I,d>::span() const {
 
 template<typename I,int d>
 I& coordinate<I,d>::at(int i) {
-  return coordinates.at(i); };
-
+  return coordinates.at(i);
+};
 template<typename I,int d>
 const I& coordinate<I,d>::at(int i) const {
   return coordinates.at(i);
+};
+
+template<typename I,int d>
+I& coordinate<I,d>::operator[](int i) {
+  return coordinates[i];
+};
+template<typename I,int d>
+const I& coordinate<I,d>::operator[](int i) const {
+  return coordinates[i];
+};
+
+/*
+ * Operators
+ */
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator+( coordinate<I,d> other ) const {
+  auto r(*this);
+  for ( int id=0; id<d; id++ )
+    r.coordinates[id] += other.coordinates[id];
+  return r;
+};
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator+( I other ) const {
+  auto r(*this);
+  for ( int id=0; id<d; id++ )
+    r.coordinates[id] += other;
+  return r;
+};
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator-( coordinate<I,d> other ) const {
+  auto r(*this);
+  for ( int id=0; id<d; id++ )
+    r.coordinates[id] -= other.coordinates[id];
+  return r;
+};
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator+( I other ) const {
+  auto r(*this);
+  for ( int id=0; id<d; id++ )
+    r.coordinates[id] -= other;
+  return r;
+};
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator*( I f ) const {
+  auto r(*this);
+  for ( int id=0; id<d; id++ )
+    r.coordinates[id] *= f;
+  return r;
+};
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator/( I f ) const {
+  auto r(*this);
+  for ( int id=0; id<d; id++ )
+    r.coordinates[id] /= f;
+  return r;
+};
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator%( I other ) const {
+  auto r(*this);
+  for ( int id=0; id<d; id++ )
+    r.coordinates[id] %= other;
+  return r;
+};
+// equals
+template<typename I,int d>
+bool coordinate<I,d>::operator==( coordinate<I,d> other ) const {
+  bool r{true};
+  for ( int id=0; id<d; id++ )
+    r &&= coordinates[id]==other.coordinates[id];
+  return r;
+};
+template<typename I,int d>
+bool coordinate<I,d>::operator==( I other ) const {
+  bool r{true};
+  for ( int id=0; id<d; id++ )
+    r &&= coordinates[id]==other;
+  return r;
 };
 
 template<typename I,int d>
