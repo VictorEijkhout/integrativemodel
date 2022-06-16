@@ -33,7 +33,7 @@ using std::vector;
  ****************/
 
 template<typename I,int d>
-I outer_volume() const {
+I indexstruct<I,d>::outer_volume() const {
   auto outer_vector = last_index()-first_index()+1;
   return outer_vector.span();
 };
@@ -140,7 +140,7 @@ shared_ptr<indexstruct<I,d>> indexstruct<I,d>::truncate_right( I trunc ) {
  **** Empty indexstruct
  ****/
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> empty_indexstruct<I,d>::add_element( const I idx ) {
+shared_ptr<indexstruct<I,d>> empty_indexstruct<I,d>::add_element( coordinate<I,d> idx ) const {
   //  return shared_ptr<indexstruct<I,d>>( new indexed_indexstruct<I,d>(1,&idx) );
   return shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>(1,&idx) );
 };
@@ -157,7 +157,7 @@ contiguous_indexstruct<I,d>::contiguous_indexstruct
   : strided_indexstruct<I,d>(s,l,1) {};
 
 template<typename I,int d>
-virtual std::string as_string() const {
+std::string contiguous_indexstruct<I,d>::as_string() const {
   return fmt::format("contiguous: [{}--{}]",this->first[0],this->last[0]);
 };
 
@@ -192,9 +192,9 @@ strided_indexstruct<I,d>::strided_indexstruct
  * stuff
  */
 template<typename I,int d>
-I strided_indexstruct<I,d>::outer_volume()  const override {
+I strided_indexstruct<I,d>::outer_volume()  const {
   auto outer_vector = (last_index()-first_index()+stride_amount-1)/stride_amount+1;
-  return outer_vector.volume();
+  return outer_vector.span();
 };
 
 template<typename I,int d>
@@ -214,7 +214,7 @@ bool strided_indexstruct<I,d>::equals( shared_ptr<indexstruct<I,d>> idx ) const 
 };
 
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::add_element( const I idx ) {
+shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::add_element( coordinate<I,d> idx ) const {
   if (contains_element(idx))
     return this->make_clone(); //shared_from_this();
   else if (idx==first-stride_amount) {
@@ -229,19 +229,21 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::add_element( const I idx 
 };
 
 template<typename I,int d>
-bool strided_indexstruct<I,d>::contains_element( I idx ) const {
-  return idx>=first && idx<=last && (idx-first)%stride_amount==0;
+bool strided_indexstruct<I,d>::contains_element( coordinate<I,d> idx ) const {
+  return first<=idx && idx<=last && (idx-first)%stride_amount==0;
 };
 
 template<typename I,int d>
 I strided_indexstruct<I,d>::find( coordinate<I,d> idx ) const {
   if (!contains_element(idx))
-    throw(fmt::format("Index {} to find is out of range <<{}>>",idx,this->as_string()));
-  return (idx-first)/stride_amount;
+    throw(format("Index {} to find is out of range <<{}>>",
+		 idx[0],this->as_string()));
+  auto locvec = (idx-first)/stride_amount;
+  return locvec[0];
 };
 
 template<typename I,int d>
-I strided_indexstruct<I,d>::get_ith_element( const I i ) const {
+coordinate<I,d> strided_indexstruct<I,d>::get_ith_element( const I i ) const {
   if (i<0 || i>=volume())
     throw(fmt::format("Index {} out of range for {}",i,as_string()));
   return first+i*stride_amount;
@@ -376,7 +378,7 @@ bool strided_indexstruct<I,d>::has_intersect( shared_ptr<indexstruct<I,d>> idx )
 };
 
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::translate_by( I shift ) {
+shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::translate_by( coordinate<I,d> shift ) const {
   return shared_ptr<indexstruct<I,d>>{
     new strided_indexstruct<I,d>(first+shift,last+shift,stride_amount) };
 };
@@ -762,32 +764,32 @@ indexed_indexstruct<I,d>::indexed_indexstruct( const vector<coordinate<I,d>> idx
   : indices(idxs) {
 };
 
-template<typename I>
-indexed_indexstruct<I,d>::indexed_indexstruct( const vector<I> idxs )
-  : indices( vector<coordinate<I,1>>(idxs.size()) ) {
-  for ( int i=0; i<indices.size(); i++ ) {
-    indices.at(i) = coordinate<I,1>( idxs.at(i) );
-  }
-};
+// template<typename I>
+// indexed_indexstruct<I>::indexed_indexstruct( const vector<I> idxs )
+//   : indices( vector<coordinate<I,1>>(idxs.size()) ) {
+//   for ( int i=0; i<indices.size(); i++ ) {
+//     indices.at(i) = coordinate<I,1>( idxs.at(i) );
+//   }
+// };
 
-template<typename I,int d>
-indexed_indexstruct<I,d>::indexed_indexstruct( const I len,const I *idxs ) {
-  indices.reserve(len);
-  I iold;
-  for (int i=0; i<len; i++) {
-    I inew = idxs[i];
-    if (i>0 && inew<=iold) throw(std::string("Only construct from sorted array"));
-    indices.push_back(inew);
-    iold = inew;
-  }
-};
+// template<typename I,int d>
+// indexed_indexstruct<I,d>::indexed_indexstruct( const I len,const I *idxs ) {
+//   indices.reserve(len);
+//   I iold;
+//   for (int i=0; i<len; i++) {
+//     I inew = idxs[i];
+//     if (i>0 && inew<=iold) throw(std::string("Only construct from sorted array"));
+//     indices.push_back(inew);
+//     iold = inew;
+//   }
+// };
 
 /*!
   Add an element to an indexed indexstruct. We don't simplify: that
   can be done through \ref force_simplify.
 */
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::add_element( const I idx ) {
+shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::add_element( coordinate<I,d> idx ) const {
   if (indices.size()==0 || idx>indices.at(indices.size()-1)) {
     indices.push_back(idx);
   } else {
@@ -815,7 +817,7 @@ void indexed_indexstruct<I,d>::addin_element( const I idx ) {
 };
 
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::translate_by( I shift ) {
+shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::translate_by( coordinate<I,d> shift ) const {
   auto translated = shared_ptr<indexstruct<I,d>>{
     new indexed_indexstruct<I,d>() };
   for (int loc=0; loc<indices.size(); loc++)
@@ -851,7 +853,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
       // try detect strided
       int stride;
       if (is_strided_between_indices(ileft,iright,stride)) {
-	I first = get_ith_element(ileft), last = get_ith_element(iright);
+	auto first = get_ith_element(ileft), last = get_ith_element(iright);
 	//print("detecting stride {} between {}-{}\n",stride,first,last);
 	if (stride==1)
 	  return shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(first,last) );
@@ -859,7 +861,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
 	  return shared_ptr<indexstruct<I,d>>( make_shared<strided_indexstruct<I,d>>(first,last,stride) );
       } else {
 	// find strided subsections
-	I first = get_ith_element(ileft), last = get_ith_element(iright);
+	auto first = get_ith_element(ileft), last = get_ith_element(iright);
 	for (I find_left=ileft; find_left<iright; find_left++) {
 	  int top_right = iright; if (find_left==ileft) top_right--;
 	  for (I find_right=top_right; find_right>find_left+1; find_right--) {
@@ -868,10 +870,10 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
 	      // print("{}: found strided stretch {}-{}\n",
 	      // 	       this->as_string(),find_left,find_right);
 	      auto comp = shared_ptr<composite_indexstruct<I,d>>( make_shared<composite_indexstruct<I,d>>() );
-	      I found_left = get_ith_element(find_left),
+	      auto found_left = get_ith_element(find_left),
 		found_right = get_ith_element(find_right);
 	      if (find_left>ileft) { // there is stuff to the left
-		I left = get_ith_element(find_left);
+		auto left = get_ith_element(find_left);
 		auto left_part = this->minus
 		  ( shared_ptr<indexstruct<I,d>>(make_shared<contiguous_indexstruct<I,d>>(left,last)) );
 		//print("composing with left: {}\n",left_part->as_string());
@@ -889,7 +891,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
 	      comp->push_back(strided);
 	      //print(" .. gives {}\n",comp->as_string());
 	      if (find_right<iright) { // there is stuff to the right
-		I right = get_ith_element(find_right);
+		auto right = get_ith_element(find_right);
 		auto right_part = this->minus
 		  ( shared_ptr<indexstruct<I,d>>(make_shared<contiguous_indexstruct<I,d>>(first,right)) );
 		right_part = right_part->force_simplify();
@@ -923,7 +925,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
 //! Detect a strided subsection in the indexed structure
 template<typename I,int d>
 bool indexed_indexstruct<I,d>::is_strided_between_indices(int ileft,int iright,int &stride) const {
-  I first = get_ith_element(ileft), last = get_ith_element(iright),
+  auto first = get_ith_element(ileft), last = get_ith_element(iright),
     n_index = iright-ileft+1;
   if (n_index==1)
     throw(fmt::format("Single point should have been caught"));
@@ -934,7 +936,7 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices(int ileft,int iright,i
     return false;
   // test if everything in between is also strided
   for (I inext=ileft+1; inext<iright; inext++) {
-    I elt = get_ith_element(inext);
+    auto elt = get_ith_element(inext);
     //print("elt {} : {}, testing with stride {}\n",inext,elt,stride);
     if ( (elt-first)%stride!=0 )
       return false;
@@ -943,7 +945,7 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices(int ileft,int iright,i
 };
 
 template<typename I,int d>
-I indexed_indexstruct<I,d>::get_ith_element( const I i ) const {
+coordinate<I,d> indexed_indexstruct<I,d>::get_ith_element( const I i ) const {
   if (i<0 || i>=this->volume())
     throw(fmt::format("Index {} out of range for {}",i,as_string()));
   return indices[i];
@@ -1242,7 +1244,7 @@ coordinate<I,d> composite_indexstruct<I,d>::first_index() const {
 };
 
 template<typename I,int d>
-coordinate<I,d>I composite_indexstruct<I,d>::last_index() const {
+coordinate<I,d> composite_indexstruct<I,d>::last_index() const {
   throw("composite last index");
   // if (structs.size()==0)
   //   throw(std::string("Can not get last from empty composite"));
@@ -1264,7 +1266,7 @@ I composite_indexstruct<I,d>::volume() const {
 
 //! \todo I have my doubts
 template<typename I,int d>
-I composite_indexstruct<I,d>::get_ith_element( const I i ) const {
+coordinate<I,d> composite_indexstruct<I,d>::get_ith_element( const I i ) const {
   if (i>=volume())
     throw(fmt::format("Requested index {} out of bounds for {}",i,as_string()));
   if (structs.size()==1)
@@ -1341,7 +1343,7 @@ bool composite_indexstruct<I,d>::contains( shared_ptr<indexstruct<I,d>> idx ) co
 };
 
 template<typename I,int d>
-bool composite_indexstruct<I,d>::contains_element( I idx ) const {
+bool composite_indexstruct<I,d>::contains_element( coordinate<I,d> idx ) const {
   //for (auto s : structs)
   for (int is=0; is<structs.size(); is++) {
     auto s = structs.at(is);
@@ -1965,15 +1967,15 @@ I ioperator<I,d>::inverse_operate( I i, I m ) const {
   }
 };
 
-template<typename I,int d>
-std::string strided_indexstruct<I,d>::as_string() const {
-  fmt::memory_buffer w;
-  format_to(w.end(),"indexed: {}:[",indices.size());
-  for (auto i : indices)
-    format_to(w.end(),"{},",i[0]);
-  format_to(w.end(),"]");
-  return to_string(w);
-}
+// template<typename I,int d>
+// std::string strided_indexstruct<I,d>::as_string() const {
+//   fmt::memory_buffer w;
+//   format_to(w.end(),"indexed: {}:[",indices.size());
+//   for (auto i : indices)
+//     format_to(w.end(),"{},",i[0]);
+//   format_to(w.end(),"]");
+//   return to_string(w);
+// }
 
 /****
  **** Operate on indexstructs
@@ -2020,7 +2022,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
     auto rstruct = shared_ptr<indexstruct<I,d>>{ make_shared<indexed_indexstruct<I,d>>() };
     //for (auto i : *this) { VLE `this' is modified, which contradicts the const
     for (I ii=0; ii<volume(); ii++) {
-      I i = get_ith_element(ii);
+      auto i = get_ith_element(ii);
       rstruct = rstruct->add_element( op.operate(i) );
     }
     operated = rstruct;
@@ -2070,7 +2072,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
     auto rstruct = shared_ptr<indexstruct<I,d>>{ make_shared<indexed_indexstruct<I,d>>() };
     //for (auto i : *this) { VLE `this' is modified, which contradicts the const
     for (int ii=0; ii<volume(); ii++) {
-      I i = get_ith_element(ii);
+      auto i = get_ith_element(ii);
       rstruct = rstruct->add_element( op.operate(i) );
     }
     operated = rstruct;

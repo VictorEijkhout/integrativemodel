@@ -85,7 +85,7 @@ public:
     report_unimplemented("last_index"); return 0; };
   virtual I volume() const {
     report_unimplemented("volume"); return 0; };
-  I outer_volume() const;
+  virtual I outer_volume() const;
   virtual I stride() const { throw(std::string("Indexstruct has no stride")); };
   virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const;
   
@@ -100,7 +100,7 @@ public:
   virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const {
     report_unimplemented("contains"); return false; };
   virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx );
-  virtual I get_ith_element( const I i ) const {
+  virtual coordinate<I,d> get_ith_element( const I i ) const {
     throw(std::string("Get ith: not implemented")); };
 
   /*
@@ -115,11 +115,11 @@ public:
     return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this();
   virtual std::shared_ptr<indexstruct<I,d>> over_simplify() {
     return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this();
-  virtual std::shared_ptr<indexstruct<I,d>> add_element( const I idx ) {
+  virtual std::shared_ptr<indexstruct<I,d>> add_element( coordinate<I,d> idx ) const {
     throw(std::string("add_element: Not implemented")); };
   virtual void addin_element( const I idx ) {
     throw(std::string("add_element: Not implemented")); };
-  virtual std::shared_ptr<indexstruct<I,d>> translate_by( I shift ) {
+  virtual std::shared_ptr<indexstruct<I,d>> translate_by( coordinate<I,d> shift ) const {
     report_unimplemented("translate_by"); return nullptr; };
   virtual bool has_intersect( std::shared_ptr<indexstruct<I,d>> idx ) {
     report_unimplemented("has_intersect"); return false; };
@@ -205,14 +205,14 @@ public:
   virtual I volume() const override { return 0; };
   virtual std::shared_ptr<indexstruct<I,d>> make_clone() const override {
     return std::shared_ptr<indexstruct<I,d>>{ new empty_indexstruct() }; };
-  virtual std::shared_ptr<indexstruct<I,d>> add_element( const I idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> add_element( coordinate<I,d> idx ) const override;
   virtual coordinate<I,d> first_index() const override {
     throw(std::string("No first index for empty")); };
   virtual coordinate<I,d> last_index()  const override {
     throw(std::string("No last index for empty")); };
-  virtual I get_ith_element( const I i ) const override {
+  virtual coordinate<I,d> get_ith_element( const I i ) const override {
     throw(fmt::format("Can not get ith <<{}>> in empty",i)); };
-  virtual std::shared_ptr<indexstruct<I,d>> translate_by( I shift ) override {
+  virtual std::shared_ptr<indexstruct<I,d>> translate_by( coordinate<I,d> shift ) const override {
     return this->make_clone(); };
   virtual bool has_intersect( std::shared_ptr<indexstruct<I,d>> idx ) override { return false; };
   virtual std::shared_ptr<indexstruct<I,d>> relativize_to( std::shared_ptr<indexstruct<I,d>>,bool=false) override{
@@ -276,13 +276,14 @@ public:
    */
   coordinate<I,d> first_index() const override { return first; };
   coordinate<I,d> last_index()  const override { return last; };
-  I volume()  const override;
+  virtual I outer_volume() const override;
+  virtual I volume()  const override;
   virtual I stride() const override { return stride_amount; };
   virtual bool is_strided() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("strided"); };
   virtual I find( coordinate<I,d> idx ) const override;
   virtual bool contains_element( coordinate<I,d> idx ) const override;
-  virtual I get_ith_element( const I i ) const override;
+  virtual coordinate<I,d> get_ith_element( const I i ) const override;
   virtual bool can_incorporate( coordinate<I,d> v ) const override {
     return ( v==first-stride_amount || v==last+stride_amount); };
   //  virtual bool contains( indexstruct *idx ) override;
@@ -298,8 +299,8 @@ public:
   virtual std::shared_ptr<indexstruct<I,d>> make_clone() const override {
     return std::shared_ptr<indexstruct<I,d>>{ new strided_indexstruct(first,last,stride_amount) };
   };
-  virtual std::shared_ptr<indexstruct<I,d>> add_element( const I idx ) override;
-  virtual std::shared_ptr<indexstruct<I,d>> translate_by( I shift ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> add_element( coordinate<I,d> idx ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> translate_by( coordinate<I,d> shift ) const override;
   virtual bool has_intersect( std::shared_ptr<indexstruct<I,d>> idx ) override;
   virtual std::shared_ptr<indexstruct<I,d>> intersect( std::shared_ptr<indexstruct<I,d>> idx ) override;
   virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const override;
@@ -397,7 +398,7 @@ public:
       if (indices[i]==idx) return true;
     return false;
   };
-  virtual I get_ith_element( const I i ) const override;
+  virtual coordinate<I,d> get_ith_element( const I i ) const override;
   bool is_strided_between_indices(int,int,int&) const;
   //  virtual bool contains( indexstruct *idx ) override;
   virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
@@ -413,9 +414,9 @@ public:
     return std::shared_ptr<indexstruct<I,d>>{ new indexed_indexstruct(indices) }; };
   virtual std::shared_ptr<indexstruct<I,d>> convert_to_indexed() const override {
     return std::shared_ptr<indexstruct<I,d>>( this->make_clone() ); }; //shared_from_this(); };
-  virtual std::shared_ptr<indexstruct<I,d>> add_element( const I idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> add_element( coordinate<I,d> idx ) const override;
   virtual void addin_element( const I idx ) override;
-  virtual std::shared_ptr<indexstruct<I,d>> translate_by( I shift ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> translate_by( coordinate<I,d> shift ) const override;
 
   virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const override;
   virtual std::shared_ptr<indexstruct<I,d>> relativize_to( std::shared_ptr<indexstruct<I,d>>,bool=false) override;
@@ -462,7 +463,7 @@ public:
   virtual bool contains_element( coordinate<I,d> idx ) const override;
   virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
   virtual I find( coordinate<I,d> idx ) const override ;
-  virtual I get_ith_element( const I i ) const override;
+  virtual coordinate<I,d> get_ith_element( const I i ) const override;
   virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> ) override;
   virtual std::shared_ptr<indexstruct<I,d>> intersect( std::shared_ptr<indexstruct<I,d>> idx ) override;
   virtual std::shared_ptr<indexstruct<I,d>> convert_to_indexed() const override;
@@ -737,7 +738,7 @@ public:
     return strct->disjoint(idx.strct); };
   virtual bool can_incorporate( coordinate<I,d> v ) const {
     return strct->can_incorporate(v); };
-  virtual I get_ith_element( const I i ) const {
+  virtual coordinate<I,d> get_ith_element( const I i ) const {
     return strct->get_ith_element(i); };
 
   /*
@@ -746,9 +747,9 @@ public:
   void simplify() { strct = strct->simplify(); };
   void force_simplify() { strct = strct->force_simplify(); };
   void over_simplify() { strct = strct->over_simplify(); };
-  void add_element( const I idx ) { strct = strct->add_element(idx); };
+  void add_element( coordinate<I,d> idx ) { strct = strct->add_element(idx); };
   void addin_element( const I idx ) { strct->addin_element(idx); };
-  void translate_by( I shift ) { strct = strct->translate_by(shift); };
+  void translate_by( coordinate<I,d> shift ) { strct = strct->translate_by(shift); };
   bool has_intersect( std::shared_ptr<indexstruct<I,d>> idx ) {
     return strct->has_intersect(idx); };
 

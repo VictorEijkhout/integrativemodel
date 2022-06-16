@@ -59,6 +59,7 @@ public :
   // operators
   coordinate<I,d> operator+( coordinate<I,d> ) const;
   coordinate<I,d> operator-( coordinate<I,d> ) const;
+  void operator-=( coordinate<I,d> );
   coordinate<I,d> operator%( I ) const;
   coordinate<I,d> operator+( I ) const;
   coordinate<I,d> operator-( I ) const;

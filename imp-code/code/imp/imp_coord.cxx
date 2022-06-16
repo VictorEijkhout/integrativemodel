@@ -115,6 +115,7 @@ const I& coordinate<I,d>::operator[](int i) const {
 /*
  * Operators
  */
+// plus
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator+( coordinate<I,d> other ) const {
   auto r(*this);
@@ -129,6 +130,8 @@ coordinate<I,d> coordinate<I,d>::operator+( I other ) const {
     r.coordinates[id] += other;
   return r;
 };
+
+// minus
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator-( coordinate<I,d> other ) const {
   auto r(*this);
@@ -143,6 +146,13 @@ coordinate<I,d> coordinate<I,d>::operator+( I other ) const {
     r.coordinates[id] -= other;
   return r;
 };
+template<typename I,int d>
+void coordinate<I,d>::operator-=( coordinate<I,d> other ) {
+  for ( int id=0; id<d; id++ )
+    coordinates[id] -= other.coordinates[id];
+};
+
+// mult
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator*( I f ) const {
   auto r(*this);
