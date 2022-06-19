@@ -140,10 +140,10 @@ coordinate<I,d> coordinate<I,d>::operator-( coordinate<I,d> other ) const {
   return r;
 };
 template<typename I,int d>
-coordinate<I,d> coordinate<I,d>::operator+( I other ) const {
+coordinate<I,d> coordinate<I,d>::operator-() const {
   auto r(*this);
   for ( int id=0; id<d; id++ )
-    r.coordinates[id] -= other;
+    r.coordinates[id] = -r.coordinates[id];
   return r;
 };
 template<typename I,int d>
@@ -174,22 +174,37 @@ coordinate<I,d> coordinate<I,d>::operator%( I other ) const {
     r.coordinates[id] %= other;
   return r;
 };
-// equals
+// equals and other comparisons
 template<typename I,int d>
 bool coordinate<I,d>::operator==( coordinate<I,d> other ) const {
   bool r{true};
   for ( int id=0; id<d; id++ )
-    r &&= coordinates[id]==other.coordinates[id];
+    r = r and coordinates[id]==other.coordinates[id];
   return r;
 };
 template<typename I,int d>
 bool coordinate<I,d>::operator==( I other ) const {
   bool r{true};
   for ( int id=0; id<d; id++ )
-    r &&= coordinates[id]==other;
+    r = r and coordinates[id]==other;
+  return r;
+};
+template<typename I,int d>
+bool coordinate<I,d>::operator<( coordinate<I,d> other ) const {
+  bool r{true};
+  for ( int id=0; id<d; id++ )
+    r = r and coordinates[id]<other.coordinates[id];
+  return r;
+};
+template<typename I,int d>
+bool coordinate<I,d>::operator>( coordinate<I,d> other ) const {
+  bool r{true};
+  for ( int id=0; id<d; id++ )
+    r = r and coordinates[id]>other.coordinates[id];
   return r;
 };
 
+// stuff
 template<typename I,int d>
 I coordinate<I,d>::linear( const coordinate<I,d>& layout ) const {
   int s = coordinates.at(0);
@@ -199,13 +214,24 @@ I coordinate<I,d>::linear( const coordinate<I,d>& layout ) const {
   }
   return s;
 };
-
-// template<typename I,int d>
-// bool coordinate<I,d>::operator>( const coordinate<I,d>& other ) const {
-// for (int id=0; id<d; id++)
-//   if (coordinates[id]<=other.coordinates[id]) return false;
-// return true;
-// };
+template<typename I,int d>
+coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other ) {
+  auto r(current);
+  for ( int id=0; id<d; id++ ) {
+    auto cmp = other.data()[id];
+    if (cmp>r.data()[id]) r.data()[id] = cmp;
+  }
+  return r;
+};
+template<typename I,int d>
+coordinate<I,d>  coordmin( coordinate<I,d> current,coordinate<I,d> other ) {
+  auto r(current);
+  for ( int id=0; id<d; id++ ) {
+    auto cmp = other.data()[id];
+    if (cmp<r.data()[id]) r.data()[id] = cmp;
+  }
+  return r;
+};
 
 template<typename I,int d>
 bool coordinate<I,d>::before( const coordinate<I,d>& other ) const {
@@ -224,10 +250,6 @@ template array<index_int,1> endpoint<index_int,1>(index_int);
 template array<index_int,2> endpoint<index_int,2>(index_int);
 template array<index_int,3> endpoint<index_int,3>(index_int);
 
-// template array<int,1> farpoint<1>(int);
-// template array<int,2> farpoint<2>(int);
-// template array<int,3> farpoint<3>(int);
-
 template class coordinate<int,1>;
 template class coordinate<int,2>;
 template class coordinate<int,3>;
@@ -235,3 +257,11 @@ template class coordinate<index_int,1>;
 template class coordinate<index_int,2>;
 template class coordinate<index_int,3>;
 
+template coordinate<int,1> coordmax<int,1>( coordinate<int,1>,coordinate<int,1> );
+template coordinate<int,2> coordmax<int,2>( coordinate<int,2>,coordinate<int,2> );
+template coordinate<index_int,1> coordmax<index_int,1>( coordinate<index_int,1>,coordinate<index_int,1> );
+template coordinate<index_int,2> coordmax<index_int,2>( coordinate<index_int,2>,coordinate<index_int,2> );
+template coordinate<int,1> coordmin<int,1>( coordinate<int,1>,coordinate<int,1> );
+template coordinate<int,2> coordmin<int,2>( coordinate<int,2>,coordinate<int,2> );
+template coordinate<index_int,1> coordmin<index_int,1>( coordinate<index_int,1>,coordinate<index_int,1> );
+template coordinate<index_int,2> coordmin<index_int,2>( coordinate<index_int,2>,coordinate<index_int,2> );

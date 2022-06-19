@@ -66,7 +66,7 @@ bool indexstruct<I,d>::equals( std::shared_ptr<indexstruct<I,d>> idx ) const {
 //! Operate, then cut to let lo/hi be the lowest/highest index, inclusive.
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
-    ( const ioperator<I,d> &op, I lo,I hi ) const {
+    ( const ioperator<I,d> &op, coordinate<I,d> lo,coordinate<I,d> hi ) const {
   shared_ptr<indexstruct<I,d>>
     noleft = this->operate(op)->truncate_left(lo),
     noright = noleft->truncate_right(hi);
@@ -74,8 +74,8 @@ shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
 };
 
 template<typename I,int d>
-bool indexstruct<I,d>::contains_element_in_range(I idx) const {
-  return idx>=first_index() && idx<=last_index();
+bool indexstruct<I,d>::contains_element_in_range( coordinate<I,d> idx) const {
+  return first_index()<=idx && idx<=last_index();
 };
 
 //! Base test for disjointness; derived classes will build on this.
@@ -85,7 +85,8 @@ bool indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
 };
 
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate( const sigma_operator<I,d> &op, I lo,I hi ) const {
+shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
+        ( const sigma_operator<I,d> &op, coordinate<I,d> lo,coordinate<I,d> hi ) const {
   shared_ptr<indexstruct<I,d>>
     noleft = this->operate(op)->truncate_left(lo),
     noright = noleft->truncate_right(hi);
@@ -96,7 +97,7 @@ shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate( const sigma_operator<I,d
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
     ( const ioperator<I,d> &op,shared_ptr<indexstruct<I,d>> outer ) const {
-  I lo = outer->first_index(), hi = outer->last_index();
+  auto lo = outer->first_index(), hi = outer->last_index();
   return this->operate(op,lo,hi);
 };
 
@@ -104,13 +105,13 @@ shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
     ( const sigma_operator<I,d> &op,shared_ptr<indexstruct<I,d>> outer ) const {
-  I lo = outer->first_index(), hi = outer->last_index();
+  auto lo = outer->first_index(), hi = outer->last_index();
   return this->operate(op,lo,hi);
 };
 
 //! Let `trunc' be the first index in the truncated struct.
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> indexstruct<I,d>::truncate_left( I trunc ) {
+shared_ptr<indexstruct<I,d>> indexstruct<I,d>::truncate_left( coordinate<I,d> trunc ) {
   if (trunc<=first_index()) {
     return this->make_clone();
     //return shared_ptr<indexstruct<I,d>>( this->make_clone() ); //shared_from_this();
@@ -124,8 +125,8 @@ shared_ptr<indexstruct<I,d>> indexstruct<I,d>::truncate_left( I trunc ) {
 
 //! Let `trunc' be the last index in the truncated struct.
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> indexstruct<I,d>::truncate_right( I trunc ) {
-  if (trunc>=last_index()) {
+shared_ptr<indexstruct<I,d>> indexstruct<I,d>::truncate_right( coordinate<I,d> trunc ) {
+  if (last_index()<=trunc) {
     return this->make_clone(); //shared_from_this();
     //return shared_ptr<indexstruct<I,d>>( this->make_clone() ); //shared_from_this();
   } else {
@@ -142,7 +143,8 @@ shared_ptr<indexstruct<I,d>> indexstruct<I,d>::truncate_right( I trunc ) {
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> empty_indexstruct<I,d>::add_element( coordinate<I,d> idx ) const {
   //  return shared_ptr<indexstruct<I,d>>( new indexed_indexstruct<I,d>(1,&idx) );
-  return shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>(1,&idx) );
+  return shared_ptr<indexstruct<I,d>>
+    ( make_shared<indexed_indexstruct<I,d>>(vector<coordinate<I,d>>{idx}) );
 };
 
 template<typename I,int d>
@@ -216,15 +218,17 @@ bool strided_indexstruct<I,d>::equals( shared_ptr<indexstruct<I,d>> idx ) const 
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::add_element( coordinate<I,d> idx ) const {
   if (contains_element(idx))
-    return this->make_clone(); //shared_from_this();
-  else if (idx==first-stride_amount) {
-    first = idx; return  this->make_clone();
-  } else if (idx==last+stride_amount) {
-    last = idx;
     return this->make_clone();
+  else if (idx==first-stride_amount) {
+    return shared_ptr<indexstruct<I,d>>
+      ( make_shared<strided_indexstruct<I,d>>(idx,last,stride_amount) );
+  } else if (idx==last+stride_amount) {
+    return shared_ptr<indexstruct<I,d>>
+      ( make_shared<strided_indexstruct<I,d>>(first,idx,stride_amount) );
   } else {
-    auto indexed = shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>(this) );
-    return indexed->add_element(idx);
+    auto indexed = make_clone(); // shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>(this) );
+    indexed->add_in_element(idx);
+    return indexed;
   }
 };
 
@@ -272,7 +276,7 @@ bool strided_indexstruct<I,d>::contains( shared_ptr<indexstruct<I,d>> idx ) cons
    */
   strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr)
-    return first<=strided->first && last>=strided->last
+    return first<=strided->first && strided->last<=last
       && (strided->first-first)%stride_amount==0 && strided->stride_amount%stride_amount==0;
 
   /*
@@ -354,11 +358,10 @@ bool strided_indexstruct<I,d>::has_intersect( shared_ptr<indexstruct<I,d>> idx )
       if (first%stride_amount!=strided->first%strided->stride_amount) {
 	return false;
       } else {
-	I mn = MAX(first,strided->first), mx = MIN(last,strided->last);
-	if (mn>mx)
-	  return false;
-	else
-	  return true;
+	auto
+	  mn = coordmax<I,d>(first,strided->first),
+	  mx = coordmin<I,d>(last,strided->last);
+	return not (mx<mn);
       }
     } else if (idx->volume()<volume()) { // case of different strides, `this' s/b small
       return idx->has_intersect(this->shared_from_this());
@@ -392,7 +395,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::intersect
     return idx->make_clone();
   if (idx->contains(this->shared_from_this()))
     return this->make_clone();
-  if (first_index()>idx->last_index() || last_index()<idx->first_index() )
+  if (idx->last_index()<first_index() or last_index()<idx->first_index() )
     return shared_ptr<indexstruct<I,d>>( make_shared<empty_indexstruct<I,d>>() );
 
   /*
@@ -404,8 +407,10 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::intersect
       if (first%stride_amount!=strided->first%strided->stride_amount) {
 	return shared_ptr<indexstruct<I,d>>( make_shared<empty_indexstruct<I,d>>() );
       } else {
-	I mn = MAX(first,strided->first), mx = MIN(last,strided->last);
-	if (mn>mx)
+	auto
+	  mn = coordmax<I,d>(first,strided->first),
+	  mx = coordmin<I,d>(last,strided->last);
+	if (mx<mn)
 	  return shared_ptr<indexstruct<I,d>>( make_shared<empty_indexstruct<I,d>>() );
 	else if (stride_amount==1)
 	  return shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(mn,mx) );
@@ -461,10 +466,9 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::minus
   /*
    * Case: the idx set is in the interior
    */
-  if (this->first_index()<idx->first_index() && this->last_index()>idx->last_index()) {
+  if (this->first_index()<idx->first_index() and idx->last_index()<this->last_index()) {
     shared_ptr<indexstruct<I,d>> left,right,mid;
-    I 
-      midfirst = idx->first_index(), midlast = idx->last_index();
+    auto midfirst = idx->first_index(), midlast = idx->last_index();
     if (stride_amount==1) {
       left = shared_ptr<indexstruct<I,d>>
 	( make_shared<contiguous_indexstruct<I,d>>(this->first_index(),midfirst-1) );
@@ -475,8 +479,9 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::minus
       left = shared_ptr<indexstruct<I,d>>
 	( make_shared<strided_indexstruct<I,d>>(this->first_index(),midfirst-1,stride_amount) );
       // right
-      I rfirst = midlast+1;
-      while (rfirst%stride_amount!=last%stride_amount) rfirst++;
+      auto rfirst = midlast+1;
+      while (rfirst%stride_amount!=last%stride_amount)
+	rfirst = rfirst+1;
       right = shared_ptr<indexstruct<I,d>>
 	( make_shared<strided_indexstruct<I,d>>(rfirst,this->last_index(),stride_amount) );
     }
@@ -489,7 +494,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::minus
    */
   contiguous_indexstruct<I,d>* contiguous = dynamic_cast<contiguous_indexstruct<I,d>*>(idx.get());
   if (contiguous!=nullptr) {
-    I ifirst = contiguous->first_index(),ilast = contiguous->last_index();
+    auto ifirst = contiguous->first_index(),ilast = contiguous->last_index();
     shared_ptr<indexstruct<I,d>> contmin;
     if (ilast<first || ifirst>last) // disjoint 
       return this->make_clone(); //shared_from_this();
@@ -523,11 +528,11 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::minus
       } else {
 	if (contains_element(idx->first_index()) && contains_element(idx->last_index()))
 	  throw(std::string("should yield composite; unimplemented"));
-	I f = idx->first_index(), l = idx->last_index();
+	auto f = idx->first_index(), l = idx->last_index();
 	if (f<=first) { // cut on the left
-	  f = MAX(l+1,first); l = last;
+	  f = coordmax<I,d>(l+1,first); l = last;
 	} else { // cut on the right
-	  l = MIN(f-1,last); f = first;
+	  l = coordmin<I,d>(f-1,last); f = first;
 	}
 	if (stride_amount==1)
 	  stridmin = shared_ptr<indexstruct<I,d>>{ make_shared<contiguous_indexstruct<I,d>>(f,l) };
@@ -596,7 +601,9 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::relativize_to
       if (first%stride_amount!=strided->first%strided->stride_amount) { // interleaved
         return shared_ptr<indexstruct<I,d>>{ make_shared<empty_indexstruct<I,d>>() };
       } else {
-        I mn = MAX(first,strided->first), mx = MIN(last,strided->last);
+	auto
+	  mn = coordmax<I,d>(first,strided->first),
+	  mx = coordmin<I,d>(last,strided->last);
         if (mn>mx)
 	  return shared_ptr<indexstruct<I,d>>{ make_shared<empty_indexstruct<I,d>>() };
         else {
@@ -614,7 +621,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::relativize_to
   if (indexed!=nullptr) {
     auto relext = shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>() );
     for (auto i : *this) {
-      relext->addin_element( idx->find(i) );
+      relext->add_in_element( idx->find(i) );
     }
     return relext;
   }
@@ -673,10 +680,12 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
   strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) {
     int amt = idx->stride();
-    I frst = idx->first_index(), lst = idx->last_index();
+    auto frst = idx->first_index(), lst = idx->last_index();
     if (stride_amount==amt && first%stride_amount==frst%amt &&
-	frst<=last+stride_amount && lst>=first-stride_amount) {
-      I mn = MIN(first,frst), mx = MAX(last,lst);
+	frst<=last+stride_amount && first-stride_amount<=lst) {
+      auto
+	mn = coordmin<I,d>(first,frst),
+	mx = coordmax<I,d>(last,lst);
       if (stride_amount==1)
 	return shared_ptr<indexstruct<I,d>>{make_shared<contiguous_indexstruct<I,d>>(mn,mx)};
       else
@@ -790,21 +799,14 @@ indexed_indexstruct<I,d>::indexed_indexstruct( const vector<coordinate<I,d>> idx
 */
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::add_element( coordinate<I,d> idx ) const {
-  if (indices.size()==0 || idx>indices.at(indices.size()-1)) {
-    indices.push_back(idx);
-  } else {
-    // this loop can not be ranged....
-    for (auto it=indices.begin(); it!=indices.end(); ++it) {
-      if (*it==idx) break;
-      else if (*it>idx) { indices.insert(it,idx); break; }
-    }
-  }
-  return this->make_clone();
+  auto added(*this);
+  added.add_in_element(idx);
+  return added.make_clone();
 };
 
 //! Add an element into this structure.
 template<typename I,int d>
-void indexed_indexstruct<I,d>::addin_element( const I idx ) {
+void indexed_indexstruct<I,d>::add_in_element( coordinate<I,d> idx ) {
   if (indices.size()==0 || idx>indices.at(indices.size()-1)) {
     indices.push_back(idx);
   } else {
@@ -821,7 +823,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::translate_by( coordinate<
   auto translated = shared_ptr<indexstruct<I,d>>{
     new indexed_indexstruct<I,d>() };
   for (int loc=0; loc<indices.size(); loc++)
-    translated->addin_element( indices.at(loc)+shift );
+    translated->add_in_element( indices.at(loc)+shift );
   return translated;
 };
 
@@ -924,7 +926,10 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
 
 //! Detect a strided subsection in the indexed structure
 template<typename I,int d>
-bool indexed_indexstruct<I,d>::is_strided_between_indices(int ileft,int iright,int &stride) const {
+bool indexed_indexstruct<I,d>::is_strided_between_indices
+        (int ileft,int iright,int &stride) const {
+  throw("strided between");
+#if 0
   auto first = get_ith_element(ileft), last = get_ith_element(iright),
     n_index = iright-ileft+1;
   if (n_index==1)
@@ -941,6 +946,7 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices(int ileft,int iright,i
     if ( (elt-first)%stride!=0 )
       return false;
   }
+#endif
   return true; // iright>ileft+1; // should be at least 3 elements
 };
 
@@ -960,9 +966,9 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::intersect
   strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) { // indexed & strided
     auto limited = shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>() );
-    I first = strided->first_index(), last = strided->last_index();
+    auto first = strided->first_index(), last = strided->last_index();
     for (auto v : indices)
-      if (v>=first && v<=last)
+      if (first<=v && v<=last)
     	limited = limited->add_element(v);
     return limited;
   }
@@ -1109,7 +1115,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::relativize_to
    */
   strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) {
-    I shift = strided->first_index();
+    auto shift = strided->first_index();
     return shared_ptr<indexstruct<I,d>>{ this->translate_by( -shift ) };
   }
 
@@ -1239,7 +1245,7 @@ coordinate<I,d> composite_indexstruct<I,d>::first_index() const {
   //   throw(std::string("Can not get first from empty composite"));
   // I f = structs.at(0)->first_index();
   // for (auto s : structs)
-  //   f = MIN(f,s->first_index());
+  //   f = coordmin<I,d>(f,s->first_index());
   // return f;
 };
 
@@ -1271,12 +1277,13 @@ coordinate<I,d> composite_indexstruct<I,d>::get_ith_element( const I i ) const {
     throw(fmt::format("Requested index {} out of bounds for {}",i,as_string()));
   if (structs.size()==1)
     return structs.at(0)->get_ith_element(i);
-  I ilocal = i, start_check;
+  I ilocal = i;
+  coordinate<I,d> start_check;
   for ( auto s : structs ) {
     if (ilocal==i)
       start_check = s->first_index();
     else {
-      I sf = s->first_index();
+      auto sf = s->first_index();
       if (sf<start_check)
 	print("WARNING composite not in increasing order: {}\n",as_string());
       start_check = sf;
@@ -1355,9 +1362,8 @@ bool composite_indexstruct<I,d>::contains_element( coordinate<I,d> idx ) const {
 
 template<typename I,int d>
 I composite_indexstruct<I,d>::find( coordinate<I,d> idx ) const {
-  I
-    first = structs[0]->first_index(),
-    accumulate = 0;
+  auto first = structs[0]->first_index();
+  I accumulate{0};
   for ( auto s : structs ) {
     if (s->first_index()<first)
       throw(fmt::format("Composite not sorted: {}",as_string()));
@@ -1367,7 +1373,7 @@ I composite_indexstruct<I,d>::find( coordinate<I,d> idx ) const {
     } else
       accumulate += s->volume();
   }
-  throw(format("Could not find {} in <<{}>>",idx,as_string()));
+  throw(format("Could not find {} in <<{}>>",idx[0],as_string()));
 };
 
 //! Disjointness test for composite. \todo bunch of unimplemented cases
@@ -1455,7 +1461,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::struct_union
   // merge in: weed out both existing members and the new contribution
   {
     auto composite = shared_ptr<composite_indexstruct>( make_shared<composite_indexstruct<I,d>>() );
-    //print("  weeding out and adding\n");
+    //print("  weeding out and add_ing\n");
     for (auto s : structs) {
       auto new_s = s->minus(idx);
       if (new_s->is_empty())
@@ -1639,7 +1645,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::force_simplify() const 
 	auto istruct = structs.at(is);
 	if (istruct->is_strided() && istruct->stride()>1) {
 	  // try to find a mergeable i
-	  I first=istruct->first_index(),last = istruct->last_index();
+	  auto first=istruct->first_index(),last = istruct->last_index();
 	  int canj = -1;
 	  for (int js=0; js<structs.size(); js++) {
 	    // try to find a j that can incorporate
@@ -1657,7 +1663,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::force_simplify() const 
       }
       if (cani>=0) { // merge set i into all others
 	auto istruct = structs.at(cani);
-	I first=istruct->first_index(),last = istruct->last_index();
+	auto first=istruct->first_index(),last = istruct->last_index();
 	bool left{true};
 	auto composite = shared_ptr<composite_indexstruct>( make_shared<composite_indexstruct<I,d>>() );
 	for (int js=0; js<structs.size(); js++) { // loop over all others
@@ -1887,6 +1893,14 @@ I ioperator<I,d>::operate( I i ) const {
 };
 
 template<typename I,int d>
+coordinate<I,d> ioperator<I,d>::operate( coordinate<I,d> c ) const {
+  auto r(c);
+  for ( auto& e : c.data() )
+    e = operate(e);
+  return r;
+};
+
+template<typename I,int d>
 std::string ioperator<I,d>::as_string() const {
   if (is_none_op())
     return std::string("Id");
@@ -1988,26 +2002,29 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
   if (op.is_none_op()) {
     return this->make_clone();
   } else if (op.is_shift_to()) {
-    I amt = op.amount()-first;
-    ioperator shift = shift_operator<I,d>(amt);
-    operated = this->operate(shift);
+    throw("shift to not implemented");
+    // I amt = op.amount()-first;
+    // ioperator shift = shift_operator<I,d>(amt);
+    // operated = this->operate(shift);
   } else if (op.is_shift_op()) {
-    I f = op.operate(first_index()),
+    auto
+      f = op.operate(first_index()),
       l = f+(last_index()-first_index());
     if (stride()==1)
       operated = shared_ptr<indexstruct<I,d>>{ make_shared<contiguous_indexstruct<I,d>>(f,l) };
     else
       operated = shared_ptr<indexstruct<I,d>>{ make_shared<strided_indexstruct<I,d>>(f,l,stride()) };
   } else if (op.is_mult_op() || op.is_div_op() || op.is_contdiv_op()) {
-    I
+    coordinate<I,d>
       new_first  = op.operate(first_index()),
-      new_last, new_stride;
+      new_last;
+    I new_stride;
     if (op.is_base_op())
       new_stride  = stride();
     else
       new_stride = MAX(1,op.operate(stride()));
     if (op.is_contdiv_op())
-      new_last = MAX( new_first, op.operate(last_index()+stride())-new_stride );
+      new_last = coordmax<I,d>( new_first, op.operate(last_index()+stride())-new_stride );
     else if (op.is_base_op())
       new_last = op.operate(last_index()+1)-1;
     else
@@ -2038,26 +2055,27 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
   if (op.is_none_op()) {
     return this->make_clone();
   } else if (op.is_shift_to()) {
-    I amt = op.amount()-first;
-    auto shift = shift_operator<I,d>(amt);
-    operated = this->operate(shift);
+    throw("shift to not implemented");
+    // I amt = op.amount()-first;
+    // auto shift = shift_operator<I,d>(amt);
+    // operated = this->operate(shift);
   } else if (op.is_shift_op()) {
-    int f = op.operate(first_index()),
+    auto f = op.operate(first_index()),
       l = f+(last_index()-first_index());
     if (stride()==1)
       operated = shared_ptr<indexstruct<I,d>>{ make_shared<contiguous_indexstruct<I,d>>(f,l) };
     else
       operated = shared_ptr<indexstruct<I,d>>{ make_shared<strided_indexstruct<I,d>>(f,l,stride()) };
   } else if (op.is_mult_op() || op.is_div_op() || op.is_contdiv_op()) {
-    int
+    coordinate<I,d>
       new_first  = op.operate(first_index()),
-      new_last, new_stride;
+      new_last; I new_stride;
     if (op.is_base_op())
       new_stride  = stride();
     else
       new_stride = MAX(1,op.operate(stride()));
     if (op.is_contdiv_op())
-      new_last = MAX( new_first, op.operate(last_index()+stride())-new_stride );
+      new_last = coordmax<I,d>( new_first, op.operate(last_index()+stride())-new_stride );
     else if (op.is_base_op())
       new_last = op.operate(last_index()+1)-1;
     else
@@ -2095,9 +2113,10 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const sigma_oper
   } else {
     auto rstruct = shared_ptr<indexstruct<I,d>>{ make_shared<empty_indexstruct<I,d>>() };
     //for ( auto i : *this ) {
-    for ( auto i=first_index(); i<=last_index(); i+=stride() ) {
-      rstruct = rstruct->struct_union( op.operate(i) );
-    }
+    throw( "operate on strided");
+    // for ( auto i=first_index(); i<=last_index(); i+=stride() ) {
+    //   rstruct = rstruct->struct_union( op.operate(i) );
+    // }
     return rstruct;
   }
 };
@@ -2150,14 +2169,15 @@ shared_ptr<indexstruct<I,d>> sigma_operator<I,d>::operate( shared_ptr<indexstruc
     };
   } else if (lambda_p) {
     return shared_ptr<indexstruct<I,d>>
-      {make_shared<contiguous_indexstruct<I,d>
-		   >( point_func.operate(i->first_index()),point_func.operate(i->last_index()) )};
+      { make_shared<contiguous_indexstruct<I,d>>
+	( point_func.operate(i->first_index()),
+	  point_func.operate(i->last_index()) ) };
   } else if (lambda_i) {
     //print("sigma by point operator is dangerous\n");
     return shared_ptr<indexstruct<I,d>>
-      ( make_shared<contiguous_indexstruct<I,d>
-	>( func(i->first_index())->first_index(),
-	  func(i->last_index())->last_index() ) );
+      { make_shared<contiguous_indexstruct<I,d>>
+	( func(i->first_index())->first_index(),
+	  func(i->last_index())->last_index() ) };
   } else {
     throw(std::string("sigma::operate(struct) weird case"));
   }
@@ -2173,1526 +2193,6 @@ std::string sigma_operator<I,d>::as_string() const {
 };
 
 
-
-#if 0
-/****
- **** Multi indexstructs
- ****/
-
-//! Constructor, just specifying the dimensionality. Components are set later.
-template<typename I,int d>
-multi_indexstruct<I,d>::multi_indexstruct( int d ) {
-  if (d<=0)
-    throw(fmt::format("multi indexstruct dimension {} s/b >=1",d));
-  dim = d;
-  for (int dm=0; dm<d; dm++)
-    components.push_back( shared_ptr<indexstruct<I,d>>( make_shared<empty_indexstruct<I,d>>() ) );
-  stored_local_size = domain_coordinate(d);
-};
-
-//! Constructor from coordinate: make structures in each dimension
-template<typename I,int d>
-multi_indexstruct<I,d>::multi_indexstruct( domain_coordinate c )
-  : multi_indexstruct(c.get_dimensionality()) {
-  int dim = c.get_dimensionality();
-  stored_local_size = domain_coordinate_allones(c.get_dimensionality());
-  for (int id=0; id<dim; id++)
-    set_component(id,shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(c[id])) );
-};
-
-template<typename I,int d>
-multi_indexstruct<I,d>::multi_indexstruct( domain_coordinate f,domain_coordinate l )
-  : multi_indexstruct(f.get_dimensionality()) {
-  int dim = f.get_same_dimensionality(l.get_dimensionality());
-  stored_local_size = l-f+domain_coordinate_allones(dim);
-  for (int id=0; id<dim; id++)
-    set_component(id,shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(f[id],l[id]) ));
-};
-
-//! Constructor by wrapping up a single \ref indexstruct as the only dimension
-template<typename I,int d>
-multi_indexstruct<I,d>::multi_indexstruct( shared_ptr<indexstruct<I,d>> d1struct )
-  : multi_indexstruct(1) {
-  set_component(0,d1struct);
-};
-
-//! Constructor from individual \ref indexstruct objects. \todo should we clone?
-template<typename I,int d>
-multi_indexstruct<I,d>::multi_indexstruct( std::vector< shared_ptr<indexstruct<I,d>> > structs )
-  : multi_indexstruct(structs.size()) {
-  for ( int is=0; is<structs.size(); is++ ) {
-    set_component(is,structs.at(is));
-  }
-};
-
-template<typename I,int d>
-multi_indexstruct<I,d>::multi_indexstruct( std::vector<I> sizes )
-  : multi_indexstruct( domain_coordinate_zero(sizes.size()),
-		       domain_coordinate(sizes)-1 ) {
-};
-
-/*!
-  A multi-indexstruct is known if all its coordinates are known
-  \todo it's kinda suspicious for only one component to be unknown, right?
-*/
-template<typename I,int d>
-bool multi_indexstruct<I,d>::is_known() const {
-  int d = get_dimensionality();
-  for (int id=0; id<d; id++)
-    if ( !get_component(id)->is_known() )
-      return false;
-  return true;
-};
-
-template<typename I,int d>
-int multi_indexstruct<I,d>::type_as_int() const {
-  int type{-1};
-  int d = get_dimensionality();
-  for (int id=0; id<d; id++) {
-    if (type<0)
-      type = get_component(id)->type_as_int();
-    else
-      if (type!=get_component(id)->type_as_int())
-	throw(format("Can not deduce single type for multi indexstruct"));
-  }
-  return type;
-};
-
-/*!
-  A multi-indexstruct is strided if all its coordinates are strided
-  \todo it's kinda suspicious for only one component to be unstrided, right?
-*/
-template<typename I,int d>
-bool multi_indexstruct<I,d>::is_strided() const {
-  int d = get_dimensionality();
-  for (int id=0; id<d; id++)
-    if ( !get_component(id)->is_strided() )
-      return false;
-  return true;
-};
-
-/*!
-  Deep copy of a multi_indexstruct;
-  we copy both the immediate content and the multi pointers
-*/
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::make_clone() const {
-  int dim = get_dimensionality();
-  auto cstruct = make_shared<multi_indexstruct<I,d>>(dim) ;
-  if (is_multi()) {
-    for ( auto m : multi ) {
-      cstruct->multi.push_back(m->make_clone());
-    }
-  } else {
-    for (int id=0; id<dim; id++) {
-      shared_ptr<indexstruct<I,d>> idx = get_component(id), nidx;
-      if (idx==nullptr)
-	nidx = idx;
-      else
-	nidx = idx->make_clone();
-      cstruct->set_component( id,nidx );
-    }
-  }
-  return cstruct;
-};
-
-//! Return dimensionality, but has to be same as someone else's.
-template<typename I,int d>
-int multi_indexstruct<I,d>::get_same_dimensionality(int d) const {
-  int dim = get_dimensionality();
-  if (dim!=d)
-    throw(fmt::format("Multi idx dimensionality mismatch {} vs {}\n",dim,d));
-  return dim;
-};
-
-/*!
-  Set the indexstruct as component. This does not make a copy: that 
-  is for instance done in the copy constructor.
-*/
-template<typename I,int d>
-void multi_indexstruct<I,d>::set_component( int d, shared_ptr<indexstruct<I,d>> cmp ) {
-  if (multi.size()>0)
-    throw(fmt::format("set_component multi {}+{} needs multi",
-    		      multi.at(0)->as_string(),multi.at(1)->as_string()));
-  if (d<0 || d>=dim)
-    throw(fmt::format("Component dimension index {} out of bounds 0--{}",d,dim));
-  components.at(d) = cmp;
-  if (cmp->is_known())
-    stored_local_size.set(d,cmp->volume());
-  set_needs_recomputing();
-};
-
-template<typename I,int d>
-shared_ptr<indexstruct<I,d>> multi_indexstruct<I,d>::get_component(int d) const {
-  if (multi.size()>0) {
-    throw(fmt::format("unimplemented get_component in {}",as_string()));
-  }
-  if (d<0 || d>=dim)
-    throw(fmt::format("Component dimension index {} out of bounds 0--{}",d,dim));
-  return components.at(d);
-};
-
-//! Compute volume; return stored volume if available.
-template<typename I,int d>
-I multi_indexstruct<I,d>::volume() const {
-  if (multi.size()>0) {
-    return enclosing_structure_r().volume();
-  }
-  if (stored_volume<0) {
-    I s = 1;
-    try {
-      for ( auto c : components ) {
-	auto ss = c->volume();
-	//print("component {} size {}\n",c->as_string(),ss);
-	s *= ss;
-      }
-      //print("computed volume {} : {}\n",as_string(),s);
-    } catch (std::string c) { throw(fmt::format("Error <<{}>> computing volume",c)); };
-    stored_volume = s;
-  }
-  return stored_volume;
-};
-
-//! Return a vector of local sizes \todo can we do this and the next bunch without a star?
-template<typename I,int d>
-const domain_coordinate &multi_indexstruct<I,d>::volume_r() const {
-  if (multi.size()>0) throw(std::string("local_size_r needs multi"));
-  return stored_local_size;
-};
-
-/*! Return a vector of first indices
-  We memoize it as a st::share_ptr, hoping that regeneration will make it deallocate.
-  However, we return a naked pointer to the calling environment, hoping that will
-  not make a copy or otherwise remember it.
-*/
-template<typename I,int d>
-const domain_coordinate &multi_indexstruct<I,d>::first_index_r() const {
-  if (stored_first_index==nullptr) {
-    //    compute_first_index();
-    if (multi.size()==0) {
-      //auto idx =
-      stored_first_index =
-	make_shared<domain_coordinate>( get_dimensionality() ) ;
-      int id=0;
-      for ( auto c : components )
-	stored_first_index->set( id++,c->first_index() );
-    } else {
-      stored_first_index = 
-	shared_ptr<domain_coordinate>
-	( make_shared<domain_coordinate>( multi.at(0)->first_index_r() ) );
-      for ( auto m : multi )
-	stored_first_index->min_with( m->first_index_r() );
-    }
-  }
-  return *stored_first_index;
-};
-
-/*! Return a vector of last indices
-  We memoize it as a st::share_ptr, hoping that regeneration will make it deallocate.
-  However, we return a naked pointer to the calling environment, hoping that will
-  not make a copy or otherwise remember it.
-*/
-template<typename I,int d>
-const domain_coordinate &multi_indexstruct<I,d><I,d>::last_index_r() const {
-  if (stored_last_index==nullptr) {
-    //    compute_last_index();
-    if (multi.size()==0) {
-      //auto idx =
-      stored_last_index =
-	shared_ptr<domain_coordinate>( make_shared<domain_coordinate>( get_dimensionality() ) );
-      int id=0;
-      for ( auto c : components )
-	stored_last_index->set( id++,c->last_index() );
-    } else {
-      stored_last_index =
-	shared_ptr<domain_coordinate>{
-				      make_shared<domain_coordinate>( multi.at(0)->last_index_r() ) };
-      //    print("multi last starts as {}\n",stored_last_index->as_string());
-      for ( auto m : multi ) {
-	stored_last_index->max_with( m->last_index_r() );
-	// print("multi extended by {} to {}\n",
-	// 		 m->last_index()->as_string(),stored_last_index->as_string());
-      }
-    }
-  }
-  return *stored_last_index;
-};
-
-template<typename I,int d>
-std::vector<domain_coordinate> multi_indexstruct<I,d><I,d>::get_corners() const {
-  int dim = get_dimensionality();
-  std::vector<domain_coordinate> corners;
-  { auto corner = first_index_r(); corners.push_back(corner); }
-  for (int nd=0; nd<dim-1; nd++) {
-    {
-    // set nd first dimensions to max
-      auto corner = domain_coordinate(first_index_r());
-      for (int id=0; id<=nd; id++)
-	corner.set( id, last_index_r().coord(id) );
-      corners.push_back(corner);
-    }
-    {
-    // set nd lat dimensions to max
-      auto corner = domain_coordinate(first_index_r());
-      for (int id=0; id<=nd; id++)
-	corner.set( dim-1-id,  last_index_r().coord(dim-1-id) );
-      corners.push_back(corner);
-    }
-  }
-  { auto corner = last_index_r(); corners.push_back(corner); }
-  return corners;
-};
-
-template<typename I,int d>
-const multi_indexstruct &multi_indexstruct<I,d>::enclosing_structure_r() const {
-  if (stored_enclosing_structure==nullptr)
-    stored_enclosing_structure =
-      shared_ptr<multi_indexstruct>
-      ( make_shared<contiguous_multi_indexstruct<I,d>>( first_index_r(),last_index_r() ) );
-  return *(stored_enclosing_structure.get());
-};
-
-template<typename I,int d>
-const shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::enclosing_structure() const {
-  if (stored_enclosing_structure==nullptr)
-    stored_enclosing_structure =
-      shared_ptr<multi_indexstruct>
-      ( make_shared<contiguous_multi_indexstruct<I,d>>( first_index_r(),last_index_r() ) );
-  return stored_enclosing_structure;
-};
-
-/*!
-  Return a vector of strides. If not every dimension is strided, constructing
-  this will throw an exception.
-*/
-template<typename I,int d>
-domain_coordinate *multi_indexstruct<I,d>::stride() const {
-  int dim = get_dimensionality();
-  domain_coordinate *strid = new domain_coordinate<I,d>(dim);
-  for (int id=0; id<dim; id++)
-    strid->set(id,get_component(id)->stride());
-  return strid;
-};
-
-//! A multi-dimensional indexstruct is empty if at least one dimension is empty
-template<typename I,int d>
-bool multi_indexstruct<I,d>::is_empty() const {
-  int count = 0;
-  if (multi_size()>0) {
-    for ( auto s : multi )
-      count += s->is_empty();
-  } else {
-    for ( auto c : components )
-      count += c->is_empty();
-  }
-  return count>0;
-};
-
-template<typename I,int d>
-bool multi_indexstruct<I,d>::is_contiguous() const { bool is=1;
-  for (int id=0; id<get_dimensionality(); id++)
-    is = is && get_component(id)->is_contiguous();
-  return is;
-};
-
-template<typename I,int d>
-std::string multi_indexstruct<I,d>::type_as_string() const {
-  if (is_contiguous())
-    return std::string("contiguous");
-  else if (get_dimensionality()==0)
-    return std::string("zero-dimensional");
-  else
-    return fmt::format("(not implemented, maybe {})",components.at(0)->type_as_string());
-};
-
-/*!
-  Give the coordinate of a structure within this one.
-template<typename I,int d>
-  Containment testing is inherited from indexstruct<I,d>::location_of.
-
-  \todo why the hell do we still have a naked pointer here?
-*/
-template<typename I,int d>
-domain_coordinate *multi_indexstruct<I,d>::location_of
-    ( shared_ptr<multi_indexstruct> inner ) const {
-  int dim = get_same_dimensionality( inner->get_dimensionality() );
-  auto loc = new domain_coordinate<I,d>(dim);
-  for (int id=0; id<dim; id++) {
-    I iloc = this->get_component(id)->location_of( inner->get_component(id) );
-    loc->set( id,iloc);
-  }
-  return loc;
-};
-
-/*! Where is this indexstruct located in a surrounding one?
-  \todo the simplification should be done outside
-*/
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::relativize_to
-    ( shared_ptr<multi_indexstruct> other ) {
-  auto simple = force_simplify();
-  auto somple = other->force_simplify();
-
-  int dim = get_same_dimensionality( other->get_dimensionality() );
-  auto rstruct = make_shared<multi_indexstruct<I,d>>(dim) ;
-  for (int id=0; id<dim; id++) {
-    try { rstruct->set_component
-	( id,simple->get_component(id)->relativize_to( somple->get_component(id) ) );
-    } catch (std::string c) { print("Error <<{}>> in component {}\n",c,id);
-      throw(fmt::format("Could not relativize multi_indexstruct {} to {}",
-			this->as_string(),other->as_string()));
-    }
-  }
-  return rstruct;
-};
-
-/*!
-  Find the linear location of a structure in this one.
-  We don't do any testing on proper containment.
-  \todo probably lose this in favour of the next
-*/
-template<typename I,int d>
-I multi_indexstruct<I,d>::linear_location_of( shared_ptr<multi_indexstruct> idx ) const {
-  return idx->first_index_r().linear_location_in( this->first_index_r(),this->last_index_r() );
-};
-
-template<typename I,int d>
-I multi_indexstruct<I,d>::linear_location_in( shared_ptr<multi_indexstruct> idx ) const {
-  auto find = first_index_r(),
-    first = idx->first_index_r(), last = idx->last_index_r();
-  I s = find.linear_location_in(first,last);
-  return s;
-};
-
-template<typename I,int d>
-I multi_indexstruct<I,d>::linear_location_in( const multi_indexstruct &idx ) const {
-  auto find = first_index_r(),
-    first = idx.first_index_r(), last = idx.last_index_r();
-  I s = find.linear_location_in(first,last);
-  return s;
-};
-
-template<typename I,int d>
-domain_coordinate multi_indexstruct<I,d>::linear_offsets(shared_ptr<multi_indexstruct> inner) const {
-  int dim = get_same_dimensionality(inner->get_dimensionality());
-  domain_coordinate offsets(dim),
-    ofirst = this ->first_index_r(), osize = this ->local_size_r(), 
-    ifirst = inner->first_index_r(), isize = inner->local_size_r();
-  return offsets;				    
-};
-
-/*! Operate the same operator on every dimension of a multi_indexstruct.
-  There is a mechanism for limiting on what dimensions we operate.
-  \todo write a unitttest for this
-*/
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::operate( const ioperator<I,d>& op ) const {
-  int dim = get_dimensionality();
-  auto rstruct = make_shared<multi_indexstruct<I,d>>(dim) ;
-  for (int id=0; id<dim; id++) {
-    rstruct->set_component( id,get_component(id)->operate(op) );
-  }
-  return rstruct->force_simplify();
-};
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::operate( const ioperator<I,d>&& op ) const {
-  int dim = get_dimensionality();
-  auto rstruct = make_shared<multi_indexstruct<I,d>>(dim) ;
-  for (int id=0; id<dim; id++) {
-    rstruct->set_component( id,get_component(id)->operate(op) );
-  }
-  return rstruct->force_simplify();
-};
-
-template<typename I,int d>
-/*! Same as \ref multi_indexstruct<I,d>::operate but with truncation of the result.
-  Treatment of the dimension is weird. Make dimension explicit
-
-  \todo Treatment of the dimension is weird. Make dimension explicit
-*/
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::operate
-    ( const ioperator<I,d>& op,shared_ptr<multi_indexstruct> truncation ) const {
-  return operate(op,*(truncation.get())); };
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::operate
-    ( const ioperator<I,d>& op,const multi_indexstruct &truncation ) const {
-  int dim = get_dimensionality(),opdim = op.get_dimension();
-  auto rstruct = make_shared<multi_indexstruct<I,d>>(dim) ;
-  for (int id=0; id<dim; id++)
-    rstruct->set_component
-      ( id,get_component(id)->operate(op,truncation.get_component(id)) );
-  return rstruct->force_simplify();
-};
-
-//! That looks like a dangerous use of get() on the operator!!
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::operate
-    ( multi_ioperator *op,shared_ptr<multi_indexstruct> truncation ) const {
-  return operate(op,*(truncation.get()));
-};
-
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::operate
-    ( multi_ioperator *op,const multi_indexstruct &truncation ) const {
-  int dim = get_same_dimensionality(op->get_dimensionality());
-  auto rstruct = make_shared<multi_indexstruct<I,d>>(dim) ;
-  for (int id=0; id<dim; id++)
-    rstruct->set_component
-      ( id,get_component(id)
-	->operate(op->get_operator(id),truncation.get_component(id)));
-  return rstruct->force_simplify();
-};
-
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::operate( multi_ioperator *op ) const {
-  int dim = op->get_dimensionality(), sim = get_dimensionality();
-  if (dim>sim)
-    throw(fmt::format("Operator dimensionality {} greater than struct: {}",dim,sim));
-  auto s = make_shared<multi_indexstruct<I,d>>(sim) ;
-  for (int id=0; id<dim; id++)
-    s->set_component(id, get_component(id)->operate( op->get_operator(id) ) );
-  for (int id=dim+1; id<sim; id++)
-    s->set_component(id, get_component(id)->make_clone() );
-  return s->force_simplify();
-};
-
-//! \todo this is a synonym of multi_sigma_operator::operate : lose this.
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::operate( const multi_sigma_operator<I,d>& op ) const {
-  return op.operate(this->shared_from_this())->force_simplify();
-};
-
-//! Translating is an operation in place.
-template<typename I,int d>
-void multi_indexstruct<I,d>::translate_by(int d,I amt) {
-  get_component(d)->translate_by(amt); set_needs_recomputing();
-};
-
-/*!
-  Two base cases: both structs are non-multi, or the second one is non-multi.
- */
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::struct_union
-    (shared_ptr<multi_indexstruct> other) {
-  int dim = get_same_dimensionality(other->get_dimensionality());
-
-  // empty cases
-  if (is_empty()) {
-    return other->make_clone();
-  } else if (other->is_empty()) {
-    return make_clone();
-  } else if (other->is_multi() && !this->is_multi()) {
-    // if any, the other is not multi
-    return other->struct_union(this->shared_from_this());
-  } else if (contains(other)) {
-    // containment
-    return make_clone();
-  }
-
-  // two multis then gradually merge the whole thing together
-  if (other->is_multi() && this->is_multi()) {
-    auto un = shared_ptr<multi_indexstruct>( make_shared<empty_multi_indexstruct<I,d>>(dim) );
-    for ( auto o : multi )
-      un = un->struct_union(o);
-    for ( auto o : other->multi )
-      un = un->struct_union(o);
-    return un;
-  }
-
-  //print("Union {} & {}\n", this->as_string(),other->as_string());
-  {
-    int diff = -1; shared_ptr<multi_indexstruct> un;
-    un = shared_ptr<multi_indexstruct>( make_shared<empty_multi_indexstruct<I,d>>(dim) );
-    // first store yourself
-    if (!is_multi()) {
-      un->multi.push_back(make_clone());
-    } else {
-      for ( auto m : multi )  {
-	auto uni =  m->make_clone(); un->multi.push_back(uni);
-      }
-    }
-    // then store the other
-    if ( !other->is_multi() ) {
-      un->multi.push_back(other->make_clone());
-    } else {
-      for ( auto o : other->multi ) {
-	un->multi.push_back( o->make_clone() );
-      }
-    }
-    return un->force_simplify(); // can we detect mergability earlier? e.g. in 1D?
-  }
-};
-
-/*!
-  Test whether the `other' argument can be merged into `this'. If so, return 
-  the dimension.
-*/
-template<typename I,int d>
-bool multi_indexstruct<I,d>::can_union_in_place
-    (shared_ptr<multi_indexstruct> other,int &diff) const {
-  diff = -1;
-  if (is_multi() || other->is_multi())
-    return false;
-
-  // try to make an actual union
-  for (int d=0; d<get_same_dimensionality( other->get_dimensionality() ); d++) {
-    // find dimensions that don't fit
-    if ( !get_component(d)->equals( other->get_component(d) ) ) {
-      if (diff>=0) {
-	// if we already found a differing dimension, we have to make a multi
-	return false;
-      } else // record the differing dimension
-	diff = d;
-    }
-  }
-  return true;
-};
-
-/*!
-  The `other' struct can be merged along dimension `diff', so yield a 
-  expanded struct with the other struct merged in.
-*/
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::struct_union_in_place
-    (shared_ptr<multi_indexstruct> other,int diff) {
-  int dim = get_same_dimensionality(other->get_dimensionality());
-  if (other->is_multi())
-    throw(std::string("Argument of union in place should not be multi"));
-  auto un = shared_ptr<multi_indexstruct>( make_shared<empty_multi_indexstruct<I,d>>(dim) );
-  for (int d=0; d<dim; d++) {
-    if (d!=diff)
-      un->set_component( d,get_component(d)->make_clone() );
-    else {
-      auto d1 = get_component(d), d2 = other->get_component(d);
-      try {
-	auto new_un = d1->struct_union(d2);
-	un->set_component( d,new_un );
-      } catch (std::string c) {
-	throw(fmt::format("struct union in place, dim {}: {} & {} : {}",
-			  d,d1->as_string(),d2->as_string(),c));
-      }
-    }
-  }
-  return un;
-};
-
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::split_along_dim
-    (int splitdim,shared_ptr<indexstruct<I,d>> induce) const {
-  int dim = get_dimensionality();
-  if (splitdim<0 || splitdim>=dim)
-    throw(fmt::format("invalid dim={} for {}",splitdim,as_string()));
-  //print("Split {} on dim {} along {}\n",this->as_string(),dim,induce->as_string());
-  auto res = shared_ptr<multi_indexstruct>( make_shared<empty_multi_indexstruct<I,d>>(dim) );
-  if (is_multi()) {
-    for ( auto m : multi ) {
-      auto msplit = m->split_along_dim(splitdim,induce);
-      //print("split component to be unioned: {}\n",msplit->as_string());
-      if (msplit->is_multi()) {
-	for ( auto split_comp : msplit->multi )
-	  res->multi.push_back(split_comp);
-      } else
-	res->multi.push_back(msplit);
-      //res = res->struct_union(msplit);
-    }
-  } else {
-    auto cmp = get_component(splitdim)->split(induce);
-    composite_indexstruct<I,d>* comp = dynamic_cast<composite_indexstruct<I,d>*>( cmp.get() );
-    if (comp==nullptr)
-      throw(fmt::format("could not upcast supposed composite (split along dim)"));
-    for ( auto c : comp->get_structs() ) {
-      auto s = make_shared<multi_indexstruct<I,d>>(dim) ;
-      for (int id=0; id<dim; id++) {
-	if (id==splitdim)
-	  s->set_component( id,c );
-	else
-	  s->set_component( id,get_component(id) );
-      }
-      res->multi.push_back(s); // = res->struct_union(s);
-    }
-  }
-  return res;
-};
-
-/*!
-  This function tries to simplify a union.
-  There are still cases being missed, mostly non-orthogonal ones, such as
-   ____
-  |_   |
-  | |__|
-  |____|
-  Hm. Can this really exist?
-*/
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::force_simplify(bool trace) const {
-  try {
-    if (is_multi()) {
-      if (trace) print("Simplifying multi: {}\n",this->as_string());
-      if (multi_size()==1) {
-	if (trace)
-	  print("Returning unique member {}\n",multi.at(0)->as_string());
-	return multi.at(0);
-      } else {
-	auto rstruct = shared_ptr<multi_indexstruct>( make_shared<empty_multi_indexstruct<I,d>>(dim) );
-	multi_indexstruct cstruct(*this);
-	bool merged{false};
-	// go through components, merging
-	for (int im=0; im<multi_size(); im++) {
-	  bool can{false}; int diff = -1;
-	  // see if it can be merged with a previous
-	  for (int jm=0 ;jm<im; jm++) { // if can union with previous, then was already
-	    can = cstruct.multi.at(im)->can_union_in_place(cstruct.multi.at(jm),diff);
-	    if (can) {
-	      if (trace)
-		print("multi {} can be merged back with {}\n",
-		      cstruct.multi.at(im)->as_string(),cstruct.multi.at(jm)->as_string());
-	      try {
-		cstruct.multi.at(jm) =
-		  cstruct.multi.at(jm)->struct_union_in_place(cstruct.multi.at(im),diff);
-	      } catch (std::string c) { print("Error: {}",c);
-		throw(fmt::format("Union in place1 failed {} & {}",
-				  cstruct.multi.at(jm)->as_string(),
-				  cstruct.multi.at(im)->as_string()));
-	      }
-	      break;
-	    }
-	  }
-	  if (!can) {
-	    // can not be merged with previous, so merge with future and push.
-	    auto imstruct = cstruct.multi.at(im)->make_clone();
-	    if (trace)
-	      print("multi {} is new\n",imstruct->as_string());
-	    for (int jm=im+1; jm<multi.size(); jm++) {
-	      auto jmstruct = cstruct.multi.at(jm);
-	      if (imstruct->can_union_in_place(jmstruct,diff)) {
-		if (trace) print(".. merging along dim {}: {} & {}\n",diff,im,jm);
-		try {
-		  imstruct = imstruct->struct_union_in_place(jmstruct,diff);
-		} catch (std::string c) { print("Error: {}",c);
-		  throw(fmt::format("Union in place2 {} & {}",
-				    imstruct->as_string(),jmstruct->as_string()));
-		}
-		if (trace) print(".. merging into {}, giving {}\n",
-				 jmstruct->as_string(),imstruct->as_string());
-		merged = true;
-	      }
-	    }
-	    if (trace) print(".. pushing {}\n",imstruct->as_string());
-	    rstruct->multi.push_back(imstruct);
-	  }
-	}
-	if (rstruct->multi_size()==1) {
-	  if (trace)
-	    print("Returning unique member {}\n",rstruct->multi.at(0)->as_string());
-	  return rstruct->multi.at(0);
-	} else {
-	  if (trace) print("simplify non-multi\n");
-	  if (merged) {
-	    if (trace) print("do another pass over {}\n",rstruct->as_string());
-	    rstruct = rstruct->force_simplify();
-	    if (trace) print("giving {}\n",rstruct->as_string());
-	  }
-	  return rstruct;
-	}
-      }
-    } else {
-      //print("Simplifying non-multi: {}\n",as_string());
-      int dim = get_dimensionality();
-      auto rstruct = make_shared<multi_indexstruct<I,d>>(dim) ;
-      for (int id=0; id<dim; id++)
-	rstruct->set_component(id,get_component(id)->force_simplify());
-      //print(".. simplified to: {}\n",rstruct->as_string());
-      return rstruct;
-    }
-  } catch (string e) { print("Error: {}",e);
-    throw("Could not simplify multi_indexstruct");
-  } catch( ... ) {
-    throw("Could not simplify multi_indexstruct");
-  }
-}
-
-/*!
-  A multi-intersection is the simultaneous intersection in all components.
-  \todo add unittest for strided case to 102
-  \todo needs to return shared_ptr
-*/
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::intersect
-    ( shared_ptr<multi_indexstruct> other ) {
-  return intersect( *(other.get()) );
-};
-
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::intersect
-    ( const multi_indexstruct &other ) {
-  int dim = get_same_dimensionality( other.get_dimensionality() );
-
-  if (other.is_empty())
-    return shared_ptr<multi_indexstruct>( make_shared<empty_multi_indexstruct<I,d>>(dim) );
-  if (contains(other))
-    return other.make_clone();
-  if (other.contains(this->shared_from_this()))
-    return this->make_clone();
-  if (first_index_r()>other.last_index_r() || last_index_r()<other.first_index_r() )
-    return shared_ptr<multi_indexstruct>( make_shared<empty_multi_indexstruct<I,d>>(dim) );
-
-  auto rstruct = make_shared<multi_indexstruct<I,d>>(dim) ;
-  for (int id=0; id<dim; id++)
-    rstruct->set_component
-      (id,shared_ptr<indexstruct<I,d>>
-       ( get_component(id)->intersect(other.get_component(id))) );
-  return rstruct;
-};
-
-template<typename I,int d>
-bool multi_indexstruct<I,d>::contains( shared_ptr<multi_indexstruct> other ) const {
-  return contains( *(other.get()) );
-};
-
-//! Multi_indexstruct containment requires all dimensions to contain
-template<typename I,int d>
-bool multi_indexstruct<I,d>::contains( const multi_indexstruct &other ) const {
-  bool trace{false};
-  int dim  = get_same_dimensionality( other.get_dimensionality() );
-  if (trace)
-    print("Testing containment {} > {} ?\n",this->as_string(),other.as_string());
-  if (is_empty())
-    return other.is_empty();
-
-  if (!is_multi()) {
-    if (other.is_multi()) {
-      if (trace)
-	print("   test non-multi {} contains multi {}\n",as_string(),other.as_string());
-      // simple & multi: test if you contain all multis
-      for ( auto o : other.multi ) {
-	if (!contains(o))
-	  return false;
-      } // .... it contains all other multis
-      return true;
-    } else { // both not multi: we use an orthogonal containment test
-      if (trace)
-	print("   test non-multi {} contains non-multi {}\n",as_string(),other.as_string());
-      for (int id=0; id<get_same_dimensionality(other.get_dimensionality()); id++) {
-	if (get_component(id)->contains(other.get_component(id))) {
-	  if (trace) print("   true in component {}\n",id);
-	} else {
-	  if (trace) print("   false because component {}\n",id);
-	  return false; }
-      }
-      if (trace) print("   true\n\n");
-      return true;
-    }
-  } else { // this is_multi
-    if (other.is_multi()) {
-      if (trace) print("   test multi contains multi\n");
-      for ( auto o : other.multi ) { // check all others
-	if (!contains(o))
-	  return false;
-      }
-      return true;
-    } else { // multi, other not
-      if (trace) print("   test multi contains non-multi\n");
-      for ( auto &p : other.get_corners() ) {
-	if (contains_element(p)) {
-	if (trace) print("      test contains corner {}: true\n",p.as_string());
-	} else {
-	if (trace) print("      test contains corner {}: false\n",p.as_string());
-	  return false;
-	}
-      }
-      return true;
-    }
-  }
-};
-
-//! \todo weird clone because of a const problem.
-template<typename I,int d>
-shared_ptr<multi_indexstruct> multi_indexstruct<I,d>::minus
-    ( shared_ptr<multi_indexstruct> idx,bool trace ) const {
-  int dim = get_same_dimensionality( idx->get_dimensionality() );
-
-  fmt::memory_buffer w;
-  if (trace) {
-    format_to(w.end(),"Minus {}-{}",as_string(),idx->as_string());
-    print("{}\n",to_string(w)); }
-
-  // easy cases
-  if (!is_multi() && !idx->is_multi() && idx->contains(make_clone()/*shared_from_this()*/)) {
-    if (trace) print("{} easy case: contain in other\n",to_string(w));
-    return shared_ptr<multi_indexstruct>( make_shared<empty_multi_indexstruct<I,d>>(dim) );
-  }
-  if (!is_multi() && !idx->is_multi()) {
-    if (trace) print("{} easy case: disjoint in some dimension\n",to_string(w));
-    for (int id=0; id<dim; id++) {
-      if (get_component(id)->disjoint(idx->get_component(id))) {
-	if (trace) print(".. {} simple/simple disjoint in dim={}\n",to_string(w),id);
-	return make_clone();
-      }
-    }
-    if (trace) print(".. {} no easy disjoint case\n",to_string(w));
-  }
-
-  if (idx->is_multi()) {
-    if (trace) print("{} Subtract multis from this:\n",to_string(w));
-    auto res = shared_ptr<multi_indexstruct>( make_shared<empty_multi_indexstruct<I,d>>(dim) );
-    for ( auto o : idx->multi ) {
-      auto omin = minus(o); res = res->struct_union(omin);
-      if (trace) print(".. {} subtracted multi: {}\n",to_string(w),omin->as_string());
-    }
-    return res;
-  } else if (is_multi()) {
-    if (trace) print("{} Subtract from multi:\n",to_string(w));
-    auto res = shared_ptr<multi_indexstruct>( make_shared<empty_multi_indexstruct<I,d>>(dim) );
-    for ( auto m : multi ) {
-      auto mm = m->minus(idx); res = res->struct_union(mm);
-      if (trace) print(".. {} subtracted multi: {}\n",to_string(w),mm->as_string());
-    }
-    return res;
-  } else {
-    if (trace) print("{} Subtract non-multi from non-multi:\n",to_string(w));
-    // Case: other contains in all dimensions but one
-    int noncontain = -1;
-    for (int id=0; id<dim; id++) {
-      if (!idx->get_component(id)->contains(get_component(id))) {
-	if (noncontain<0) {
-	  if (trace) print("non-containment in dimension {}\n",id);
-	  noncontain = id;
-	} else { // we have already found one non-containing dimension
-	  if (trace) print("{} needs splitting in dim={}\n",to_string(w),noncontain);
-	  auto s = split_along_dim(noncontain,idx->get_component(noncontain));
-	  if (trace) print("Retry minus with: {}\n",s->as_string());
-	  // s = s->split_along_dim(id,idx->get_component(id));
-	  // if (trace) print("split twice {}\n",s->as_string());
-	  return s->minus(idx);
-	}
-      }
-    }
-    if (noncontain>=0) {
-      auto mn = make_shared<multi_indexstruct<I,d>>(dim) ;
-      for (int id=0; id<dim; id++) {
-	if (id==noncontain)
-	  mn->set_component(id,get_component(id)->minus(idx->get_component(id)));
-	else
-	  mn->set_component(id,get_component(id)->make_clone());
-      }
-      return mn;
-    }
-  }
-  template<typename I,int d>
-  throw(fmt::format("Unimplemented multi_indexstruct<I,d>::minus"));
-}
-
-//! Multi_indexstruct containment requires all dimensions to contain \todo write unit test
-template<typename I,int d>
-bool multi_indexstruct<I,d>::contains_element( const domain_coordinate &i ) const {
-  if (is_multi()) {
-    for ( auto s : multi )
-      if (s->contains_element(i))
-	return true;
-    return false;
-  } else {
-    for (int id=0; id<get_same_dimensionality(i.get_dimensionality()); id++)
-      if ( !(get_component(id)->contains_element(i.coord(id))) )
-	return false;
-    return true;
-  }
-};
-
-//! Multi_indexstruct containment requires all dimensions to contain \todo write unit test
-template<typename I,int d>
-bool multi_indexstruct<I,d>::contains_element( const domain_coordinate &&i ) const {
-  if (is_multi()) {
-    for ( auto s : multi )
-      if (s->contains_element(i))
-	return true;
-    return false;
-  } else {
-    for (int id=0; id<get_same_dimensionality(i.get_dimensionality()); id++)
-      if ( !(get_component(id)->contains_element(i.coord(id))) )
-	return false;
-    return true;
-  }
-};
-
-//! Multi_indexstruct equals requires all dimensions to contain \todo write unit test
-template<typename I,int d>
-bool multi_indexstruct<I,d>::equals( shared_ptr<multi_indexstruct> other ) const {
-  if (is_multi() || other->is_multi()) {
-    throw(std::string("multi multi equals not implemented"));
-  } else {
-    for (int d=0; d<get_dimensionality(); d++)
-      if ( !(get_component(d)->equals(other->get_component(d))) )
-	return false;
-    return true;
-  }
-};
-template<typename I,int d>
-bool multi_indexstruct<I,d>::operator==( const multi_indexstruct &other ) const {
-  if (is_multi() || other.is_multi()) {
-    throw(std::string("multi multi equals not implemented"));
-  } else {
-    for (int d=0; d<get_dimensionality(); d++)
-      if ( !(get_component(d)->equals(other.get_component(d))) )
-	return false;
-    return true;
-  }
-};
-
-//! Find an element expressed in linearized coordinates
-template<typename I,int d>
-I multi_indexstruct<I,d>::linearfind( I i ) {
-  int dim = get_dimensionality();
-  if (dim==1)
-    return get_component(0)->find(i);
-  else throw(std::string("Can not linearfind in multi-d"));
-};
-
-template<typename I,int d>
-std::string multi_indexstruct<I,d>::as_string() const {
-  int dim = get_dimensionality();
-  fmt::memory_buffer w; format_to(w.end(),"Dim={} ",dim);
-  if (multi.size()==0) {
-    for (int id=0; id<dim; id++)
-      format_to(w.end(),"{}:[{}]",id,get_component(id)->as_string());
-  } else {
-    format_to(w.end(),"M{}:",multi.size());
-    for (int im=0; im<multi.size(); im++) {
-      format_to(w.end(),"{}",multi.at(im)->as_string());
-      if (im<multi.size()-1)
-	format_to(w.end(),"+");
-    }
-  }
-  return to_string(w);
-};
-
-/*!
-  We begin iteration by giving the first coordinate.
-  We store the current iterate as a private domain_coordinate: `cur_coord'.
-  Iteration is done C-style: the last coordinate varies quickest.
-
-  Note: iterating is only defined for bricks.
-*/
-template<typename I,int d>
-multi_indexstruct &multi_indexstruct<I,d>::begin() {
-  if (!is_contiguous())
-    throw(fmt::format("Iteration only defined for contiguous"));
-  cur_coord = first_index_r();
-  //print("multi::begin: {}\n",cur_coord.as_string());
-  return *this;
-};
-
-/*!
-  Since we are iterating C-style (row-major),
-  the iteration endpoint is like the first coordinate but with the 
-  zero component increased.
-  In row major this would be the first iterated point that is not in the brick.
-*/
-template<typename I,int d>
-multi_indexstruct &multi_indexstruct<I,d>::end() {
-  cur_coord = domain_coordinate( first_index_r() );
-  cur_coord.set(0,last_index_r()[0]+1);
-  //print("multi::end: {}\n",cur_coord.as_string());
-  return *this;
-};
-
-/*!
-  Here's how to iterate: 
-  - from last to first dimensions, find the dimension where you are not at the far edge
-  - increase the coordinate in that dimension
-  - all higher dimensions are reset to the first coordinate.
-*/
-template<typename I,int d>
-void multi_indexstruct<I,d>::operator++() {
-  int dim = first_index_r().get_dimensionality();
-  for (int id=dim-1; id>=0; id--) {
-    if (cur_coord[id]<last_index_r()[id] || id==0) {
-      cur_coord.set(id,cur_coord.at(id)+1); break;
-    } else
-      cur_coord.set(id,first_index_r()[id]);
-  }
-};
-
-template<typename I,int d>
-bool multi_indexstruct<I,d>::operator!=( multi_indexstruct &other ) {
-  bool
-    f = first_index_r()!=other.first_index_r(),
-    l = last_index_r()!=other.last_index_r(),
-    c = cur_coord!=other.cur_coord; // what does this test?
-  // print("mult:neq {}@{} vs {}@{} : {}, {}, {}\n",
-  // 	     as_string(),cur_coord.as_string(),
-  // 	     other.as_string(),other.cur_coord.as_string(),
-  // 	     f,l,c);
-  return f || l || c;
-};
-
-template<typename I,int d>
-bool multi_indexstruct<I,d>::operator==( multi_indexstruct &other ) {
-  bool
-    f = first_index_r()==other.first_index_r(),
-    l = last_index_r()==other.last_index_r(),
-    c = cur_coord==other.cur_coord;
-  // print("mult:eq {}@{} vs {}@{} : {}, {}, {}\n",
-  // 	     as_string(),cur_coord.as_string(),
-  // 	     other.as_string(),other.cur_coord.as_string(),
-  // 	     f,l,c);
-  return f && l && c;
-};
-
-template<typename I,int d>
-domain_coordinate &multi_indexstruct<I,d>::operator*() {
-  //print("multi::deref: {}\n",cur_coord.as_string());
-  return cur_coord;
-};
-
-void multi_ioperator<I,d>::set_operator(int id,ioperator<I,d>& op) {
-  if (id<0 || id>=get_dimensionality())
-    throw(fmt::format("set component invalid dimension {}: s/b 0--{}",
-		      id,0,get_dimensionality()));
-  operators.at(id) = op;
-};
-void multi_ioperator<I,d>::set_operator(int id,ioperator<I,d>&& op) {
-  if (id<0 || id>=get_dimensionality())
-    throw(fmt::format("set component invalid dimension {}: s/b 0--{}",
-		      id,0,get_dimensionality()));
-  operators.at(id) = op;
-};
-
-/*!
-  Operating on a domain coordinate gives a new domain_coordinate
-  by plain Cartesian product of the operate results in each dimension.
-*/
-domain_coordinate *multi_ioperator<I,d>::operate( domain_coordinate *c ) {
-  int dim = c->get_dimensionality();
-  if (operator_based) {
-    domain_coordinate *idx = new domain_coordinate<I,d>(dim);
-    for (int id=0; id<dim; id++)
-      idx->set(id, get_operator(id).operate(c->coord(id)) );
-    return idx;
-  } else if (point_based) {
-    return pointf(c);
-  } else
-    throw(std::string("What type is this multi_ioperator?"));
-};
-
-/*! A multi operator is modulo if all components are modulo.
-  \todo can we be more clever about the function case?
-*/
-bool multi_ioperator::is_modulo_op() {
-  if (operator_based) {
-    for (int id=0; id<get_dimensionality(); id++)
-      if (!get_operator(id).is_modulo_op())
-	return false;
-    return true;
-  } else return false;
-};
-
-//! A multi operator is shift if all components are shift.
-bool multi_ioperator::is_shift_op() {
-  if (operator_based) {
-    for (int id=0; id<get_dimensionality(); id++)
-      if (!get_operator(id).is_shift_op())
-	return false;
-    return true;
-  } else return false;
-};
-
-//! A multi operator is restrict if all components are restrict.
-bool multi_ioperator::is_restrict_op() {
-  if (operator_based) {
-    for (int id=0; id<get_dimensionality(); id++)
-      if (!get_operator(id).is_restrict_op())
-	return false;
-    return true;
-  } else return false;
-};
-
-/****
- **** Multi sigma
- ****/
-
-//! Constructor from list of sigma operators
-multi_sigma_operator::multi_sigma_operator( vector<sigma_operator> ops )
-  : multi_sigma_operator(ops.size()) {
-  print("setting vector implementation from sigmas\n");
-  operator_implementation = shared_ptr<multi_sigma_operator_implementation>
-    ( make_shared<multi_sigma_operator_impl_vector>(ops) );
-};
-
-multi_sigma_operator::multi_sigma_operator( vector<ioperator> ops )
-  : multi_sigma_operator(ops.size()) {
-  try {
-    operator_implementation = shared_ptr<multi_sigma_operator_implementation>
-      ( make_shared<multi_sigma_operator_impl_vector>(ops) );
-  } catch (string c) {
-    print("Could not create impl_vector: <<{}>>\n",c);
-    throw("Error setting vector implementation from iops");
-  }
-};
-
-multi_sigma_operator_impl_vector::multi_sigma_operator_impl_vector
-    ( std::vector<sigma_operator> ops )
-  : multi_sigma_operator_implementation(ops.size()),operators(ops) {
-};
-
-multi_sigma_operator_impl_vector::
-multi_sigma_operator_impl_vector( vector<ioperator> ops )
-  : multi_sigma_operator_implementation(ops.size()) {
-  int dim = ops.size();
-  for (int id=0; id<dim; id++)
-    operators.push_back(sigma_operator(ops.at(id)));
-};
-
-shared_ptr<multi_indexstruct> multi_sigma_operator_impl_vector::
-operate( const domain_coordinate &point ) const {
-  int dim = get_same_dimensionality(point.get_dimensionality());
-  print("applying operators\n");
-  auto idx = make_shared<multi_indexstruct>(dim) ;
-  for (int id=0; id<dim; id++) { auto op = operators.at(id);
-    try { idx->set_component(id, op.operate(point.coord(id)) );
-    } catch (...) {
-      throw(format("Could not operate <<{}>> set component {}",
-			op.as_string(),id));
-    }
-  }
-  return idx;
-};
-
-shared_ptr<multi_indexstruct> multi_sigma_operator_impl_vector::operate
-    ( const multi_indexstruct &idx ) const {
-  int dim = get_same_dimensionality(idx.get_dimensionality());
-  auto opidx = make_shared<multi_indexstruct>(dim) ;
-    for (int id=0; id<dim; id++) { 
-      auto cpt = idx.get_component(id); auto op = operators.at(id);
-      try {
-	opidx->set_component(id,op.operate(cpt));
-      } catch (std::string c) {
-	print("Error <<{}>> applying <<{}>> in dimension {}",
-		   c,op.as_string(),id,cpt->as_string());
-	throw(fmt::format("Could not appy multi_sigma by operators on <<{}>>",
-			  idx.as_string()));
-      }
-    }
-    return opidx;
-};
-
-//! Constructor from coordinate operator
-multi_sigma_operator::multi_sigma_operator
-    ( int dim, function< domain_coordinate(const domain_coordinate&) > f )
-  : multi_sigma_operator(dim) {
-  operator_implementation = shared_ptr<multi_sigma_operator_implementation>
-    ( make_shared<multi_sigma_operator_impl_coord>(dim,f) );
-};
-
-std::shared_ptr<multi_indexstruct> multi_sigma_operator_impl_coord::operate
-    ( const domain_coordinate &point ) const {
-  int dim = get_same_dimensionality(point.get_dimensionality());
-  print("applying coord\n");
-  try {
-    return std::make_shared<multi_indexstruct>( coord_oper(point) ) ;
-  } catch (std::string c) {
-    throw(fmt::format("Multi sigma op failed on coord: {}",c)); }      
-};
-
-shared_ptr<multi_indexstruct> multi_sigma_operator_impl_coord::operate
-    ( const multi_indexstruct &idx ) const {
-  //print("applying coord\n");
-  if (idx.is_contiguous()) {
-    try {
-      auto
-	ofirst = coord_oper(idx.first_index_r()),
-	olast = coord_oper(idx.last_index_r());
-      return shared_ptr<multi_indexstruct>
-	( make_shared<contiguous_multi_indexstruct>( ofirst,olast ) );
-    } catch (std::string c) {
-      throw(fmt::format("Multi sigma failed by coord on struct {}: {}",idx.as_string(),c)); }
-  } else
-    throw(std::string("Can not point operate on non-contiguous"));
-};
-
-//! Constructor from coordinate-to-struct operator
-multi_sigma_operator::multi_sigma_operator
-    //( int dim,shared_ptr<multi_indexstruct>(*f)(const domain_coordinate&) )
-    ( int dim, function< shared_ptr<multi_indexstruct>(const domain_coordinate&) > f )
-  : multi_sigma_operator(dim) {
-  operator_implementation = shared_ptr<multi_sigma_operator_implementation>
-    ( make_shared<multi_sigma_operator_impl_sigma>(dim,f) );
-};
-
-std::shared_ptr<multi_indexstruct> multi_sigma_operator_impl_sigma::operate
-    ( const domain_coordinate &point ) const {
-  int dim = get_same_dimensionality(point.get_dimensionality());
-  print("applying sigma\n");
-  try { return sigma_oper(point);
-  } catch (std::string c) {
-    throw(fmt::format("Multi sigma op failed sigma based: {}",c)); }
-};
-
-shared_ptr<multi_indexstruct> multi_sigma_operator_impl_sigma::operate
-    ( const multi_indexstruct &idx ) const {
-  try {
-    auto
-      ofirst = sigma_oper( idx.first_index_r() )->first_index_r(),
-      olast = sigma_oper( idx.last_index_r() )->last_index_r();
-    return shared_ptr<multi_indexstruct>
-      ( make_shared<contiguous_multi_indexstruct>( ofirst,olast ) );
-  } catch (std::string c) {
-    throw(fmt::format("Multi sigma failed by sigma on struct {}: {}",idx.as_string(),c)); }
-};
-
-//! Constructor from struct to struct
-multi_sigma_operator::multi_sigma_operator
-    ( int dim,function<shared_ptr<multi_indexstruct>(const multi_indexstruct&) > f )
-    //( int dim,function< shared_ptr<multi_indexstruct>(const multi_indexstruct&) > f )
-  : multi_sigma_operator(dim) {
-  operator_implementation = shared_ptr<multi_sigma_operator_implementation>
-    ( make_shared<multi_sigma_operator_impl_struct>(dim,f) );
-};
-
-std::shared_ptr<multi_indexstruct> multi_sigma_operator_impl_struct::operate
-    ( const domain_coordinate &point ) const {
-  int dim = get_same_dimensionality(point.get_dimensionality());
-  print("applying struct\n");
-  try {
-    auto pointstruct = multi_indexstruct(point);
-    return struct_oper(pointstruct);
-    //return struct_oper( std::shared_ptr<multi_indexstruct>(pointstruct) );
-  } catch (std::string c) {
-    throw(fmt::format("Multi sigma op failed struct based: {}",c)); }      
-};
-
-shared_ptr<multi_indexstruct> multi_sigma_operator_impl_struct::operate
-    ( const multi_indexstruct &idx ) const {
-  try {
-    return struct_oper(idx);
-  } catch (std::string c) {
-    throw(fmt::format("Multi sigma failed by struct on struct {}: {}",idx.as_string(),c)); }
-};
-
-int multi_sigma_operator::get_dimensionality() const {
-  return opdim;
-};
-int multi_sigma_operator::get_same_dimensionality(int dim) const {
-  if (get_dimensionality()!=dim)
-    throw(fmt::format("Sigma operator dimensionality mismatch: {} vs {}",
-		      get_dimensionality(),dim));
-  return dim;
-};
-
-#if 0
-/*! Set a sigma operator in a specific dimension.
-  This defines the multi sigma as operator based
-*/
-void multi_sigma_operator::set_operator(int id,sigma_operator op) {
-  if (coord_based || sigma_based || struct_based)
-    throw(string("Can not set operator: already of function type"));
-  if (!op_based)
-    operators = vector<sigma_operator>(opdim);
-  op_based = true;
-  operators.at(id) = op;
-};
-
-//! Set the operator in a dimension by converting from an ioperator
-void multi_sigma_operator::set_operator(int id,ioperator op) {
-  set_operator( id, sigma_operator(op) );
-};
-
-const sigma_operator<I,d>& multi_sigma_operator::get_operator(int id) const {
-  if (!op_based)
-    throw(std::string("Can not get operator: not operator based"));
-  return operators.at(id);
-};
-
-//! Define from coord-to-coord operator
-multi_sigma_operator::multi_sigma_operator
-    ( int dim, domain_coordinate(*c2c)(const domain_coordinate&) )
-  : multi_sigma_operator(dim) {
-  coord_oper = c2c; coord_based = true;
-};
-
-//! Define from coord-to-struct operator
-multi_sigma_operator::multi_sigma_operator
-( int dim, std::function< shared_ptr<multi_indexstruct>(const domain_coordinate&) > multisigma )
-  : multi_sigma_operator(dim) {
-  sigma_oper = multisigma; sigma_based = true;
-};
-
-//! Define from struct-to-struct operator
-multi_sigma_operator::multi_sigma_operator
-( int dim,std::function< shared_ptr<multi_indexstruct>(shared_ptr<multi_indexstruct>) > multisigma ) : multi_sigma_operator(dim) {
-  struct_oper = multisigma; struct_based = true;
-};
-#endif
-
-// bool multi_sigma_operator::is_point_operator() {
-//   if (coord_oper!=nullptr) return true;
-//   else if (sigma_oper!=nullptr || struct_oper!=nullptr) return false;
-//   else {
-//     for ( const auto &o : operators )
-//       if (!o.is_point_operator())
-// 	return false;
-//     return true;
-//   }
-// };
-
-/*!
-  Operating on a domain coordinate gives a \ref multi_indexstruct
-  by plain Cartesian product of the operate results in each dimension.
-*/
-#if 0
-shared_ptr<multi_indexstruct> multi_sigma_operator::operate
-    ( const domain_coordinate &point ) const {
-  return operator_implementation(point);
-  int dim = get_same_dimensionality(point.get_dimensionality());
-
-  if (0) {
-  } else if (op_based) {
-    print("applying operators\n");
-    auto idx = make_shared<multi_indexstruct>(dim) ;
-    for (int id=0; id<dim; id++) { auto op = get_operator(id);
-      try { idx->set_component(id, op.operate(point.coord(id)) );
-      } catch (...) {
-	throw(fmt::format("Could not operate <<{}>> set component {}",
-			  op.as_string(),id));
-      }
-    }
-    return idx;
-  } else if (coord_based) {
-    print("applying coord\n");
-    try {
-      return make_shared<multi_indexstruct>( coord_oper(point) ) ;
-    } catch (std::string c) {
-      throw(fmt::format("Multi sigma op failed on coord: {}",c)); }      
-  } else if (sigma_based) {
-    print("applying sigma\n");
-    try { return sigma_oper(point);
-    } catch (std::string c) {
-      throw(fmt::format("Multi sigma op failed sigma based: {}",c)); }
-  } else if (struct_based) {
-    print("applying struct\n");
-    try {
-      return struct_oper( make_shared<multi_indexstruct>(point) ) ;
-    } catch (std::string c) {
-      throw(fmt::format("Multi sigma op failed struct based: {}",c)); }      
-  } else
-    throw(std::string("Unimplemented case multi_sigma operate"));
-};
-
-/*!
-  A \ref multi_sigma_operator is strictly mapping coordinate to struct,
-  but most of the time we will optimize this by mapping struct to struct.
-  This routine covers three cases:
-  - if \ref struct_oper is set, apply this once
-  - if \ref coord_oper is set, we can apply this to contiguous by transforming the 
-    first and last coordinate
-  - if we have an array of single operators we apply those, one per dimension
-
-  \todo the coord->indexstruct variant is not efficient. can we make shortcuts?
-*/
-shared_ptr<multi_indexstruct> multi_sigma_operator::operate
-    ( shared_ptr<multi_indexstruct> idx ) {
-  int dim = get_same_dimensionality(idx->get_dimensionality());
-  if (0) {
-  } else if (coord_based) {
-    print("applying coord\n");
-    if (idx->is_contiguous()) {
-      try {
-	auto
-	  ofirst = coord_oper(idx->first_index_r()),
-	  olast = coord_oper(idx->last_index_r());
-	return shared_ptr<multi_indexstruct>
-	  ( make_shared<contiguous_multi_indexstruct>( ofirst,olast ) );
-      } catch (std::string c) {
-	throw(fmt::format("Multi sigma failed by coord on struct {}: {}",idx->as_string(),c)); }
-    } else
-      throw(std::string("Can not point operate on non-contiguous"));
-  } else if (sigma_based) {
-    try {
-      auto
-	ofirst = sigma_oper( idx->first_index_r() )->first_index_r(),
-	olast = sigma_oper( idx->last_index_r() )->last_index_r();
-      return shared_ptr<multi_indexstruct>
-	( make_shared<contiguous_multi_indexstruct>( ofirst,olast ) );
-    } catch (std::string c) {
-      throw(fmt::format("Multi sigma failed by sigma on struct {}: {}",idx->as_string(),c)); }
-  } else if (struct_based) {
-    try {
-      return struct_oper(idx);
-    } catch (std::string c) {
-      throw(fmt::format("Multi sigma failed by struct on struct {}: {}",idx->as_string(),c)); }
-  } else if (op_based) {
-    auto opidx = make_shared<multi_indexstruct>(dim) ;
-    for (int id=0; id<dim; id++) { 
-      auto cpt = idx->get_component(id); auto op = get_operator(id);
-      try {
-	opidx->set_component(id,op.operate(cpt));
-      } catch (std::string c) {
-	print("Error <<{}>> applying <<{}>> in dimension {}",
-		   c,op.as_string(),id,cpt->as_string());
-	throw(fmt::format("Could not appy multi_sigma by operators on <<{}>>",
-			  idx->as_string()));
-      }
-    }
-    return opidx;
-  } else if (1) {
-    throw(std::string("And this is as far as we implemented it"));
-  }
-#if 0
-  else if (is_coord_struct_operator()) {
-    auto f = idx->first_index_r(), l = idx->last_index_r();
-    if (is_shift_op()) {
-      auto op_first = operate(f), op_last = operate(l);
-      if (idx->is_contiguous()) {
-	return new contiguous_multi<I,d>_indexstruct
-	  ( op_first->first_index_r(), op_last->last_index_r() );
-      } else
-	throw(fmt::format("Unimplemented case coord-struct on type {}",idx->type_as_string()));
-    } else {
-      throw(std::string("Really bad idea to enumerate coord-struct op"));
-      shared_ptr<multi_indexstruct> r = new empty_multi<I,d>_indexstruct(dim);
-      domain_coordinate *ii = new domain_coordinate<I,d>(dim);
-      if (dim==1) {
-	for (I i=f->coord(0); i<=l->coord(0); i++) {
-	  ii->set(0,i);
-	  r = r->struct_union( sigma_oper(ii) );
-	}
-      } else if (dim==2) {
-	for (I i=f->coord(0); i<=l->coord(0); i++) {
-	  ii->set(0,i);
-	  for (I j=f->coord(1); j<=l->coord(1); j++) {
-	    ii->set(1,j);
-	    r = r->struct_union( sigma_oper(ii) );
-	  }
-	}
-      } else if (dim==3) {
-	for (I i=f->coord(0); i<=l->coord(0); i++) {
-	  ii->set(0,i);
-	  for (I j=f->coord(1); j<=l->coord(1); j++) {
-	    ii->set(1,j);
-	    for (I k=f->coord(2); k<=l->coord(2); k++) {
-	      ii->set(2,k);
-	      r = r->struct_union( sigma_oper(ii) );
-	    }
-	  }
-	}
-      } else
-	throw(std::string("Cannot coord->indexstruct operate in dim>3"));
-      return r;
-    }
-  } else {
-    auto s = shared_ptr<multi_indexstruct>( new multi_indexstruct<I,d>(dim) ); //(sim);
-    for (int id=0; id<dim; id++) {
-      shared_ptr<indexstruct<I,d>>
-	oldstruct = idx->get_component(id),
-	newstruct = shared_ptr<indexstruct<I,d>>( oldstruct->operate( operators[id] ) );
-      s->set_component(id,newstruct);
-    }
-    return s;
-  }
-#endif
-};
-#endif
-#endif
 
 template class indexstructure<int,1>;
 template class indexstructure<index_int,1>;

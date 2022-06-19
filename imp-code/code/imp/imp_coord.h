@@ -20,7 +20,9 @@ public :
   coordinate(I span);
   coordinate( std::array<I,d> );
   coordinate( environment& );
-
+  auto &data() { return coordinates; };
+  const auto& data() const { return coordinates; };
+  
   // basic manipulation
   constexpr int dimensionality() const { return d; }
   I &at(int i); const I &at(int i) const;
@@ -59,6 +61,7 @@ public :
   // operators
   coordinate<I,d> operator+( coordinate<I,d> ) const;
   coordinate<I,d> operator-( coordinate<I,d> ) const;
+  coordinate<I,d> operator-( ) const;
   void operator-=( coordinate<I,d> );
   coordinate<I,d> operator%( I ) const;
   coordinate<I,d> operator+( I ) const;
@@ -70,13 +73,10 @@ public :
 //     return std::accumulate( coordinates.begin(),coordinates.end(),
 // 		       []( I x,I y) { return x<=>y; } );
 //   };
-  bool operator<=( coordinate<I,d> other ) const {
-    bool r{true};
-    for (int id=0; id<d; id++)
-      r = r and coordinates[id]<=other.coordinates[id];
-    return r;
-  };
-  bool operator==( coordinate<I,d> ) const;
+  bool operator==( coordinate<I,d> other ) const;
+  bool operator<=( coordinate<I,d> other ) const;
+  bool operator<( coordinate<I,d> ) const;
+  bool operator>( coordinate<I,d> ) const;
   bool operator==( I ) const;
 
   // iterating
@@ -95,3 +95,7 @@ public:
     return v; };
 };
 
+template<class I,int d>
+coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other );
+template<class I,int d>
+coordinate<I,d> coordmin( coordinate<I,d> current,coordinate<I,d> other );
