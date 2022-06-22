@@ -185,7 +185,8 @@ public:
   virtual void operator++() { current_iterate++; };
 
   // Stuff
-  virtual std::string as_string() const { throw(std::string("as_string: Not implemented")); };
+  virtual std::string as_string() const {
+    throw(std::string("as_string: Not implemented")); };
   virtual void debug_on() {};
   virtual void debug_off() {};
 };
@@ -816,6 +817,25 @@ public:
   virtual void debug_off() {};
 };
 
+template<typename I,int d>
+struct fmt::formatter<shared_ptr<indexstruct<I,d>>> {
+ constexpr
+ auto parse(format_parse_context& ctx)
+       -> decltype(ctx.begin()) {
+   auto it = ctx.begin(),
+     end = ctx.end();
+   if (it != end && *it != '}')
+     throw format_error("invalid format");
+   return it;
+  }
+  template <typename FormatContext>
+  auto format
+    (const shared_ptr<indexstruct<I,d>>& p, FormatContext& ctx)
+        -> decltype(ctx.out()) {
+    return format_to(ctx.out(),"{}", p->as_string());
+  }
+};
+
 #if 0
 template<typename I,int d>
 class multi_indexstruct;
@@ -1189,270 +1209,3 @@ public:
 #endif
 #endif
 
-/*
- * OLD CODE
- */
-#if 0
-//! A domain coordinate is a domain point. \todo make templated coordinate class
-template<typename I,int d>
-class domain_coordinate {
-private:
-  std::vector<I> coordinates;
-public:
-  domain_coordinate() {}; // in case we need a default constructor
-  // Create an empty domain_coordinate object of given dimension
-  domain_coordinate(int dim);
-  //! Create from std vector
-  domain_coordinate( std::vector<I> ic ) { coordinates = ic; };
-  domain_coordinate( std::vector<int> ic ) { int dim = ic.size();
-    coordinates = std::vector<I>(dim);
-    for (int i=0; i<dim; i++)
-      coordinates.at(i) = ic.at(i);
-  };
-  // Copy constructor
-  domain_coordinate( domain_coordinate *other );
-
-  // basic stats and manipulation
-  int get_dimensionality() const; int get_same_dimensionality(int) const;
-  void reserve(int n) { coordinates.reserve(n); };
-  I &at(int i) { return coordinates.at(i); };
-  I sub(int i) const { return coordinates.at(i); };
-  void set(int id,I v) { coordinates.at(id) = v; };
-  I coord(int id) const;
-  //! \todo make by reference
-  std::vector<I> data() const { return coordinates; };
-  I volume() const;
-
-  I linear_location_in( domain_coordinate,domain_coordinate ) const;
-  I linear_location_in( domain_coordinate*,domain_coordinate* ) const;
-  I linear_location_in( domain_coordinate farcorner ) const;
-  I linear_location_in( domain_coordinate *farcorner ) const;
-  I linear_location_in( std::shared_ptr<multi_indexstruct> bigstruct ) const;
-  I linear_location_in( const multi_indexstruct &bigstruct ) const;
-
-  // operators
-  // bool operator==( domain_coordinate &other ) const; VLE don't work with denotations
-  // bool operator!=( domain_coordinate &other ) const;
-  bool operator==( const domain_coordinate &&other ) const;
-  bool operator==( const domain_coordinate &other ) const;
-  bool operator!=( const domain_coordinate other ) const;
-  domain_coordinate operator+(I i) const;
-  domain_coordinate operator+(const domain_coordinate i) const;
-  domain_coordinate operator-(I i) const;
-  domain_coordinate operator-(const domain_coordinate i) const;
-  domain_coordinate operator*(I i) const;
-  domain_coordinate operator/(I i) const;
-  domain_coordinate operator%(I i) const;
-  bool operator<(domain_coordinate other) const;
-  bool operator>(domain_coordinate other) const;
-  bool operator<=(domain_coordinate other) const;
-  bool operator>=(domain_coordinate other) const;
-  domain_coordinate *negate();
-  const domain_coordinate operate( const ioperator<I,d>& ) const ;
-  domain_coordinate *operate_p( const ioperator<I,d>& ) const;
-  //!\todo can we make this by reference?
-  I operator[](int id) const {
-    if (id<0 || id>=get_dimensionality())
-      throw(fmt::format("Wrong dimension {} to get from coordinate <<{}>>",id,as_string()));
-    auto cid = coordinates[id]; return cid;
-  };
-  //! \todo const ref !
-  void min_with(const domain_coordinate&); void max_with(const domain_coordinate&);
-  //void min_with(domain_coordinate*); void max_with(domain_coordinate*);
-  bool equals( domain_coordinate *other );
-  bool is_zero();
-  std::string as_string() const { fmt::memory_buffer w;
-    format_to(w.end(),"["); for ( auto i : coordinates ) format_to(w.end(),"{},",i);
-    format_to(w.end(),"]"); return to_string(w); };
-
-  bool is_on_left_face(int d,std::shared_ptr<multi_indexstruct>) const;
-  bool is_on_right_face(int d,std::shared_ptr<multi_indexstruct>) const;
-
-  // iterating
-protected:
-  I iterator{-1};
-public:
-  domain_coordinate& begin() { iterator = 0; return *this; };
-  domain_coordinate& end() { return *this; };
-  bool operator!=( domain_coordinate ps ) { return iterator<coordinates.size()-1; };
-  void operator++() { iterator++; };
-  //  I operator[](int d) { return coordinates[d]; };
-  I operator*() const {
-    if (iterator<0)
-      throw(fmt::format("dereferincing iterator {} in {}",iterator,as_string()));
-    I v = coordinates[iterator];
-    //printf("deref domain coord @%d to %d\n",iterator,v);
-    return v;
-  };
-};
-
-//! \todo this needs to be a singleton class
-template<typename I,int d>
-class domain_coordinate_zero : public domain_coordinate {
-public:
-  domain_coordinate_zero(int dim) : domain_coordinate(dim) {
-    for (int id=0; id<dim; id++) set(id,0.); };
-};
-
-template<typename I,int d>
-class domain_coordinate_allones : public domain_coordinate {
-public:
-  domain_coordinate_allones(int dim) : domain_coordinate(dim) {
-    for (int id=0; id<dim; id++) set(id,1.); };
-};
-
-//! Wrap a single I into a one-d \ref domain_coordinate.
-template<typename I,int d>
-class domain_coordinate1d : public domain_coordinate {
-public:
-  domain_coordinate1d( I i ) : domain_coordinate(1) {
-    set(0,i); };
-};
-
-/*!
-  Multi-dimensional sigma operator: give a \ref multi_indexstruct from a \ref domain_coordinate.
-  Cases:
-  - an array of \ref sigma_operator 
-  - a single function pointer multi_indexstruct -> multi_indexstruct
-  - a function processor_coordinate -> processor_coordinate, 
-    which is to be applied all over the domain; in practice to first & last index
-    \todo use coordinate& instead of pointer
-*/
-template<typename I,int d>
-class multi_sigma_operator {
-protected:
-  int opdim{-1};
-  // pointer to private implementation
-  std::shared_ptr<multi_sigma_operator_implementation> operator_implementation{nullptr};
-public:
-  //! Default constructor
-  multi_sigma_operator() {};
-  //! Construct with dimension
-  multi_sigma_operator( int d ) { opdim = d; };
-  int get_dimensionality() const;
-  int get_same_dimensionality(int dim) const;
-
-  // constructor from list of sigma operators
-  multi_sigma_operator( std::vector<ioperator<I,d>> ops );
-  multi_sigma_operator( std::vector<sigma_operator> ops );
-  multi_sigma_operator( sigma_operator op )
-    : multi_sigma_operator( std::vector<sigma_operator>{op} ) {};
-
-  // constructor from coordinate operator
-  multi_sigma_operator
-  ( int dim, std::function< domain_coordinate(const domain_coordinate&) > f );
-
-  // constructor from coordinate-to-struct operator
-  multi_sigma_operator
-  ( int dim,std::function< std::shared_ptr<multi_indexstruct>(const domain_coordinate&) > f );
-  //( int dim,std::shared_ptr<multi_indexstruct>(*)(const domain_coordinate&) );
-
-  // constructor from struct to struct
-  multi_sigma_operator
-  ( int dim,std::function< std::shared_ptr<multi_indexstruct>(const multi_indexstruct&) > f );
-  //( int dim,std::shared_ptr<multi_indexstruct>(*)(const multi_indexstruct&) );
-    
-  // What type are we?
-  bool is_single_operator() const {
-    return operator_implementation->is_single_operator(); };
-  bool is_point_operator() const {
-    return operator_implementation->is_point_operator(); };
-  bool is_coord_struct_operator() const {
-    return operator_implementation->is_coord_struct_operator(); };
-  // operating is implementation dependent
-  std::shared_ptr<multi_indexstruct> operate( const domain_coordinate &point ) const {
-    return operator_implementation->operate(point); };
-  std::shared_ptr<multi_indexstruct> operate( const multi_indexstruct &idx ) const {
-    return operator_implementation->operate(idx); };
-  std::shared_ptr<multi_indexstruct> operate( std::shared_ptr<const multi_indexstruct> idx ) const {
-    return operate( *(idx.get()) ); };
-  std::shared_ptr<multi_indexstruct> operate( std::shared_ptr<multi_indexstruct> idx ) const {
-    return operate( *(idx.get()) ); };
-  // get one dimension
-  sigma_operator get_operator(int id) const {
-    return operator_implementation->get_operator(id); };
-
-protected:
-  iop_type type{iop_type::INVALID};
-public:
-  bool is_shift_op()       const {
-    return type==iop_type::SHIFT_REL || type==iop_type::SHIFT_ABS; };
-  //! For functionally defined operators, the user can set the type.
-  void set_is_shift_op() { type = iop_type::SHIFT_ABS; };
-};
-
-// vector of sigma operators
-template<typename I,int d>
-class multi_sigma_operator_impl_vector : public multi_sigma_operator_implementation {
-protected:
-  std::vector<sigma_operator> operators;
-public:
-  multi_sigma_operator_impl_vector( std::vector<sigma_operator> ops );
-  multi_sigma_operator_impl_vector( std::vector<ioperator<I,d>> ops );
-  // implementation of pure virtual functions
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const domain_coordinate &point ) const override;
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const multi_indexstruct &idx ) const override;
-  virtual bool is_point_operator() const override { return true; };
-  virtual sigma_operator get_operator(int id) const override { return operators.at(id); };
-};
-
-/*!
-  Implementation of the multi_sigma_operator_implementation 
-  through coordinate operator
- */
-template<typename I,int d>
-class multi_sigma_operator_impl_coord : public multi_sigma_operator_implementation {
-protected:
-  std::function< domain_coordinate(const domain_coordinate&) >    coord_oper{nullptr};
-public:
-  multi_sigma_operator_impl_coord
-      ( int dim,std::function<domain_coordinate(const domain_coordinate&)> f )
-    : multi_sigma_operator_implementation(dim),coord_oper(f) {
-  };
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const domain_coordinate &point ) const override;
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const multi_indexstruct &idx ) const override;
-  virtual bool is_point_operator() const override { return true; };
-};
-
-// coordinate-to-struct operator
-template<typename I,int d>
-class multi_sigma_operator_impl_sigma : public multi_sigma_operator_implementation {
-protected:
-  std::function< std::shared_ptr<multi_indexstruct>(const domain_coordinate&) >
-                                                                  sigma_oper{nullptr};
-public:
-  multi_sigma_operator_impl_sigma
-  ( int dim, std::function< std::shared_ptr<multi_indexstruct>(const domain_coordinate&) > f )
-    : multi_sigma_operator_implementation(dim),sigma_oper(f) {
-  };
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const domain_coordinate &point ) const override;
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const multi_indexstruct &idx ) const override;
-  virtual bool is_coord_struct_operator() const override { return true; };
-};
-
-// struct to struct
-template<typename I,int d>
-class multi_sigma_operator_impl_struct : public multi_sigma_operator_implementation {
-protected:
-  std::function
-    < std::shared_ptr<multi_indexstruct>(const multi_indexstruct&) >struct_oper{nullptr};
-public:
-  multi_sigma_operator_impl_struct
-  ( int dim,
-    std::function< std::shared_ptr<multi_indexstruct>(const multi_indexstruct&) > f )
-    : multi_sigma_operator_implementation(dim) {
-    struct_oper = f ; };
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const domain_coordinate &point ) const override;
-  virtual std::shared_ptr<multi_indexstruct> operate
-      ( const multi_indexstruct &idx ) const override;
-  virtual bool is_single_operator() const override { return true; };
-};
-
-#endif

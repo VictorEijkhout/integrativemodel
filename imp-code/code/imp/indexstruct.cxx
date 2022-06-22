@@ -195,6 +195,12 @@ strided_indexstruct<I,d>::strided_indexstruct
  */
 template<typename I,int d>
 I strided_indexstruct<I,d>::outer_volume()  const {
+  auto outer_vector = (last_index()-first_index()+stride_amount-1)+1;
+  return outer_vector.span();
+};
+
+template<typename I,int d>
+I strided_indexstruct<I,d>::volume()  const {
   auto outer_vector = (last_index()-first_index()+stride_amount-1)/stride_amount+1;
   return outer_vector.span();
 };
@@ -773,13 +779,13 @@ indexed_indexstruct<I,d>::indexed_indexstruct( const vector<coordinate<I,d>> idx
   : indices(idxs) {
 };
 
-// template<typename I>
-// indexed_indexstruct<I>::indexed_indexstruct( const vector<I> idxs )
-//   : indices( vector<coordinate<I,1>>(idxs.size()) ) {
-//   for ( int i=0; i<indices.size(); i++ ) {
-//     indices.at(i) = coordinate<I,1>( idxs.at(i) );
-//   }
-// };
+template<typename I,int d>
+indexed_indexstruct<I,d>::indexed_indexstruct( const vector<I> idxs )
+  : indexed_indexstruct<I,d>( vector<coordinate<I,d>>( idxs.size() ) ) {
+  for ( int i=0; i<indices.size(); i++ ) {
+    indices.at(i) = coordinate<I,d>( idxs.at(i) );
+  }
+};
 
 // template<typename I,int d>
 // indexed_indexstruct<I,d>::indexed_indexstruct( const I len,const I *idxs ) {
@@ -1901,7 +1907,7 @@ coordinate<I,d> ioperator<I,d>::operate( coordinate<I,d> c ) const {
 };
 
 template<typename I,int d>
-std::string ioperator<I,d>::as_string() const {
+string ioperator<I,d>::as_string() const {
   if (is_none_op())
     return std::string("Id");
   else if (is_shift_op()) {
@@ -2141,6 +2147,11 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::operate( const ioperato
   return rstruct;
 };
 
+template<typename I,int d>
+string indexed_indexstruct<I,d>::as_string() const {
+  return "indexed";
+};
+
 /****
  **** Operators
  ****/
@@ -2210,6 +2221,11 @@ template class strided_indexstruct<int,2>;
 template class strided_indexstruct<index_int,2>;
 template class indexed_indexstruct<int,2>;
 template class indexed_indexstruct<index_int,2>;
+
+template struct fmt::formatter<shared_ptr<indexstruct<int,1>>>;
+template struct fmt::formatter<shared_ptr<indexstruct<index_int,1>>>;
+template struct fmt::formatter<shared_ptr<indexstruct<int,2>>>;
+template struct fmt::formatter<shared_ptr<indexstruct<index_int,2>>>;
 
 template class ioperator<int,1>;
 template class ioperator<int,2>;

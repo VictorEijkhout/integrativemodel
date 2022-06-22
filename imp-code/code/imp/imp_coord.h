@@ -60,12 +60,12 @@ public :
   
   // operators
   coordinate<I,d> operator+( coordinate<I,d> ) const;
+  coordinate<I,d> operator+( I ) const;
   coordinate<I,d> operator-( coordinate<I,d> ) const;
+  coordinate<I,d> operator-( I ) const;
   coordinate<I,d> operator-( ) const;
   void operator-=( coordinate<I,d> );
   coordinate<I,d> operator%( I ) const;
-  coordinate<I,d> operator+( I ) const;
-  coordinate<I,d> operator-( I ) const;
   coordinate<I,d> operator*( I ) const;
   coordinate<I,d> operator/( I ) const;
 // #include <compare>
@@ -99,3 +99,22 @@ template<class I,int d>
 coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other );
 template<class I,int d>
 coordinate<I,d> coordmin( coordinate<I,d> current,coordinate<I,d> other );
+
+template<typename I,int d>
+struct fmt::formatter<coordinate<I,d>> {
+ constexpr
+ auto parse(format_parse_context& ctx)
+       -> decltype(ctx.begin()) {
+   auto it = ctx.begin(),
+     end = ctx.end();
+   if (it != end && *it != '}')
+     throw format_error("invalid format");
+   return it;
+  }
+  template <typename FormatContext>
+  auto format
+    (const coordinate<I,d>& p, FormatContext& ctx)
+        -> decltype(ctx.out()) {
+    return format_to(ctx.out(),"{}", p.as_string());
+  }
+};

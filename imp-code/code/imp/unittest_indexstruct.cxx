@@ -75,11 +75,15 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
       CHECK( i1->volume()==4 );
       CHECK( ( i1->first_index()==2 ) );
       CHECK( ( i1->last_index()==5 ) );
-      REQUIRE_NOTHROW( i1 = i1->add_element(3) );
+      coordinate<index_int,1> c3(3);
+      INFO( format("adding 3: {}",c3) );
+      REQUIRE_NOTHROW( i1 = i1->add_element(c3) );
+      CHECK( i1->is_contiguous() );
       CHECK( i1->volume()==4 );
       CHECK( ( i1->first_index()==2 ) );
       CHECK( ( i1->last_index()==5 ) );
       REQUIRE_NOTHROW( i1 = i1->add_element(5) );
+      CHECK( i1->is_contiguous() );
       CHECK( i1->volume()==4 );
       CHECK( ( i1->first_index()==2 ) );
       CHECK( ( i1->last_index()==5 ) );

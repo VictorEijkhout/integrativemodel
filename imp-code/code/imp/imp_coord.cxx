@@ -4,8 +4,11 @@
 using std::array;
 #include <string>
 using std::string;
+#include <sstream>
+using std::stringstream;
 
 #include <cassert>
+#include <fmt/format.h>
 
 template<typename I,int d>
 array<I,d> endpoint(I s) {
@@ -140,6 +143,13 @@ coordinate<I,d> coordinate<I,d>::operator-( coordinate<I,d> other ) const {
   return r;
 };
 template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator-( I other ) const {
+  auto r(*this);
+  for ( int id=0; id<d; id++ )
+    r.coordinates[id] -= other;
+  return r;
+};
+template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator-() const {
   auto r(*this);
   for ( int id=0; id<d; id++ )
@@ -187,6 +197,13 @@ bool coordinate<I,d>::operator==( I other ) const {
   bool r{true};
   for ( int id=0; id<d; id++ )
     r = r and coordinates[id]==other;
+  return r;
+};
+template<typename I,int d>
+bool coordinate<I,d>::operator<=( coordinate<I,d> other ) const {
+  bool r{true};
+  for ( int id=0; id<d; id++ )
+    r = r and coordinates[id]<=other.coordinates[id];
   return r;
 };
 template<typename I,int d>
@@ -238,10 +255,43 @@ bool coordinate<I,d>::before( const coordinate<I,d>& other ) const {
   return other.span()>=span();
 };
 
+/*
+ * String-ifying
+ */
+
 template<typename I,int d>
 string coordinate<I,d>::as_string() const {
-  return "coordinate";
+  stringstream ss;
+  ss << "<";
+  for ( auto c : coordinates )
+    ss << c << ",";
+  ss << ">";
+  return ss.str();
 };
+
+// template<typename I,int d>
+// //template <>
+// struct fmt::formatter<coordinate<I,d>> {
+//  constexpr
+//  auto parse(format_parse_context& ctx)
+//        -> decltype(ctx.begin()) {
+//    auto it = ctx.begin(),
+//      end = ctx.end();
+//    if (it != end && *it != '}')
+//      throw format_error("invalid format");
+//    return it;
+//   }
+//   template <typename FormatContext>
+//   auto format
+//     (const coordinate<I,d>& p, FormatContext& ctx)
+//         -> decltype(ctx.out()) {
+//     return format_to(ctx.out(),"{}", p.as_string());
+//   }
+// };
+
+/*
+ * Specializations
+ */
 
 template array<int,1> endpoint<int,1>(int);
 template array<int,2> endpoint<int,2>(int);
@@ -256,6 +306,11 @@ template class coordinate<int,3>;
 template class coordinate<index_int,1>;
 template class coordinate<index_int,2>;
 template class coordinate<index_int,3>;
+
+template struct fmt::formatter<coordinate<int,1>>;
+template struct fmt::formatter<coordinate<int,2>>;
+template struct fmt::formatter<coordinate<index_int,1>>;
+template struct fmt::formatter<coordinate<index_int,2>>;
 
 template coordinate<int,1> coordmax<int,1>( coordinate<int,1>,coordinate<int,1> );
 template coordinate<int,2> coordmax<int,2>( coordinate<int,2>,coordinate<int,2> );
