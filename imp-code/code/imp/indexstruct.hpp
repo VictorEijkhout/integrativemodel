@@ -115,10 +115,8 @@ public:
     return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this();
   virtual std::shared_ptr<indexstruct<I,d>> over_simplify() {
     return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this();
-  virtual std::shared_ptr<indexstruct<I,d>> add_element( coordinate<I,d> idx ) const {
-    throw(std::string("add_element: Not implemented")); };
-  virtual void add_in_element( coordinate<I,d> idx ) {
-    throw(std::string("add_element: Not implemented")); };
+  virtual std::shared_ptr<indexstruct<I,d>> add_element( coordinate<I,d> idx ) const;
+  virtual void add_in_element( coordinate<I,d> idx );
   virtual std::shared_ptr<indexstruct<I,d>> translate_by( coordinate<I,d> shift ) const {
     report_unimplemented("translate_by"); return nullptr; };
   virtual bool has_intersect( std::shared_ptr<indexstruct<I,d>> idx ) {
@@ -210,6 +208,7 @@ public:
   virtual std::shared_ptr<indexstruct<I,d>> make_clone() const override {
     return std::shared_ptr<indexstruct<I,d>>{ new empty_indexstruct() }; };
   virtual std::shared_ptr<indexstruct<I,d>> add_element( coordinate<I,d> idx ) const override;
+  virtual void add_in_element( coordinate<I,d> idx ) override;
   virtual coordinate<I,d> first_index() const override {
     throw(std::string("No first index for empty")); };
   virtual coordinate<I,d> last_index()  const override {
@@ -274,9 +273,9 @@ protected:
   coordinate<I,d> first,last;
   I stride_amount{1};
 public:
-  strided_indexstruct(const I f,const I l,const int s);
-  strided_indexstruct(const std::array<I,d> f,const std::array<I,d>  l,const int s);
-  strided_indexstruct(const coordinate<I,d>,const coordinate<I,d>  l,const int s);
+  strided_indexstruct(const I f,const I l,const I s);
+  strided_indexstruct(const std::array<I,d> f,const std::array<I,d>  l,const I s);
+  strided_indexstruct(const coordinate<I,d>,const coordinate<I,d>  l,const I s);
   strided_indexstruct(const coordinate<I,d> f,const coordinate<I,d>  l )
     : strided_indexstruct( f,l,1 ) {};
   /*
@@ -818,7 +817,7 @@ public:
 };
 
 template<typename I,int d>
-struct fmt::formatter<shared_ptr<indexstruct<I,d>>> {
+struct fmt::formatter<std::shared_ptr<indexstruct<I,d>>> {
  constexpr
  auto parse(format_parse_context& ctx)
        -> decltype(ctx.begin()) {
@@ -830,7 +829,7 @@ struct fmt::formatter<shared_ptr<indexstruct<I,d>>> {
   }
   template <typename FormatContext>
   auto format
-    (const shared_ptr<indexstruct<I,d>>& p, FormatContext& ctx)
+      (const std::shared_ptr<indexstruct<I,d>>& p, FormatContext& ctx)
         -> decltype(ctx.out()) {
     return format_to(ctx.out(),"{}", p->as_string());
   }

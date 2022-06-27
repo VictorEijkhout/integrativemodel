@@ -58,6 +58,17 @@ void indexstruct<I,d>::report_unimplemented( const char *c ) const {
 };
 
 template<typename I,int d>
+shared_ptr<indexstruct<I,d>> indexstruct<I,d>::add_element( coordinate<I,d> idx ) const {
+  report_unimplemented("add_element");
+  return shared_ptr<indexstruct<I,d>> ( make_shared<empty_indexstruct<I,d>>() );
+};
+
+template<typename I,int d>
+void indexstruct<I,d>::add_in_element( coordinate<I,d> idx ) {
+  report_unimplemented("add_in_element");
+};
+
+template<typename I,int d>
 bool indexstruct<I,d>::equals( std::shared_ptr<indexstruct<I,d>> idx ) const {
   throw(fmt::format("Equals not implemented for <<{}>> and <<{}>>",
 		    type_as_string(),idx->type_as_string()));
@@ -142,9 +153,13 @@ shared_ptr<indexstruct<I,d>> indexstruct<I,d>::truncate_right( coordinate<I,d> t
  ****/
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> empty_indexstruct<I,d>::add_element( coordinate<I,d> idx ) const {
-  //  return shared_ptr<indexstruct<I,d>>( new indexed_indexstruct<I,d>(1,&idx) );
   return shared_ptr<indexstruct<I,d>>
     ( make_shared<indexed_indexstruct<I,d>>(vector<coordinate<I,d>>{idx}) );
+};
+
+template<typename I,int d>
+void empty_indexstruct<I,d>::add_in_element( coordinate<I,d> idx ) {
+  throw("can not add_in to empty");
 };
 
 template<typename I,int d>
@@ -171,23 +186,23 @@ std::string contiguous_indexstruct<I,d>::as_string() const {
  * Constructors
  */
 template<typename I,int d>
-strided_indexstruct<I,d>::strided_indexstruct(const I f,const I l,const int s)
-  : first(f),last(l),stride_amount(s) {
-  last -= (last-first)%stride_amount; // make sure last is actually included
+strided_indexstruct<I,d>::strided_indexstruct(const I f,const I l,const I s)
+  : strided_indexstruct<I,d>( coordinate<I,d>(f), coordinate<I,d>(l), s ) {
 };
 
 template<typename I,int d>
 strided_indexstruct<I,d>::strided_indexstruct
-        (const std::array<I,d> f,const std::array<I,d>  l,const int s)
-	  : first(f[0]),last(l[0]),stride_amount(s) {
-  last -= (last-first)%stride_amount; // make sure last is actually included
+        (const std::array<I,d> f,const std::array<I,d>  l,const I s)
+  : strided_indexstruct<I,d>( coordinate<I,d>(f), coordinate<I,d>(l), s ) {
 };
 
 template<typename I,int d>
 strided_indexstruct<I,d>::strided_indexstruct
-        (const coordinate<I,d> f,const coordinate<I,d>  l,const int s)
+        (const coordinate<I,d> f,const coordinate<I,d>  l,const I s)
 	  : first(f),last(l),stride_amount(s) {
-  last -= (last-first)%stride_amount; // make sure last is actually included
+  for (int id=0; id<d; id++)  // make sure last is actually included
+    if (first[id]!=last[id])
+      last[id] -= (last[id]-first[id])%stride_amount;
 };
 
 /*
@@ -221,19 +236,36 @@ bool strided_indexstruct<I,d>::equals( shared_ptr<indexstruct<I,d>> idx ) const 
   }
 };
 
+// template<typename I,int d>
+// void strided_indexstruct<I,d>::add_in_element( coordinate<I,d> idx ) {
+//   auto duplicate = this->make_clone();
+//   return duplicate->add_element(idx);
+// };
+
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::add_element( coordinate<I,d> idx ) const {
   if (contains_element(idx))
     return this->make_clone();
   else if (idx==first-stride_amount) {
-    return shared_ptr<indexstruct<I,d>>
-      ( make_shared<strided_indexstruct<I,d>>(idx,last,stride_amount) );
+    if (stride_amount==1)
+      return shared_ptr<indexstruct<I,d>>
+	( make_shared<contiguous_indexstruct<I,d>>(idx,last) );
+    else
+      return shared_ptr<indexstruct<I,d>>
+	( make_shared<strided_indexstruct<I,d>>(idx,last,stride_amount) );
   } else if (idx==last+stride_amount) {
-    return shared_ptr<indexstruct<I,d>>
-      ( make_shared<strided_indexstruct<I,d>>(first,idx,stride_amount) );
+    if (stride_amount==1)
+      return shared_ptr<indexstruct<I,d>>
+	( make_shared<contiguous_indexstruct<I,d>>(first,idx) );
+    else
+      return shared_ptr<indexstruct<I,d>>
+	( make_shared<strided_indexstruct<I,d>>(first,idx,stride_amount) );
   } else {
-    auto indexed = make_clone(); // shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>(this) );
-    indexed->add_in_element(idx);
+    auto indexed = make_shared<indexed_indexstruct<I,d>>();
+    if (d==1) {
+      for ( auto v=first_index(); v!=last_index(); v=v+stride() )
+	indexed->add_in_element(v);
+    } else throw("Can not convert stride to index in >1D");
     return indexed;
   }
 };

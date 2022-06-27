@@ -75,29 +75,45 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
       CHECK( i1->volume()==4 );
       CHECK( ( i1->first_index()==2 ) );
       CHECK( ( i1->last_index()==5 ) );
+
       coordinate<index_int,1> c3(3);
       INFO( format("adding 3: {}",c3) );
       REQUIRE_NOTHROW( i1 = i1->add_element(c3) );
+      INFO( format("result: {}",i1) );
       CHECK( i1->is_contiguous() );
       CHECK( i1->volume()==4 );
       CHECK( ( i1->first_index()==2 ) );
       CHECK( ( i1->last_index()==5 ) );
-      REQUIRE_NOTHROW( i1 = i1->add_element(5) );
+
+      coordinate<index_int,1> c5(5);
+      INFO( format("adding 5: {}",c5) );
+      REQUIRE_NOTHROW( i1 = i1->add_element(c5) );
+      INFO( format("result: {}",i1) );
       CHECK( i1->is_contiguous() );
       CHECK( i1->volume()==4 );
       CHECK( ( i1->first_index()==2 ) );
       CHECK( ( i1->last_index()==5 ) );
-      REQUIRE_NOTHROW( i1 = i1->add_element(6) );
+
+      coordinate<index_int,1> c6(6);
+      INFO( format("adding 6: {}",c6) );
+      REQUIRE_NOTHROW( i1 = i1->add_element(c6) );
+      INFO( format("result: {}",i1) );
       CHECK( i1->is_contiguous() );
       CHECK( i1->volume()==5 );
       CHECK( ( i1->first_index()==2 ) );
       CHECK( ( i1->last_index()==6 ) );
-      REQUIRE_NOTHROW( i1 = i1->add_element(1) );
+
+      coordinate<index_int,1> c1(1);
+      REQUIRE_NOTHROW( i1 = i1->add_element(c1) );
+      INFO( format("result: {}",i1) );
       CHECK( i1->is_contiguous() );
       CHECK( i1->volume()==6 );
       CHECK( ( i1->first_index()==1 ) );
       CHECK( ( i1->last_index()==6 ) );
-      REQUIRE_NOTHROW( i1 = i1->add_element(9) );
+
+      coordinate<index_int,1> c9(9);
+      REQUIRE_NOTHROW( i1 = i1->add_element(c9) );
+      INFO( format("result: {}",i1) );
       CHECK( !i1->is_strided() );
     }
     SECTION( "more contiguous" ) {
@@ -237,8 +253,7 @@ TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
 TEST_CASE( "contiguous 2d" ) {
   shared_ptr< indexstruct<int,2> > i1;
   REQUIRE_NOTHROW( i1 = shared_ptr< indexstruct<int,2> >
-		   ( new contiguous_indexstruct<int,2>( {0,0},{4,5} ) ) );
-  // ( make_shared< contiguous_indexstruct<int,2> >( {0,0},{4,5} ) ) );
+		   ( make_shared<contiguous_indexstruct<int,2>>( array<int,2>{0,0},array<int,2>{4,5} ) ) );
 }
 
 TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
@@ -419,6 +434,7 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
   }
 }
 
+#if 0
 TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
   shared_ptr<indexstruct<index_int,1>> i1,i2,ifinal;
   shared_ptr<composite_indexstruct<index_int,1>> icomp;
@@ -2318,4 +2334,5 @@ TEST_CASE( "multi sigma operators","[multi][sigma][140]" ) {
   // }
 }
 
+#endif
 #endif
