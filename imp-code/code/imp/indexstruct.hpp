@@ -89,6 +89,7 @@ public:
   virtual I stride() const { throw(std::string("Indexstruct has no stride")); };
   virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const;
   
+  virtual std::shared_ptr<indexstruct<I,d>> make_strided() const;
   virtual I find( coordinate<I,d> ) const { throw(std::string("Can not be found")); };
   I location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
     return find(inner->first_index()); };
@@ -99,6 +100,8 @@ public:
   bool contains_element_in_range( coordinate<I,d> idx) const;
   virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const {
     report_unimplemented("contains"); return false; };
+  virtual bool is_strided_between_indices(I,I,I&) const {
+    report_unimplemented("strided between"); return false; };
   virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx );
   virtual coordinate<I,d> get_ith_element( const I i ) const {
     throw(std::string("Get ith: not implemented")); };
@@ -406,11 +409,10 @@ public:
     return false;
   };
   virtual coordinate<I,d> get_ith_element( const I i ) const override;
-  bool is_strided_between_indices(int,int,int&) const;
-  //  virtual bool contains( indexstruct *idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> make_strided() const override;
+  virtual bool is_strided_between_indices(I,I,I&) const override;
   virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
   virtual bool can_incorporate( coordinate<I,d> v ) const override { return true; } //!< We can always add an index.
-  //  virtual bool disjoint( indexstruct *idx ) override;
   virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) override;
   virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override;
 

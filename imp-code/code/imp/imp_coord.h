@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <vector>
 #include "imp_env.h"
 
 template<class I,int d>
@@ -74,6 +75,7 @@ public :
 // 		       []( I x,I y) { return x<=>y; } );
 //   };
   bool operator==( coordinate<I,d> other ) const;
+  bool operator!=( coordinate<I,d> other ) const;
   bool operator<=( coordinate<I,d> other ) const;
   bool operator<( coordinate<I,d> ) const;
   bool operator>( coordinate<I,d> ) const;
@@ -99,6 +101,8 @@ template<class I,int d>
 coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other );
 template<class I,int d>
 coordinate<I,d> coordmin( coordinate<I,d> current,coordinate<I,d> other );
+template<typename I,int d>
+void require_sorted( std::vector<coordinate<I,d>> idxs );
 
 template<typename I,int d>
 struct fmt::formatter<coordinate<I,d>> {

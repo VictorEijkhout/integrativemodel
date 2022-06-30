@@ -275,7 +275,7 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
     SECTION( "unsorted throws an error" ) {
       int len=4; vector<index_int> idx{1,2,6,4};
       CHECK_THROWS( i1 = shared_ptr<indexstruct<index_int,1>>
-		    ( new indexed_indexstruct<index_int,1>(idx) ) );
+		    ( make_shared<indexed_indexstruct<index_int,1>>(idx) ) );
     }
 
     SECTION( "negative indices allowed" ) {
@@ -320,6 +320,19 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
       CHECK( ( i1->first_index()==1 ) );
       CHECK( ( i1->last_index()==30 ) );
     }
+    SECTION( "simplificy to strided" ) {
+      auto i1 =
+	shared_ptr<indexstruct<index_int,1>>
+	( make_shared<indexed_indexstruct<index_int,1>>( vector<index_int>{2,6,8} ) ),
+	i2 = 
+	shared_ptr<indexstruct<index_int,1>>
+	( make_shared<indexed_indexstruct<index_int,1>>( vector<index_int>{3,5,7} ) );
+      shared_ptr<indexstruct<index_int,1>> ir;
+      REQUIRE_NOTHROW( ir = i1->make_strided() );
+      REQUIRE( ir!=nullptr );
+      REQUIRE_NOTHROW( ir = i2->make_strided() );
+      REQUIRE( ir!=nullptr );
+    }
     SECTION( "construction and simplify" ) {
       auto i1 =
 	shared_ptr<indexstruct<index_int,1>>
@@ -327,8 +340,10 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
 	i2 = 
 	shared_ptr<indexstruct<index_int,1>>
 	( new indexed_indexstruct<index_int,1>( vector<index_int>{3,5,7} ) );
+      index_int stride;
+      REQUIRE( not i1->is_strided_between_indices(0,2,stride) );
       REQUIRE_NOTHROW( i4 = i1->force_simplify() );
-      INFO( format("indexed {} simplified to {}",i1->as_string(),i4->as_string()) );
+      INFO( format("indexed {} can not be simplified to: result {}",i1->as_string(),i4->as_string()) );
       CHECK( i4->is_indexed() );
       REQUIRE_NOTHROW( i1 = i1->add_element(4) );
       REQUIRE_NOTHROW( i4 = i1->force_simplify() );

@@ -12,15 +12,14 @@
 #include "imp_coord.h"
 #include "indexstruct.hpp"
 
-using fmt::format;
-using fmt::print;
-using fmt::format_to;
-using fmt::to_string;
+#include <sstream>
+using std::stringstream;
+
+using fmt::format, fmt::print,fmt::memory_buffer, fmt::format_to, fmt::to_string;
 
 using std::function;
 using std::move;
-using std::make_shared;
-using std::shared_ptr;
+using std::make_shared, std::shared_ptr;
 
 using std::string;
 
@@ -55,6 +54,12 @@ void indexstruct<I,d>::report_unimplemented( const char *c ) const {
     throw(fmt::format("Trying to use query <<{}>> on undefined indexstruct",c));
   else
     throw(fmt::format("Routine {} not implemented for type {}",c,type_as_string()));
+};
+
+template<typename I,int d>
+std::shared_ptr<indexstruct<I,d>> indexstruct<I,d>::make_strided() const {
+  report_unimplemented("make_strided");
+  return nullptr;
 };
 
 template<typename I,int d>
@@ -809,6 +814,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::split
 template<typename I,int d>
 indexed_indexstruct<I,d>::indexed_indexstruct( const vector<coordinate<I,d>> idxs )
   : indices(idxs) {
+  require_sorted(indices);
 };
 
 template<typename I,int d>
@@ -817,6 +823,7 @@ indexed_indexstruct<I,d>::indexed_indexstruct( const vector<I> idxs )
   for ( int i=0; i<indices.size(); i++ ) {
     indices.at(i) = coordinate<I,d>( idxs.at(i) );
   }
+  require_sorted(indices);
 };
 
 // template<typename I,int d>
@@ -875,50 +882,59 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::simplify() {
 };
 
 /*!
-  See if we can turn in indexed into contiguous.
+  See if we can turn in indexed into contiguous or strided.
 */
+template<typename I,int d>
+shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::make_strided() const {
+  int ileft = 0, iright = this->volume()-1;
+  // try detect strided
+  I stride;
+  if (is_strided_between_indices(ileft,iright,stride)) {
+    auto first = get_ith_element(ileft), last = get_ith_element(iright);
+    if (stride==1)
+      return shared_ptr<indexstruct<I,d>>
+	( make_shared<contiguous_indexstruct<I,d>>(first,last) );
+    else
+      return shared_ptr<indexstruct<I,d>>
+	( make_shared<strided_indexstruct<I,d>>(first,last,stride) );
+  } else return nullptr;
+};
+
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
   try {
-    if (0) {
+    if (false) {
     } else if (this->volume()==0) {
       return shared_ptr<indexstruct<I,d>>( make_shared<empty_indexstruct<I,d>>() );
     } else if (this->volume()==this->outer_volume()) {
       // easy simplification to contiguous
       return
-	shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(first_index(),last_index()) );
+	shared_ptr<indexstruct<I,d>>
+	( make_shared<contiguous_indexstruct<I,d>>(first_index(),last_index()) );
     } else {
-      //    throw(string("arbitrary throw"));	
-      int ileft = 0, iright = this->volume()-1;
-      // try detect strided
-      int stride;
-      if (is_strided_between_indices(ileft,iright,stride)) {
-	auto first = get_ith_element(ileft), last = get_ith_element(iright);
-	//print("detecting stride {} between {}-{}\n",stride,first,last);
-	if (stride==1)
-	  return shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(first,last) );
-	else
-	  return shared_ptr<indexstruct<I,d>>( make_shared<strided_indexstruct<I,d>>(first,last,stride) );
+      auto ret = make_strided();
+      if (ret!=nullptr) {
+	return ret;
       } else {
+	I ileft = 0, iright = this->volume()-1;
 	// find strided subsections
 	auto first = get_ith_element(ileft), last = get_ith_element(iright);
 	for (I find_left=ileft; find_left<iright; find_left++) {
-	  int top_right = iright; if (find_left==ileft) top_right--;
+	  I top_right = iright; if (find_left==ileft) top_right--;
+	  I stride;
 	  for (I find_right=top_right; find_right>find_left+1; find_right--) {
 	    // if we find one section, we replace it by a 3-composite. ultimately recursive?
 	    if (is_strided_between_indices(find_left,find_right,stride)) {
-	      // print("{}: found strided stretch {}-{}\n",
-	      // 	       this->as_string(),find_left,find_right);
-	      auto comp = shared_ptr<composite_indexstruct<I,d>>( make_shared<composite_indexstruct<I,d>>() );
+	      auto comp = shared_ptr<composite_indexstruct<I,d>>
+		( make_shared<composite_indexstruct<I,d>>() );
 	      auto found_left = get_ith_element(find_left),
 		found_right = get_ith_element(find_right);
 	      if (find_left>ileft) { // there is stuff to the left
 		auto left = get_ith_element(find_left);
 		auto left_part = this->minus
-		  ( shared_ptr<indexstruct<I,d>>(make_shared<contiguous_indexstruct<I,d>>(left,last)) );
-		//print("composing with left: {}\n",left_part->as_string());
+		  ( shared_ptr<indexstruct<I,d>>
+		    (make_shared<contiguous_indexstruct<I,d>>(left,last)) );
 		comp->push_back(left_part);
-		//print(" .. gives {}\n",comp->as_string());			 
 	      } 
 	      shared_ptr<indexstruct<I,d>> strided;
 	      if (stride==1)
@@ -927,9 +943,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
 	      else
 		strided = shared_ptr<indexstruct<I,d>>
 		  ( make_shared<strided_indexstruct<I,d>>(found_left,found_right,stride) );
-	      //print("with middle: {}\n",strided->as_string());
 	      comp->push_back(strided);
-	      //print(" .. gives {}\n",comp->as_string());
 	      if (find_right<iright) { // there is stuff to the right
 		auto right = get_ith_element(find_right);
 		auto right_part = this->minus
@@ -964,27 +978,32 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
 
 //! Detect a strided subsection in the indexed structure
 template<typename I,int d>
-bool indexed_indexstruct<I,d>::is_strided_between_indices
-        (int ileft,int iright,int &stride) const {
-  throw("strided between");
-#if 0
-  auto first = get_ith_element(ileft), last = get_ith_element(iright),
-    n_index = iright-ileft+1;
+bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &stride) const {
+  //  throw("strided between");
+  auto first = get_ith_element(ileft), last = get_ith_element(iright);
+  I n_index = iright-ileft+1;
   if (n_index==1)
     throw(fmt::format("Single point should have been caught"));
   // if this is strided, what would the stride be?
-  stride = (last-first)/(n_index-1);
+  auto stride_vector = (last-first)/(n_index-1);
+  print("stride vector detected: {}\n",stride_vector);
+  stride = stride_vector[0];
+  if (stride!=stride_vector[d-1])
+    // we should test the in between ones
+    return false;
   // let's see if the bounds are proper for the stride
   if (first+(n_index-1)*stride!=last)
     return false;
   // test if everything in between is also strided
   for (I inext=ileft+1; inext<iright; inext++) {
     auto elt = get_ith_element(inext);
-    //print("elt {} : {}, testing with stride {}\n",inext,elt,stride);
-    if ( (elt-first)%stride!=0 )
+    print("elt {} : {}, testing with stride {}\n",inext,elt,stride);
+    auto inplace = (elt-first)%stride;
+    print(".. inplace: {}\n",inplace);
+    if ( not ( inplace==coordinate<I,d>(0) ) )
+      // strange. why doesn't the != operator work here?
       return false;
   }
-#endif
   return true; // iright>ileft+1; // should be at least 3 elements
 };
 
@@ -1183,6 +1202,16 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::relativize_to
   }
   
   throw(fmt::format("Unimplemented indexed relativize to {}",idx->type_as_string()));
+};
+
+template<typename I,int d>
+string indexed_indexstruct<I,d>::as_string() const {
+  memory_buffer w;
+  format_to(std::back_inserter(w),"[");
+  for ( const auto& i : indices )
+    format_to(std::back_inserter(w),"{}",i);
+  format_to(std::back_inserter(w),"]");
+  return to_string(w);
 };
 
 //! \todo can we lose that clone?
@@ -2179,11 +2208,6 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::operate( const ioperato
   return rstruct;
 };
 
-template<typename I,int d>
-string indexed_indexstruct<I,d>::as_string() const {
-  return "indexed";
-};
-
 /****
  **** Operators
  ****/
@@ -2227,8 +2251,8 @@ shared_ptr<indexstruct<I,d>> sigma_operator<I,d>::operate( shared_ptr<indexstruc
 };
 
 template<typename I,int d>
-std::string sigma_operator<I,d>::as_string() const {
-  fmt::memory_buffer w;
+string sigma_operator<I,d>::as_string() const {
+  memory_buffer w;
   format_to(w.end(),"Sigma operator");
   if (is_point_operator())
     format_to(w.end()," from ioperator \"{}\"",point_func.as_string());

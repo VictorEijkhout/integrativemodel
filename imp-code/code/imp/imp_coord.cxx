@@ -4,6 +4,8 @@
 using std::array;
 #include <string>
 using std::string;
+#include <vector>
+using std::vector;
 #include <sstream>
 using std::stringstream;
 
@@ -193,6 +195,13 @@ bool coordinate<I,d>::operator==( coordinate<I,d> other ) const {
   return r;
 };
 template<typename I,int d>
+bool coordinate<I,d>::operator!=( coordinate<I,d> other ) const {
+  bool r{true};
+  for ( int id=0; id<d; id++ )
+    r = r or coordinates[id]!=other.coordinates[id];
+  return r;
+};
+template<typename I,int d>
 bool coordinate<I,d>::operator==( I other ) const {
   bool r{true};
   for ( int id=0; id<d; id++ )
@@ -251,6 +260,17 @@ coordinate<I,d>  coordmin( coordinate<I,d> current,coordinate<I,d> other ) {
 };
 
 template<typename I,int d>
+void require_sorted( vector<coordinate<I,d>> idxs ) {
+  auto v = idxs.front();
+  for ( auto vv : idxs ) {
+    if (v==vv or v<vv)
+      v = vv;
+    else
+      throw("Indices need to be sorted");
+  }    
+};
+
+template<typename I,int d>
 bool coordinate<I,d>::before( const coordinate<I,d>& other ) const {
   return other.span()>=span();
 };
@@ -263,8 +283,12 @@ template<typename I,int d>
 string coordinate<I,d>::as_string() const {
   stringstream ss;
   ss << "<";
+  auto sser = [&ss,need_comma=false] ( auto c ) mutable {
+    if (need_comma) ss << ",";
+    ss << c;
+    need_comma = true; };
   for ( auto c : coordinates )
-    ss << c << ",";
+    sser(c); // ss << c << ",";
   ss << ">";
   return ss.str();
 };
@@ -299,6 +323,11 @@ template array<int,3> endpoint<int,3>(int);
 template array<index_int,1> endpoint<index_int,1>(index_int);
 template array<index_int,2> endpoint<index_int,2>(index_int);
 template array<index_int,3> endpoint<index_int,3>(index_int);
+
+template void require_sorted( vector<coordinate<int,1>> idxs );
+template void require_sorted( vector<coordinate<int,2>> idxs );
+template void require_sorted( vector<coordinate<index_int,1>> idxs );
+template void require_sorted( vector<coordinate<index_int,2>> idxs );
 
 template class coordinate<int,1>;
 template class coordinate<int,2>;
