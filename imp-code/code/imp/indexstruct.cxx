@@ -986,7 +986,7 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &s
     throw(fmt::format("Single point should have been caught"));
   // if this is strided, what would the stride be?
   auto stride_vector = (last-first)/(n_index-1);
-  print("stride vector detected: {}\n",stride_vector);
+  // print("stride vector detected: {}\n",stride_vector);
   stride = stride_vector[0];
   if (stride!=stride_vector[d-1])
     // we should test the in between ones
@@ -997,9 +997,9 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &s
   // test if everything in between is also strided
   for (I inext=ileft+1; inext<iright; inext++) {
     auto elt = get_ith_element(inext);
-    print("elt {} : {}, testing with stride {}\n",inext,elt,stride);
+    // print("elt {} : {}, testing with stride {}\n",inext,elt,stride);
     auto inplace = (elt-first)%stride;
-    print(".. inplace: {}\n",inplace);
+    // print(".. inplace: {}\n",inplace);
     if ( not ( inplace==coordinate<I,d>(0) ) )
       // strange. why doesn't the != operator work here?
       return false;

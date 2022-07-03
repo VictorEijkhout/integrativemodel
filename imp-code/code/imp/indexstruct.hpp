@@ -837,6 +837,49 @@ struct fmt::formatter<std::shared_ptr<indexstruct<I,d>>> {
   }
 };
 
+template<typename I, int d>
+std::ostream &operator<<(std::ostream &os,const std::shared_ptr<indexstruct<I,d>> &s) {
+  os << s->as_string();
+  return os;
+};
+
+template<typename I, int d>
+std::ostream &operator<<(std::ostream &os,const std::shared_ptr<unknown_indexstruct<I,d>> &s) {
+  os << s->as_string();
+  return os;
+};
+
+template<typename I, int d>
+std::ostream &operator<<(std::ostream &os,const std::shared_ptr<empty_indexstruct<I,d>> &s) {
+  os << s->as_string();
+  return os;
+};
+
+template<typename I, int d>
+std::ostream &operator<<(std::ostream &os,const std::shared_ptr<strided_indexstruct<I,d>> &s) {
+  os << s->as_string();
+  return os;
+};
+
+template<typename I, int d>
+std::ostream &operator<<(std::ostream &os,const std::shared_ptr<contiguous_indexstruct<I,d>> &s) {
+  os << s->as_string();
+  return os;
+};
+template<typename I, int d>
+
+std::ostream &operator<<(std::ostream &os,const std::shared_ptr<indexed_indexstruct<I,d>> &s) {
+  os << s->as_string();
+  return os;
+};
+
+template<typename I, int d>
+std::ostream &operator<<(std::ostream &os,const std::shared_ptr<composite_indexstruct<I,d>> &s) {
+  os << s->as_string();
+  return os;
+};
+
+
 #if 0
 template<typename I,int d>
 class multi_indexstruct;

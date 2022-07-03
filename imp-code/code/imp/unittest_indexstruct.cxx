@@ -328,8 +328,10 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
 	shared_ptr<indexstruct<index_int,1>>
 	( make_shared<indexed_indexstruct<index_int,1>>( vector<index_int>{3,5,7} ) );
       shared_ptr<indexstruct<index_int,1>> ir;
+      // i1 is not strided
       REQUIRE_NOTHROW( ir = i1->make_strided() );
-      REQUIRE( ir!=nullptr );
+      REQUIRE( ir==nullptr );
+      // i2 is strided
       REQUIRE_NOTHROW( ir = i2->make_strided() );
       REQUIRE( ir!=nullptr );
     }
@@ -368,15 +370,18 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
       shared_ptr<indexstruct<index_int,1>>
       ( new indexed_indexstruct<index_int,1>( vector<index_int>{2,4, 10,12, 15} ) );
     INFO( format("starting with indexed {}",i1->as_string()) );
-    REQUIRE_NOTHROW( i1->add_element(11) );
+    REQUIRE_NOTHROW( i1->add_in_element(11) );
+    REQUIRE( i1->volume()==6 );
     INFO( format("add element 11 gives {}",i1->as_string()) );
     CHECK( i1->is_indexed() );
     REQUIRE_NOTHROW( i2 = i1->force_simplify() );
     INFO( format("simplify to composite {}",i2->as_string()) );
     CHECK( i2->is_composite() );
+    REQUIRE( i2->volume()==6 );
     REQUIRE_NOTHROW( i3 = i2->convert_to_indexed() );
     INFO( format("back to indexed {}",i3->as_string()) );
-    CHECK( i1->equals(i3) );
+    REQUIRE( i3->volume()==6 );
+    CHECK( not i1->equals(i3) );
   }
 
   SECTION( "striding and operations" ) {
@@ -449,7 +454,6 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
   }
 }
 
-#if 0
 TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
   shared_ptr<indexstruct<index_int,1>> i1,i2,ifinal;
   shared_ptr<composite_indexstruct<index_int,1>> icomp;
@@ -565,6 +569,7 @@ TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
   }
 }
 
+#if 0
 TEST_CASE( "enumerating indexstruct<index_int,1>s","[10]" ) {
   int count,cnt=0;
   
