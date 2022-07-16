@@ -60,12 +60,12 @@ public :
 #endif
   
   // operators
-  coordinate<I,d> operator+( coordinate<I,d> ) const;
+  coordinate<I,d> operator+( const coordinate<I,d>& ) const;
   coordinate<I,d> operator+( I ) const;
-  coordinate<I,d> operator-( coordinate<I,d> ) const;
+  coordinate<I,d> operator-( const coordinate<I,d>& ) const;
   coordinate<I,d> operator-( I ) const;
   coordinate<I,d> operator-( ) const;
-  void operator-=( coordinate<I,d> );
+  void operator-=( const coordinate<I,d>& );
   coordinate<I,d> operator%( I ) const;
   coordinate<I,d> operator*( I ) const;
   coordinate<I,d> operator/( I ) const;
@@ -74,7 +74,7 @@ public :
 //     return std::accumulate( coordinates.begin(),coordinates.end(),
 // 		       []( I x,I y) { return x<=>y; } );
 //   };
-  bool operator==( coordinate<I,d> other ) const;
+  bool operator==( const coordinate<I,d>& other ) const;
   bool operator!=( coordinate<I,d> other ) const;
   bool operator<=( coordinate<I,d> other ) const;
   bool operator<( coordinate<I,d> ) const;
@@ -122,3 +122,10 @@ struct fmt::formatter<coordinate<I,d>> {
     return format_to(ctx.out(),"{}", p.as_string());
   }
 };
+
+template<typename I, int d>
+std::ostream &operator<<(std::ostream &os,const std::shared_ptr<coordinate<I,d>> &c) {
+  os << c->as_string();
+  return os;
+};
+

@@ -49,11 +49,12 @@ int indexstruct<I,d>::type_as_int() const {
 };
 
 template<typename I,int d>
-void indexstruct<I,d>::report_unimplemented( const char *c ) const {
-  if (!is_known())
-    throw(fmt::format("Trying to use query <<{}>> on undefined indexstruct",c));
-  else
-    throw(fmt::format("Routine {} not implemented for type {}",c,type_as_string()));
+void indexstruct<I,d>::report_unimplemented( string s ) const {
+  //  string s{c};
+  //  if (!is_known())
+    throw(fmt::format("Trying to use query <<{}>> on undefined indexstruct",s));
+  // else
+  //   throw(fmt::format("Routine {} not implemented for type {}",c,type_as_string()));
 };
 
 template<typename I,int d>
@@ -1307,24 +1308,24 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::make_clone() const {
 
 template<typename I,int d>
 coordinate<I,d> composite_indexstruct<I,d>::first_index() const {
-  throw("composite first index");
-  // if (structs.size()==0)
-  //   throw(std::string("Can not get first from empty composite"));
-  // I f = structs.at(0)->first_index();
-  // for (auto s : structs)
-  //   f = coordmin<I,d>(f,s->first_index());
-  // return f;
+  //  throw("composite first index");
+  if (structs.size()==0)
+    throw(std::string("Can not get first from empty composite"));
+  auto f = structs.at(0)->first_index();
+  for (auto s : structs)
+    f = coordmin<I,d>(f,s->first_index());
+  return f;
 };
 
 template<typename I,int d>
 coordinate<I,d> composite_indexstruct<I,d>::last_index() const {
-  throw("composite last index");
-  // if (structs.size()==0)
-  //   throw(std::string("Can not get last from empty composite"));
-  // I f = structs.at(0)->last_index();
-  // for (auto s : structs)
-  //   f = MAX(f,s->last_index());
-  // return f;
+  //  throw("composite last index");
+  if (structs.size()==0)
+    throw(std::string("Can not get last from empty composite"));
+  auto f = structs.at(0)->last_index();
+  for (auto s : structs)
+    f = MAX(f,s->last_index());
+  return f;
 };
 
 template<typename I,int d>

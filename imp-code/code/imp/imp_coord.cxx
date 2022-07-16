@@ -122,7 +122,7 @@ const I& coordinate<I,d>::operator[](int i) const {
  */
 // plus
 template<typename I,int d>
-coordinate<I,d> coordinate<I,d>::operator+( coordinate<I,d> other ) const {
+coordinate<I,d> coordinate<I,d>::operator+( const coordinate<I,d>& other ) const {
   auto r(*this);
   for ( int id=0; id<d; id++ )
     r.coordinates[id] += other.coordinates[id];
@@ -138,7 +138,7 @@ coordinate<I,d> coordinate<I,d>::operator+( I other ) const {
 
 // minus
 template<typename I,int d>
-coordinate<I,d> coordinate<I,d>::operator-( coordinate<I,d> other ) const {
+coordinate<I,d> coordinate<I,d>::operator-( const coordinate<I,d>& other ) const {
   auto r(*this);
   for ( int id=0; id<d; id++ )
     r.coordinates[id] -= other.coordinates[id];
@@ -159,7 +159,7 @@ coordinate<I,d> coordinate<I,d>::operator-() const {
   return r;
 };
 template<typename I,int d>
-void coordinate<I,d>::operator-=( coordinate<I,d> other ) {
+void coordinate<I,d>::operator-=( const coordinate<I,d>& other ) {
   for ( int id=0; id<d; id++ )
     coordinates[id] -= other.coordinates[id];
 };
@@ -188,12 +188,17 @@ coordinate<I,d> coordinate<I,d>::operator%( I other ) const {
 };
 // equals and other comparisons
 template<typename I,int d>
-bool coordinate<I,d>::operator==( coordinate<I,d> other ) const {
+bool coordinate<I,d>::operator==( const coordinate<I,d>& other ) const {
   bool r{true};
   for ( int id=0; id<d; id++ )
     r = r and coordinates[id]==other.coordinates[id];
   return r;
 };
+// template<typename I,int d>
+// bool coordinate<I,d>::operator==( coordinate<I,d>&& other ) const {
+//   return *this==std::move(other);
+// };
+
 template<typename I,int d>
 bool coordinate<I,d>::operator!=( coordinate<I,d> other ) const {
   bool r{true};

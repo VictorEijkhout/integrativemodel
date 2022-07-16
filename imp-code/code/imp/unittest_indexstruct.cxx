@@ -25,6 +25,8 @@
 
 using fmt::memory_buffer;
 using fmt::format,fmt::print,fmt::format_to,fmt::to_string;
+#include <fmt/ostream.h>
+using fmt::streamed;
 using std::shared_ptr,std::make_shared;
 using std::string;
 using std::vector,std::array;
@@ -476,6 +478,7 @@ TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
       REQUIRE_NOTHROW( icomp->push_back(i1) );
     }
     REQUIRE_NOTHROW( ifinal = icomp->make_clone() );
+    //    INFO( format("ifinal: {}",streamed(ifinal)) );
     CHECK( !ifinal->is_contiguous() );
     CHECK( ( ifinal->first_index()==3 ) );
     CHECK( ( ifinal->last_index()==12 ) );
@@ -569,8 +572,7 @@ TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
   }
 }
 
-#if 0
-TEST_CASE( "enumerating indexstruct<index_int,1>s","[10]" ) {
+TEST_CASE( "enumerating indexstructs","[10]" ) {
   int count,cnt=0;
   
   SECTION( "contiguous" ) {
@@ -672,7 +674,7 @@ TEST_CASE( "enumerating indexstruct<index_int,1>s","[10]" ) {
   }
 }
 
-TEST_CASE( "indexstruct<index_int,1> intersections","[indexstruct<index_int,1>][intersect][20]" ) {
+TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
   
   shared_ptr<indexstruct<index_int,1>> i1,i2,i3,i4;
   SECTION( "first cont" ) {
@@ -836,6 +838,7 @@ TEST_CASE( "indexstruct<index_int,1> intersections","[indexstruct<index_int,1>][
   }
 }
 
+#if 0
 TEST_CASE( "indexstruct<index_int,1> differences","[indexstruct<index_int,1>][minus][21]" ) {
   indexstruct<index_int,1> *it;
   shared_ptr<indexstruct<index_int,1>> i1,i2,i3;
@@ -2355,4 +2358,6 @@ TEST_CASE( "multi sigma operators","[multi][sigma][140]" ) {
 }
 
 #endif
+#endif
+#if 0
 #endif

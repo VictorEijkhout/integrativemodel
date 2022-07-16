@@ -74,7 +74,8 @@ public:
   virtual std::string type_as_string() const { return std::string("none"); };
   int type_as_int() const;
   virtual void reserve( I s ) { return; };
-  void report_unimplemented( const char *c ) const;
+  //  void report_unimplemented( char const * const c ) const;
+  void report_unimplemented( std::string ) const;
 
   /*
    * Statistics
