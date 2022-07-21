@@ -90,7 +90,7 @@ public:
   virtual I stride() const { throw(std::string("Indexstruct has no stride")); };
   virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const;
   
-  virtual std::shared_ptr<indexstruct<I,d>> make_strided() const;
+  virtual std::shared_ptr<indexstruct<I,d>> make_strided(bool=false) const;
   virtual I find( coordinate<I,d> ) const { throw(std::string("Can not be found")); };
   I location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
     return find(inner->first_index()); };
@@ -101,7 +101,7 @@ public:
   bool contains_element_in_range( coordinate<I,d> idx) const;
   virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const {
     report_unimplemented("contains"); return false; };
-  virtual bool is_strided_between_indices(I,I,I&) const {
+  virtual bool is_strided_between_indices(I,I,I&,bool=false) const {
     report_unimplemented("strided between"); return false; };
   virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx );
   virtual coordinate<I,d> get_ith_element( const I i ) const {
@@ -115,7 +115,7 @@ public:
   virtual std::shared_ptr<indexstruct<I,d>> simplify() {
     return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this();
   //! \todo try the shared_from_this again
-  virtual std::shared_ptr<indexstruct<I,d>> force_simplify() const {
+  virtual std::shared_ptr<indexstruct<I,d>> force_simplify(bool=false) const {
     return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this();
   virtual std::shared_ptr<indexstruct<I,d>> over_simplify() {
     return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this();
@@ -127,9 +127,9 @@ public:
     report_unimplemented("has_intersect"); return false; };
 
   // union and intersection
-  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ) {
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx,bool=false ) {
     throw(fmt::format("shared struct_union: Not implemented for {}",type_as_string())); };
-  virtual std::shared_ptr<indexstruct<I,d>> struct_union( indexstruct* idx ) {
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( indexstruct* idx ,bool=false ) {
     return struct_union( idx->make_clone() ); };
   //return struct_union( std::shared_ptr<indexstruct<I,d>>{idx->make_clone()} ); };
   virtual std::shared_ptr<indexstruct<I,d>> split( std::shared_ptr<indexstruct<I,d>> idx ) {
@@ -150,10 +150,8 @@ public:
     return false; };
 
   // operate
-  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ) const {
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op,bool=false ) const {
     throw(fmt::format("ioperate: Not implemented for struct type <<{}>>",type_as_string())); };
-  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &&op ) const {
-    throw(fmt::format("ioperate rv: Not implemented for type <<{}>>",type_as_string())); };
   virtual std::shared_ptr<indexstruct<I,d>> operate
       ( const ioperator<I,d>&,coordinate<I,d>,coordinate<I,d>) const;
 
@@ -233,9 +231,7 @@ public:
     return std::shared_ptr<indexstruct<I,d>>( make_clone() ); }; //shared_from_this(); };
 
   //! Operating on empty struct give the struct itself.
-  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ) const override {
-    return std::shared_ptr<indexstruct<I,d>>( make_clone() ); };
-  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &&op ) const override {
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ,bool=false) const override {
     return std::shared_ptr<indexstruct<I,d>>( make_clone() ); };
   virtual std::shared_ptr<indexstruct<I,d>> operate
       ( const ioperator<I,d>&,coordinate<I,d>,coordinate<I,d>)
@@ -250,7 +246,7 @@ public:
     const override {
     return std::shared_ptr<indexstruct<I,d>>( make_clone() ); };
 
-  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ,bool=false ) override;
   virtual bool can_merge_with_type( std::shared_ptr<indexstruct<I,d>> idx) override {
     return true; };
   virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override {
@@ -316,7 +312,7 @@ public:
   virtual std::shared_ptr<indexstruct<I,d>> intersect( std::shared_ptr<indexstruct<I,d>> idx ) override;
   virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const override;
   virtual std::shared_ptr<indexstruct<I,d>> relativize_to( std::shared_ptr<indexstruct<I,d>>,bool=false) override;
-  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ,bool=false ) override;
   virtual bool can_merge_with_type( std::shared_ptr<indexstruct<I,d>> idx) override;
   virtual std::shared_ptr<indexstruct<I,d>> split( std::shared_ptr<indexstruct<I,d>> idx ) override;
 
@@ -333,8 +329,7 @@ public:
   /*
    * Operate
    */
-  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ) const override;
-  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &&op ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ,bool=false) const override;
   virtual std::shared_ptr<indexstruct<I,d>> operate( const sigma_operator<I,d> &op ) const override;
 
   virtual std::string as_string() const override;
@@ -351,7 +346,8 @@ public:
   virtual bool is_contiguous() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("contiguous"); };
   std::shared_ptr<indexstruct<I,d>> make_clone() const override {
-    return std::shared_ptr<indexstruct<I,d>>{ new contiguous_indexstruct(this->first,this->last) };
+    return std::shared_ptr<indexstruct<I,d>>
+      { new contiguous_indexstruct(this->first,this->last) };
   };
   virtual std::string as_string() const override;
 };
@@ -374,7 +370,7 @@ public:
   // ~indexed_indexstruct() {};
   bool is_indexed() const override { return true; };
   virtual std::shared_ptr<indexstruct<I,d>> simplify() override;
-  virtual std::shared_ptr<indexstruct<I,d>> force_simplify() const override;
+  virtual std::shared_ptr<indexstruct<I,d>> force_simplify(bool=false) const override;
   virtual std::string type_as_string() const override { return std::string("indexed"); };
   virtual void reserve( I s ) override { indices.reserve(s); };
 
@@ -410,8 +406,8 @@ public:
     return false;
   };
   virtual coordinate<I,d> get_ith_element( const I i ) const override;
-  virtual std::shared_ptr<indexstruct<I,d>> make_strided() const override;
-  virtual bool is_strided_between_indices(I,I,I&) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> make_strided(bool=false) const override;
+  virtual bool is_strided_between_indices(I,I,I&,bool=false) const override;
   virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
   virtual bool can_incorporate( coordinate<I,d> v ) const override { return true; } //!< We can always add an index.
   virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) override;
@@ -430,7 +426,7 @@ public:
 
   virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const override;
   virtual std::shared_ptr<indexstruct<I,d>> relativize_to( std::shared_ptr<indexstruct<I,d>>,bool=false) override;
-  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ,bool=false ) override;
   virtual bool can_merge_with_type( std::shared_ptr<indexstruct<I,d>> idx) override {
     return idx->is_indexed(); };
   virtual std::shared_ptr<indexstruct<I,d>> intersect( std::shared_ptr<indexstruct<I,d>> idx ) override;
@@ -438,7 +434,7 @@ public:
   /*
    * Operate
    */
-  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ,bool=false) const override;
 
   virtual std::string as_string() const override;
 };
@@ -474,10 +470,10 @@ public:
   virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
   virtual I find( coordinate<I,d> idx ) const override ;
   virtual coordinate<I,d> get_ith_element( const I i ) const override;
-  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> ) override;
+  virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> ,bool=false ) override;
   virtual std::shared_ptr<indexstruct<I,d>> intersect( std::shared_ptr<indexstruct<I,d>> idx ) override;
   virtual std::shared_ptr<indexstruct<I,d>> convert_to_indexed() const override;
-  virtual std::shared_ptr<indexstruct<I,d>> force_simplify() const override;
+  virtual std::shared_ptr<indexstruct<I,d>> force_simplify(bool=false) const override;
   virtual std::shared_ptr<indexstruct<I,d>> over_simplify() override;
   virtual std::shared_ptr<indexstruct<I,d>> relativize_to( std::shared_ptr<indexstruct<I,d>>,bool=false) override ;
   virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const override;
@@ -485,7 +481,7 @@ public:
   virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) override;
   virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override;
 
-  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ) const override;
+  virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ,bool=false) const override;
 
   virtual std::string as_string() const override;
 
@@ -537,7 +533,7 @@ public:
   ioperator( I(*f)(I) ) { type = iop_type::FUNC; func = f; };
   ioperator( std::function< I(I) > f ) { type = iop_type::FUNC; func = f; };
   I operate( I ) const;
-  coordinate<I,d> operate( coordinate<I,d> ) const;
+  coordinate<I,d> operate( const coordinate<I,d>& ) const;
   I operate( I, I ) const;
   I inverse_operate( I ) const;
   I inverse_operate( I, I ) const;
@@ -756,7 +752,7 @@ public:
    * Operations that yield a new indexstruct
    */
   void simplify() { strct = strct->simplify(); };
-  void force_simplify() { strct = strct->force_simplify(); };
+  void force_simplify(bool trace=false) { strct = strct->force_simplify(trace); };
   void over_simplify() { strct = strct->over_simplify(); };
   void add_element( coordinate<I,d> idx ) { strct = strct->add_element(idx); };
   void add_in_element( coordinate<I,d> idx ) { strct->add_in_element(idx); };
@@ -765,9 +761,9 @@ public:
     return strct->has_intersect(idx); };
 
   // union and intersection
-  auto struct_union( indexstructure &idx ) {
+  auto struct_union( indexstructure &idx ,bool=false ) {
     return indexstructure(strct->struct_union(idx.strct)); };
-  auto struct_union( indexstructure &&idx ) {
+  auto struct_union( indexstructure &&idx ,bool=false ) {
     return indexstructure(strct->struct_union(idx.strct)); };
   void split( std::shared_ptr<indexstruct<I,d>> idx ) { strct = strct->split(idx); };
   indexstructure split( indexstructure &idx ) {
@@ -1016,7 +1012,7 @@ public:
       ( const ioperator<I,d>&,const multi_indexstruct& ) const;
   void translate_by(int d,I amt);
 
-  std::shared_ptr<multi_indexstruct> struct_union( std::shared_ptr<multi_indexstruct>);
+  std::shared_ptr<multi_indexstruct> struct_union( std::shared_ptr<multi_indexstruct>,bool=false );
   bool can_union_in_place(std::shared_ptr<multi_indexstruct> other,int &diff) const;
   std::shared_ptr<multi_indexstruct> struct_union_in_place
       (std::shared_ptr<multi_indexstruct> other,int diff);

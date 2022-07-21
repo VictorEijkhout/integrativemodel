@@ -31,7 +31,6 @@ public :
   I span() const;
   bool before( const coordinate<I,d>& ) const;
   I linear( const coordinate<I,d>& ) const;
-  //  bool operator>( const coordinate<I,d>& ) const;
 
   // // linearization
   // int linearize( const coordinate&) const; // linear number wrt cube layout
@@ -75,7 +74,7 @@ public :
 // 		       []( I x,I y) { return x<=>y; } );
 //   };
   bool operator==( const coordinate<I,d>& other ) const;
-  bool operator!=( coordinate<I,d> other ) const;
+  bool operator!=( const coordinate<I,d>& other ) const;
   bool operator<=( coordinate<I,d> other ) const;
   bool operator<( coordinate<I,d> ) const;
   bool operator>( coordinate<I,d> ) const;
@@ -87,7 +86,7 @@ protected:
 public:
   coordinate<I,d>& begin() { iterator = 0; return *this; };
   coordinate<I,d>& end() { return *this; };
-  bool operator!=( coordinate<I,d> ps ) { return iterator<coordinates.size()-1; };
+  //  bool operator!=( coordinate<I,d> ps ) { return iterator<coordinates.size()-1; };
   void operator++() { iterator++; };
   int operator*() const {
     if (iterator<0)

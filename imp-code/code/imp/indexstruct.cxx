@@ -58,7 +58,7 @@ void indexstruct<I,d>::report_unimplemented( string s ) const {
 };
 
 template<typename I,int d>
-std::shared_ptr<indexstruct<I,d>> indexstruct<I,d>::make_strided() const {
+std::shared_ptr<indexstruct<I,d>> indexstruct<I,d>::make_strided(bool trace) const {
   report_unimplemented("make_strided");
   return nullptr;
 };
@@ -170,7 +170,8 @@ void empty_indexstruct<I,d>::add_in_element( coordinate<I,d> idx ) {
 
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> empty_indexstruct<I,d>::struct_union
-    ( shared_ptr<indexstruct<I,d>> idx ) {
+        ( shared_ptr<indexstruct<I,d>> idx,bool trace ) {
+  if (trace) print("union empty returns other\n");
   return idx;
 };
 
@@ -712,17 +713,21 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::convert_to_indexed() cons
 
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
-    ( shared_ptr<indexstruct<I,d>> idx ) {
-  if (contains(idx))
+        ( shared_ptr<indexstruct<I,d>> idx,bool trace ) {
+  if (contains(idx)) {
+    if (trace) print("union with already contained struct\n");
     return this->shared_from_this();
-  else if (idx->contains(this->shared_from_this()))
+  } else if (idx->contains(this->shared_from_this())) {
+    if (trace) print("union with containing struct\n");
     return idx;
+  }
   
   /*
    * Case : union with other strided
    */
   strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) {
+    if (trace) print("union strided+strided\n");
     int amt = idx->stride();
     auto frst = idx->first_index(), lst = idx->last_index();
     if (stride_amount==amt && first%stride_amount==frst%amt &&
@@ -752,19 +757,21 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
    */
   indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) {
+    if (trace) print("union strided+indexed\n");
     auto extstrided = this->make_clone();
     for (auto v : *indexed) {
-      if (extstrided->contains_element(v))
+      if (extstrided->contains_element(v)) {
+	if (trace) print("already contains element: {}\n",v);
 	continue;
-      else if (extstrided->can_incorporate(v))
+      } else if (extstrided->can_incorporate(v)) {
+	if (trace) print("can extend with element: {}\n",v);
 	extstrided = extstrided->add_element(v);
-      
-      else { // an index struct can incorporate arbitrary crap
-	//print("extending strided {} by indexed {}\n",this->as_string(),indexed->as_string());
+      } else { // an indexed struct can incorporate arbitrary crap
+	if (trace) print("can not incorporate: return as indexed\n");
 	auto indexplus = indexed->struct_union(this->shared_from_this());
-	//print("  extended : {}\n",indexplus->as_string());
-	indexplus = indexplus->force_simplify();
-	//print("  simplified : {}\n",indexplus->as_string());
+	if (trace) print("reverse incorporation as indexed: {}\n",indexplus->as_string());
+	indexplus = indexplus->force_simplify(trace);
+	if (trace) print("force simplify: {}\n",indexplus->as_string());
 	return indexplus;
       }
     }
@@ -776,6 +783,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
    */
   composite_indexstruct<I,d>* composite = dynamic_cast<composite_indexstruct<I,d>*>(idx.get());
   if (composite!=nullptr) {
+    if (trace) print("union strided+composite\n");
     return idx->struct_union(this->shared_from_this());
   }
 
@@ -886,11 +894,11 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::simplify() {
   See if we can turn in indexed into contiguous or strided.
 */
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::make_strided() const {
+shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::make_strided(bool trace) const {
   int ileft = 0, iright = this->volume()-1;
   // try detect strided
   I stride;
-  if (is_strided_between_indices(ileft,iright,stride)) {
+  if (is_strided_between_indices(ileft,iright,stride,trace)) {
     auto first = get_ith_element(ileft), last = get_ith_element(iright);
     if (stride==1)
       return shared_ptr<indexstruct<I,d>>
@@ -902,7 +910,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::make_strided() const {
 };
 
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
+shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify(bool trace) const {
   try {
     if (false) {
     } else if (this->volume()==0) {
@@ -913,8 +921,9 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
 	shared_ptr<indexstruct<I,d>>
 	( make_shared<contiguous_indexstruct<I,d>>(first_index(),last_index()) );
     } else {
-      auto ret = make_strided();
+      auto ret = make_strided(trace);
       if (ret!=nullptr) {
+	if (trace) print("simplify to strided\n");
 	return ret;
       } else {
 	I ileft = 0, iright = this->volume()-1;
@@ -925,7 +934,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
 	  I stride;
 	  for (I find_right=top_right; find_right>find_left+1; find_right--) {
 	    // if we find one section, we replace it by a 3-composite. ultimately recursive?
-	    if (is_strided_between_indices(find_left,find_right,stride)) {
+	    if (is_strided_between_indices(find_left,find_right,stride,trace)) {
 	      auto comp = shared_ptr<composite_indexstruct<I,d>>
 		( make_shared<composite_indexstruct<I,d>>() );
 	      auto found_left = get_ith_element(find_left),
@@ -979,28 +988,34 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify() const {
 
 //! Detect a strided subsection in the indexed structure
 template<typename I,int d>
-bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &stride) const {
-  //  throw("strided between");
+bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &stride,bool trace) const {
   auto first = get_ith_element(ileft), last = get_ith_element(iright);
   I n_index = iright-ileft+1;
   if (n_index==1)
     throw(fmt::format("Single point should have been caught"));
+
   // if this is strided, what would the stride be?
   auto stride_vector = (last-first)/(n_index-1);
-  // print("stride vector detected: {}\n",stride_vector);
   stride = stride_vector[0];
+  // accept only identical in all dimensions
   if (stride!=stride_vector[d-1])
     // we should test the in between ones
     return false;
+
   // let's see if the bounds are proper for the stride
-  if (first+(n_index-1)*stride!=last)
+  if (trace) print("first={}, last={}, does that fit {} x stride {}\n",
+		   first[0],last[0],n_index-1,stride);
+  if ( not ( first+(n_index-1)*stride==last) ) {
+    if (trace) print("stride does not fit\n");
     return false;
+  }
+
   // test if everything in between is also strided
   for (I inext=ileft+1; inext<iright; inext++) {
     auto elt = get_ith_element(inext);
-    // print("elt {} : {}, testing with stride {}\n",inext,elt,stride);
     auto inplace = (elt-first)%stride;
-    // print(".. inplace: {}\n",inplace);
+    if (trace) print("element {}: {} has modulo: {}\n",
+		     inext,elt,inplace);
     if ( not ( inplace==coordinate<I,d>(0) ) )
       // strange. why doesn't the != operator work here?
       return false;
@@ -1068,8 +1083,11 @@ bool indexed_indexstruct<I,d>::contains( shared_ptr<indexstruct<I,d>> idx ) cons
   indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) {
     auto nonconst = make_clone();
-    for (auto v : indexed->indices)
-      if (!nonconst->contains_element(v)) return false;
+    for (auto v : indexed->indices) {
+      if (!nonconst->contains_element(v)) {
+	return false;
+      }
+    }
     return true;
   }
 
@@ -1157,8 +1175,10 @@ bool indexed_indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
 //! \todo what do we need that nonconst for? equals and contains are const methods.
 template<typename I,int d>
 bool indexed_indexstruct<I,d>::equals( shared_ptr<indexstruct<I,d>> idx ) const {
+  // UGLY: just using shared_from_this gives you a const shared_ptr
   auto nonconst = make_clone();
   return nonconst->contains(idx) && idx->contains(nonconst);
+  //  return contains(idx) && idx->contains( this->shared_from_this() );
 };
 
 template<typename I,int d>
@@ -1218,10 +1238,12 @@ string indexed_indexstruct<I,d>::as_string() const {
 //! \todo can we lose that clone?
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::struct_union
-    ( shared_ptr<indexstruct<I,d>> idx ) {
+        ( shared_ptr<indexstruct<I,d>> idx,bool trace ) {
   if (contains(idx)) {
+    if (trace) print("union with already contained struct\n");
     return this->make_clone();
   } else if (idx->contains(this->shared_from_this())) {
+    if (trace) print("union with containing struct\n");
     return idx->make_clone();
   }
 
@@ -1230,6 +1252,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::struct_union
    */
   strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) {
+    if (trace) print("union indexed+strided\n");
     if (strided->volume()<SMALLBLOCKSIZE) {
       auto indexed = this->make_clone();
       int s = strided->stride();
@@ -1248,6 +1271,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::struct_union
    */
   indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) {
+    if (trace) print("union indexed+indexed\n");
     auto merged = indexed->make_clone();
     for (auto v : indices)
       merged = merged->add_element(v);
@@ -1259,6 +1283,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::struct_union
    */
   composite_indexstruct<I,d>* composite = dynamic_cast<composite_indexstruct<I,d>*>(idx.get());
   if (composite!=nullptr) {
+    if (trace) print("union indexed+composite\n");
     return idx->struct_union(this->shared_from_this());
   }
 
@@ -1462,12 +1487,13 @@ bool composite_indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
  */
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::struct_union
-    ( shared_ptr<indexstruct<I,d>> idx) {
+        ( shared_ptr<indexstruct<I,d>> idx,bool trace) {
   //print("composite union {} + {}\n",as_string(),idx->as_string());
 
   // already contained: return
   for (auto s : structs)
     if (s->contains(idx)) {
+      if (trace) print("union composite and already contained\n");
       return this->make_clone();
     }
 
@@ -1605,7 +1631,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::relativize_to
 
 //! Simplify a composite. We cover only some cases.
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::force_simplify() const {
+shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::force_simplify(bool trace) const {
 
   try {
     // first the obvious simplicitions: empty and just one member
@@ -1961,9 +1987,9 @@ I ioperator<I,d>::operate( I i ) const {
 };
 
 template<typename I,int d>
-coordinate<I,d> ioperator<I,d>::operate( coordinate<I,d> c ) const {
+coordinate<I,d> ioperator<I,d>::operate( const coordinate<I,d>& c ) const {
   auto r(c);
-  for ( auto& e : c.data() )
+  for ( auto& e : r.data() )
     e = operate(e);
   return r;
 };
@@ -2065,7 +2091,7 @@ I ioperator<I,d>::inverse_operate( I i, I m ) const {
 
 //! \todo lose a bunch of clones
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<I,d>& op ) const {
+shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<I,d>& op,bool trace ) const {
   shared_ptr<indexstruct<I,d>> operated{nullptr};
   if (op.is_none_op()) {
     return this->make_clone();
@@ -2079,10 +2105,13 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
       f = op.operate(first_index()),
       l = f+(last_index()-first_index());
     if (stride()==1)
-      operated = shared_ptr<indexstruct<I,d>>{ make_shared<contiguous_indexstruct<I,d>>(f,l) };
+      operated = shared_ptr<indexstruct<I,d>>
+	{ make_shared<contiguous_indexstruct<I,d>>(f,l) };
     else
-      operated = shared_ptr<indexstruct<I,d>>{ make_shared<strided_indexstruct<I,d>>(f,l,stride()) };
+      operated = shared_ptr<indexstruct<I,d>>
+	{ make_shared<strided_indexstruct<I,d>>(f,l,stride()) };
   } else if (op.is_mult_op() || op.is_div_op() || op.is_contdiv_op()) {
+    if (trace) print("mult type op");
     coordinate<I,d>
       new_first  = op.operate(first_index()),
       new_last;
@@ -2095,14 +2124,16 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
       new_last = coordmax<I,d>( new_first, op.operate(last_index()+stride())-new_stride );
     else if (op.is_base_op())
       new_last = op.operate(last_index()+1)-1;
-    else
+    else {
       new_last = op.operate(last_index());
+      if (trace) print(", mult last={} gives {}",last_index(),new_last);
+    }
     if (new_stride==1)
-      operated =
-	shared_ptr<indexstruct<I,d>>{ make_shared<contiguous_indexstruct<I,d>>(new_first,new_last) };
+      operated = shared_ptr<indexstruct<I,d>>
+	{ make_shared<contiguous_indexstruct<I,d>>(new_first,new_last) };
     else
-      operated =
-	shared_ptr<indexstruct<I,d>>{ make_shared<strided_indexstruct<I,d>>(new_first,new_last,new_stride) };
+      operated = shared_ptr<indexstruct<I,d>>
+	{ make_shared<strided_indexstruct<I,d>>(new_first,new_last,new_stride) };
   } else if (op.is_function_op()) {
     auto rstruct = shared_ptr<indexstruct<I,d>>{ make_shared<indexed_indexstruct<I,d>>() };
     //for (auto i : *this) { VLE `this' is modified, which contradicts the const
@@ -2114,57 +2145,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
   } else throw(std::string("Can not operate contiguous/strided struct"));
   if (operated==nullptr)
     throw(std::string("Strided indexstruct operate: missing case"));
-  return operated;
-};
-
-template<typename I,int d>
-shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<I,d>&& op ) const {
-  shared_ptr<indexstruct<I,d>> operated{nullptr};
-  if (op.is_none_op()) {
-    return this->make_clone();
-  } else if (op.is_shift_to()) {
-    throw("shift to not implemented");
-    // I amt = op.amount()-first;
-    // auto shift = shift_operator<I,d>(amt);
-    // operated = this->operate(shift);
-  } else if (op.is_shift_op()) {
-    auto f = op.operate(first_index()),
-      l = f+(last_index()-first_index());
-    if (stride()==1)
-      operated = shared_ptr<indexstruct<I,d>>{ make_shared<contiguous_indexstruct<I,d>>(f,l) };
-    else
-      operated = shared_ptr<indexstruct<I,d>>{ make_shared<strided_indexstruct<I,d>>(f,l,stride()) };
-  } else if (op.is_mult_op() || op.is_div_op() || op.is_contdiv_op()) {
-    coordinate<I,d>
-      new_first  = op.operate(first_index()),
-      new_last; I new_stride;
-    if (op.is_base_op())
-      new_stride  = stride();
-    else
-      new_stride = MAX(1,op.operate(stride()));
-    if (op.is_contdiv_op())
-      new_last = coordmax<I,d>( new_first, op.operate(last_index()+stride())-new_stride );
-    else if (op.is_base_op())
-      new_last = op.operate(last_index()+1)-1;
-    else
-      new_last = op.operate(last_index());
-    if (new_stride==1)
-      operated =
-	shared_ptr<indexstruct<I,d>>{ make_shared<contiguous_indexstruct<I,d>>(new_first,new_last) };
-    else
-      operated =
-	shared_ptr<indexstruct<I,d>>{ make_shared<strided_indexstruct<I,d>>(new_first,new_last,new_stride) };
-  } else if (op.is_function_op()) {
-    auto rstruct = shared_ptr<indexstruct<I,d>>{ make_shared<indexed_indexstruct<I,d>>() };
-    //for (auto i : *this) { VLE `this' is modified, which contradicts the const
-    for (int ii=0; ii<volume(); ii++) {
-      auto i = get_ith_element(ii);
-      rstruct = rstruct->add_element( op.operate(i) );
-    }
-    operated = rstruct;
-  } else throw(std::string("Can not operate contiguous/strided struct"));
-  if (operated==nullptr)
-    throw(std::string("Strided indexstruct operate: missing case"));
+  if (trace) print("\n");
   return operated;
 };
 
@@ -2190,7 +2171,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const sigma_oper
 };
 
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::operate( const ioperator<I,d>& op ) const {
+shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::operate( const ioperator<I,d>& op,bool trace ) const {
   auto shifted = shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>() );
   shifted->reserve(this->volume());
   if (op.is_shift_op()) {
@@ -2202,7 +2183,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::operate( const ioperator<
 
 //! \todo just use the result of operate?
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::operate( const ioperator<I,d>& op ) const {
+shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::operate( const ioperator<I,d>& op,bool trace ) const {
   auto rstruct = shared_ptr<composite_indexstruct>{ make_shared<composite_indexstruct<I,d>>() };
   for (auto s : structs)
     rstruct->push_back( s->operate(op)->make_clone() );

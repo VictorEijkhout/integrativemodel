@@ -39,6 +39,13 @@ TEST_CASE( "coordinates" ) {
   coordinate<int,2> twofives( {5,5} );
   CHECK( twofives.dimensionality()==2 );
   CHECK( twofives[0]==5 );
+
+  coordinate<int,2> fours( {4,4} );
+  coordinate<int,2> five1( {5,1} );
+  REQUIRE( twofives==twofives );
+  REQUIRE( not (twofives==five1) );
+  REQUIRE( (twofives!=fours) );
+  REQUIRE( (twofives!=five1) );
 }
 
 TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {
@@ -371,6 +378,8 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
     auto i1 =
       shared_ptr<indexstruct<index_int,1>>
       ( new indexed_indexstruct<index_int,1>( vector<index_int>{2,4, 10,12, 15} ) );
+    shared_ptr<indexstruct<index_int,1>> i2,i3,i1a;
+    REQUIRE_NOTHROW( i1a = i1->make_clone() );
     INFO( format("starting with indexed {}",i1->as_string()) );
     REQUIRE_NOTHROW( i1->add_in_element(11) );
     REQUIRE( i1->volume()==6 );
@@ -383,7 +392,8 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
     REQUIRE_NOTHROW( i3 = i2->convert_to_indexed() );
     INFO( format("back to indexed {}",i3->as_string()) );
     REQUIRE( i3->volume()==6 );
-    CHECK( not i1->equals(i3) );
+    CHECK( not i1a->equals(i3) );
+    CHECK( i1->equals(i3) );
   }
 
   SECTION( "striding and operations" ) {
@@ -838,8 +848,7 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
   }
 }
 
-#if 0
-TEST_CASE( "indexstruct<index_int,1> differences","[indexstruct<index_int,1>][minus][21]" ) {
+TEST_CASE( "indexstruct differences","[minus][21]" ) {
   indexstruct<index_int,1> *it;
   shared_ptr<indexstruct<index_int,1>> i1,i2,i3;
   SECTION( "cont-cont non-overlapping" ) {
@@ -1036,8 +1045,8 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
     CHECK( i2->volume()==3 );
     REQUIRE_NOTHROW( i2 = i2->convert_to_indexed() );
     CHECK( i2->volume()==3 );
-    REQUIRE_NOTHROW( i3 = i1->struct_union(i2.get()) ); // [5-8] & [8,10,12] overlap 1
-    INFO( "i3 should be [5-8] & [8,10,12]: " << i3->as_string() );
+    REQUIRE_NOTHROW( i3 = i1->struct_union(i2) ); // [5-8] & [8,10,12] overlap 1
+    INFO( "i3 should be [5-8] & [8,10,12], is: " << i3->as_string() );
     CHECK( !i3->is_contiguous() );
     CHECK( i1->volume()==4 );
     CHECK( i2->volume()==3 );
@@ -1337,10 +1346,12 @@ TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) 
   SECTION( "multiply by constant" ) {
     i1 = shared_ptr<indexstruct<index_int,1>>( new contiguous_indexstruct<index_int,1>(5,10) );
     I1 = indexstructure<index_int,1>(contiguous_indexstruct<index_int,1>(5,10));
+    INFO( format("start with contiguous: {}",i1->as_string()) );
     REQUIRE_NOTHROW( op = ioperator<index_int,1>("*2") );
     REQUIRE_NOTHROW( i2 = i1->operate(op) );
     REQUIRE_NOTHROW( I2 = I1.operate(op) );
     // printf("i2 s/b strided: <<%s>>\n",i2->as_string().data());
+    INFO( format("multiplied by 2: {}",i2->as_string()) );
     CHECK( i2->is_strided() );
     CHECK( ( i2->first_index()==10 ) );
     CHECK( ( i2->last_index()==20 ) );
@@ -1474,6 +1485,7 @@ TEST_CASE( "big shift operators","[operator][shift][43]" ) {
   CHECK_NOTHROW( i.operate(-6)==-2 );  
 }
 
+#if 0
 TEST_CASE( "arbitrary shift of indexstruct<index_int,1>","[indexstruct<index_int,1>][shift][44]" ) {
   shared_ptr<indexstruct<index_int,1>> i1,i2;
   indexstructure<index_int,1> I1,I2;
@@ -2358,6 +2370,4 @@ TEST_CASE( "multi sigma operators","[multi][sigma][140]" ) {
 }
 
 #endif
-#endif
-#if 0
 #endif

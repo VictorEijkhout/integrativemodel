@@ -11,6 +11,7 @@ using std::stringstream;
 
 #include <cassert>
 #include <fmt/format.h>
+using fmt::print,fmt::format;
 
 template<typename I,int d>
 array<I,d> endpoint(I s) {
@@ -189,21 +190,10 @@ coordinate<I,d> coordinate<I,d>::operator%( I other ) const {
 // equals and other comparisons
 template<typename I,int d>
 bool coordinate<I,d>::operator==( const coordinate<I,d>& other ) const {
+  // print("test equal\n");
   bool r{true};
   for ( int id=0; id<d; id++ )
     r = r and coordinates[id]==other.coordinates[id];
-  return r;
-};
-// template<typename I,int d>
-// bool coordinate<I,d>::operator==( coordinate<I,d>&& other ) const {
-//   return *this==std::move(other);
-// };
-
-template<typename I,int d>
-bool coordinate<I,d>::operator!=( coordinate<I,d> other ) const {
-  bool r{true};
-  for ( int id=0; id<d; id++ )
-    r = r or coordinates[id]!=other.coordinates[id];
   return r;
 };
 template<typename I,int d>
@@ -212,6 +202,24 @@ bool coordinate<I,d>::operator==( I other ) const {
   for ( int id=0; id<d; id++ )
     r = r and coordinates[id]==other;
   return r;
+};
+
+// template<typename I,int d>
+// bool coordinate<I,d>::operator==( coordinate<I,d>&& other ) const {
+//   return *this==std::move(other);
+// };
+
+template<typename I,int d>
+bool coordinate<I,d>::operator!=( const coordinate<I,d>& other ) const {
+  //  print("test neq\n");
+  return not (*this==other);
+  // bool r{ coordinates[0]!=other.coordinates[0] };
+  // print("not eq {}",r);
+  // for ( int id=1; id<d; id++ ) {
+  //   r = r or coordinates[id]!=other.coordinates[id];
+  //   print("{}",r);
+  // } print("\n");
+  // return r;
 };
 template<typename I,int d>
 bool coordinate<I,d>::operator<=( coordinate<I,d> other ) const {
