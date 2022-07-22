@@ -1886,8 +1886,8 @@ bool composite_indexstruct<I,d>::equals( shared_ptr<indexstruct<I,d>> idx ) cons
  ****/
 template<typename I,int d>
 void indexstructure<I,d>::push_back( contiguous_indexstruct<I,d> &&idx ) {
-  print("pushing cnt <<{}>>\n",idx.as_string());
-  print(".. onto <<{}>>\n",this->as_string());
+  // print("pushing cnt <<{}>>\n",idx.as_string());
+  // print(".. onto <<{}>>\n",this->as_string());
   auto comp = dynamic_cast<composite_indexstruct<I,d>*>(strct.get());
   if (comp!=nullptr) {
     auto cnt_ptr = std::shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(idx) );

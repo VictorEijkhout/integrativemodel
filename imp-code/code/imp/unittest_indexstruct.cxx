@@ -1485,7 +1485,6 @@ TEST_CASE( "big shift operators","[operator][shift][43]" ) {
   CHECK_NOTHROW( i.operate(-6)==-2 );  
 }
 
-#if 0
 TEST_CASE( "arbitrary shift of indexstruct<index_int,1>","[indexstruct<index_int,1>][shift][44]" ) {
   shared_ptr<indexstruct<index_int,1>> i1,i2;
   indexstructure<index_int,1> I1,I2;
@@ -1499,12 +1498,11 @@ TEST_CASE( "arbitrary shift of indexstruct<index_int,1>","[indexstruct<index_int
     CHECK( ( I2.first_index()==12 ) );
     CHECK( ( I2.last_index()==14 ) );
   }
-  SECTION( "shift to" ) {
-    REQUIRE_NOTHROW( i2 = i1->operate( ioperator<index_int,1>("shiftto",7) ) );
-    CHECK( ( i2->first_index()==7 ) );
-    CHECK( ( i2->last_index()==9 ) );
-  }
-
+  // SECTION( "shift to" ) {
+  //   REQUIRE_NOTHROW( i2 = i1->operate( ioperator<index_int,1>("shiftto",7) ) );
+  //   CHECK( ( i2->first_index()==7 ) );
+  //   CHECK( ( i2->last_index()==9 ) );
+  // }
 }
 
 TEST_CASE( "sigma operator stuff","[50]" ) {
@@ -2369,5 +2367,4 @@ TEST_CASE( "multi sigma operators","[multi][sigma][140]" ) {
   // }
 }
 
-#endif
 #endif
