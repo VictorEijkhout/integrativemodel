@@ -51,7 +51,8 @@ index_int INDEXanyD(coordinate<I,d> &i,coordinate<I,d> &off,coordinate<I,d> &siz
 
 #define kernel_function_call step,p,invectors,outvector,flopcount
 
-typedef void(*kernel_function)(int,coordinate<int,d>&,std::vector<std::shared_ptr<object>>&,std::shared_ptr<object>,double*);
+template<typename I,int d>
+typedef void(*kernel_function)(int,coordinate<I,d>&,std::vector<std::shared_ptr<object>>&,std::shared_ptr<object>,double*);
 
 typedef struct {std::string op; std::shared_ptr<object> obj; } char_object_struct;
 typedef struct {double *s1; double *s2; std::shared_ptr<object>obj; } doubledouble_object_struct;

@@ -9,7 +9,6 @@
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
  ****
  **** unit tests for mpi-based distributions
- ****     this file does not test kernels and such
  ****
  ****************************************************************/
 
@@ -18,7 +17,7 @@
 
 #include "catch2/catch_all.hpp"
 
-#include "mpi_base.h"
+#include "mpi_decomp.h"
 using fmt::format;
 using fmt::print;
 
@@ -30,57 +29,12 @@ using std::vector;
 #include "mpi_ops.h"
 #include "mpi_static_vars.h"
 #include "unittest_functions.h"
-#include "imp_functions.h"
+// #include "imp_functions.h"
 
 // for the [61/2/3] tests
 #include "balance_functions.h"
 
-TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
-  INFO( "mytid=" << mytid );
-  int over;
-  REQUIRE_NOTHROW( over = arch.get_over_factor() );
-  vector<processor_coordinate> domains;
-  REQUIRE_NOTHROW( domains = decomp.get_domains() );
-  int count = 0;
-  for ( auto dom : domains ) { int lindom = dom.coord(0);
-    INFO( "domain=" << lindom );
-    CHECK( lindom==over*mytid+count );
-    count++;
-  }
-}
-
-TEST_CASE( "coordinate conversion","[mpi][decomposition][02]" ) {
-  decomposition oned;
-  REQUIRE_NOTHROW( oned = mpi_decomposition
-		   (arch,new processor_coordinate( vector<int>{4} ) ) );
-  CHECK( oned.get_dimensionality()==1 );
-  CHECK( oned.domains_volume()==4 );
-  processor_coordinate onep;
-  REQUIRE_NOTHROW( onep = oned.coordinate_from_linear(1) );
-  CHECK( onep==processor_coordinate( vector<int>{1} ) );
-
-  decomposition twod;
-  REQUIRE_NOTHROW( twod = mpi_decomposition
-		   (arch,new processor_coordinate( vector<int>{2,4} ) ) );
-  CHECK( twod.get_dimensionality()==2 );
-  CHECK( twod.domains_volume()==8 );
-  processor_coordinate twop;
-  REQUIRE_NOTHROW( twop = twod.coordinate_from_linear(6) );
-  INFO( "6 translates to " << twop.as_string() );
-  CHECK( twop==processor_coordinate( vector<int>{1,2} ) );
-
-  decomposition threed;
-  REQUIRE_NOTHROW( threed = mpi_decomposition
-		   (arch,new processor_coordinate( vector<int>{6,2,4} ) ) );
-  CHECK( threed.get_dimensionality()==3 );
-  CHECK( threed.domains_volume()==6*2*4 ); 
-  processor_coordinate threep; // {2,0,1} -> 2*(2*4) 0*2 + 1 = 17
-  REQUIRE_NOTHROW( threep = threed.coordinate_from_linear(17) );
-  INFO( "17 translates to " << threep.as_string() );
-  CHECK( threep== processor_coordinate( vector<int>{2,0,1} ) );
-
-}
-
+#if 0
 TEST_CASE( "coordinate operations","[mpi][decomposition][03]" ) {
   index_int nlocal = 100, s = nlocal*ntids;
   shared_ptr<distribution> d1;
@@ -117,7 +71,7 @@ TEST_CASE( "coordinate operations","[mpi][decomposition][03]" ) {
 
   INFO( fmt::format("distribution created by {}",path) );
   auto dom = decomp.get_domains()[0];
-  domain_coordinate f1(1),f2(1),domop;
+  coordinate<index_int,d> f1(1),f2(1),domop;
   REQUIRE_NOTHROW( f1 = d1->first_index_r(dom) );
   REQUIRE_NOTHROW( domop = dom.operate( mult_operator(nlocal) ) );
   INFO( format("First coord {} ?==? domain operate {}",f1.as_string(),domop.as_string()) );
@@ -142,7 +96,7 @@ TEST_CASE( "test presence of numa structure","[mpi][numa][04]" ) {
   decltype( d1->get_global_structure() ) global;
   REQUIRE_NOTHROW( global = d1->get_global_structure() );
   CHECK( !global->is_empty() );
-  CHECK( global->first_index_r()==domain_coordinate_zero(1) );
+  CHECK( global->first_index_r()==coordinate<index_int,d>_zero(1) );
   CHECK( global->volume()==ntids*nlocal );
 }
 
@@ -174,7 +128,7 @@ TEST_CASE( "MPI distributions, sanity","[mpi][distribution][cookie][10]" ) {
   shared_ptr<distribution> d1;
   REQUIRE_NOTHROW( d1 = shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,-1,s) ) );
   CHECK( d1->get_cookie()==entity_cookie::DISTRIBUTION );
-  processor_coordinate pcoord;
+  coordinate<int,d> pcoord;
   REQUIRE_NOTHROW( pcoord = d1->proc_coord() );
   CHECK( pcoord==mycoord );
   shared_ptr<indexstruct> pstruct;
@@ -197,8 +151,8 @@ TEST_CASE( "MPI distributions copying","[mpi][distribution][hide][12]" ) {
   CHECK( d1->has_defined_type() );
   CHECK( d1->volume(mycoord)==nlocal );
   auto
-    f = domain_coordinate( vector<index_int>{nlocal*mytid} ),
-    l = domain_coordinate( vector<index_int>{nlocal*(mytid+1)-1} );
+    f = coordinate<index_int,d>( vector<index_int>{nlocal*mytid} ),
+    l = coordinate<index_int,d>( vector<index_int>{nlocal*(mytid+1)-1} );
   CHECK( d1->first_index_r(mycoord)==f );
   CHECK( d1->contains_element(mycoord,d1->first_index_r(mycoord)) );
   CHECK( ( !d1->is_valid_index(f-1) || !d1->contains_element(mycoord,f-1)) );
@@ -206,7 +160,7 @@ TEST_CASE( "MPI distributions copying","[mpi][distribution][hide][12]" ) {
   // d2 is a copy of d1
   shared_ptr<distribution> d2;
   REQUIRE_NOTHROW( d2 = shared_ptr<distribution>( new mpi_distribution(d1) ) );
-  domain_coordinate d2c(0); index_int d2s;
+  coordinate<index_int,d> d2c(0); index_int d2s;
   REQUIRE_NOTHROW( d2s = d2->volume(mycoord) );
   CHECK( d2s==nlocal );
   REQUIRE_NOTHROW( d2c = d2->first_index_r(mycoord) );
@@ -218,10 +172,10 @@ TEST_CASE( "MPI distributions copying","[mpi][distribution][hide][12]" ) {
   CHECK( d1->last_index_r(mycoord)==l );
   CHECK( d1->contains_element(mycoord,l) );
   CHECK_NOTHROW( d1->contains_element
-		 (mycoord,domain_coordinate( vector<index_int>{s} ) ) );
+		 (mycoord,coordinate<index_int,d>( vector<index_int>{s} ) ) );
   CHECK( ( !d1->is_valid_index(l+1) || !d1->contains_element(mycoord,l+1) ) );
   CHECK_NOTHROW
-    ( d1->contains_element(mycoord,domain_coordinate( vector<index_int>{-1} )) );
+    ( d1->contains_element(mycoord,coordinate<index_int,d>( vector<index_int>{-1} )) );
 }
 
 TEST_CASE( "MPI distributions, other types","[mpi][distribution][13]" ) {
@@ -232,8 +186,8 @@ TEST_CASE( "MPI distributions, other types","[mpi][distribution][13]" ) {
   CHECK( d1->has_defined_type() );
   CHECK( d1->volume(mycoord)==nlocal );
   auto
-    f = domain_coordinate( vector<index_int>{nlocal*mytid} ),
-    l = domain_coordinate( vector<index_int>{nlocal*(mytid+1)-1} );
+    f = coordinate<index_int,d>( vector<index_int>{nlocal*mytid} ),
+    l = coordinate<index_int,d>( vector<index_int>{nlocal*(mytid+1)-1} );
   CHECK( d1->first_index_r(mycoord)==f );
   CHECK( d1->contains_element(mycoord,d1->first_index_r(mycoord)) );
   CHECK( ( !d1->is_valid_index(f-1) || !d1->contains_element(mycoord,f-1)) );
@@ -241,8 +195,8 @@ TEST_CASE( "MPI distributions, other types","[mpi][distribution][13]" ) {
   // replicated has everyone the same
   auto d3 = shared_ptr<distribution>( new mpi_replicated_distribution(decomp) );
   CHECK( d3->volume(mycoord)==1 );
-  CHECK( d3->first_index_r(mycoord)==domain_coordinate_zero(1) );
-  CHECK( d3->last_index_r(mycoord)==domain_coordinate_zero(1) );
+  CHECK( d3->first_index_r(mycoord)==coordinate<index_int,d>_zero(1) );
+  CHECK( d3->last_index_r(mycoord)==coordinate<index_int,d>_zero(1) );
   shared_ptr<object> scalar;
   CHECK( d3->get_domains().size()==1 );
   REQUIRE_NOTHROW( scalar = shared_ptr<object>( new mpi_object(d3) ) );
@@ -270,8 +224,8 @@ TEST_CASE( "Distribution creation","[mpi][distribution][14]" ) {
   SECTION( "unique local" ) { path = "from unique local";
     auto my_local = shared_ptr<multi_indexstruct>
           ( new contiguous_multi_indexstruct
-	    ( domain_coordinate( vector<index_int>{ 1 } ),
-	      domain_coordinate( vector<index_int>{ localsize } ) ) );
+	    ( coordinate<index_int,d>( vector<index_int>{ 1 } ),
+	      coordinate<index_int,d>( vector<index_int>{ localsize } ) ) );
     REQUIRE_NOTHROW( d->create_from_unique_local(my_local) );
   }
   REQUIRE_NOTHROW( d->memoize_structure() );
@@ -283,7 +237,7 @@ TEST_CASE( "Distribution creation","[mpi][distribution][14]" ) {
   CHECK( s==localsize );
   auto 
     sbfirst = mycoord_coord*(mytid+1)*5; // 5 = 10/2, see above for that 10
-  domain_coordinate myfirst;
+  coordinate<index_int,d> myfirst;
   REQUIRE_NOTHROW( myfirst = d->first_index_r(mycoord) );
   CHECK( myfirst==sbfirst );
 }
@@ -427,7 +381,7 @@ TEST_CASE( "extending distributions","[distribution][extend][27]" ) {
   int nlocal=100,nglobal=nlocal*ntids;
   shared_ptr<distribution> d1,d2;
   REQUIRE_NOTHROW( d1 = shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,nlocal,-1) ) );
-  domain_coordinate
+  coordinate<index_int,d>
     my_first = d1->first_index_r(mycoord), my_last = d1->last_index_r(mycoord);
 
   int shift = 1;
@@ -440,12 +394,12 @@ TEST_CASE( "extending distributions","[distribution][extend][27]" ) {
   INFO( "mytid=" << mytid << "\nusing shift: " << shift );
 
   {
-    domain_coordinate the_first(dim), the_last(dim);
+    coordinate<index_int,d> the_first(dim), the_last(dim);
     REQUIRE_NOTHROW( the_first = d1->first_index_r(mycoord) );
     REQUIRE_NOTHROW( the_last = d1->last_index_r(mycoord) );
     shared_ptr<multi_indexstruct> estruct,xstruct;
 
-    processor_coordinate close(1);
+    coordinate<int,d> close(1);
     REQUIRE_NOTHROW( close = decomp.get_origin_processor() );
     if (mycoord==close)
       REQUIRE_NOTHROW( estruct = shared_ptr<multi_indexstruct>
@@ -532,7 +486,7 @@ TEST_CASE( "Function-specified distribution","[distribution][50]" ) {
   CHECK( d1->volume(mycoord)==nlocal );
   for (int i=0; i<nlocal; i++) {
     index_int iglobal = 3*mytid+i;
-    CHECK( d1->contains_element(mycoord,domain_coordinate(vector<index_int>{iglobal})) );
+    CHECK( d1->contains_element(mycoord,coordinate<index_int,d>(vector<index_int>{iglobal})) );
     CHECK( d1->find_index(iglobal)==mytid );
   }
 
@@ -540,7 +494,7 @@ TEST_CASE( "Function-specified distribution","[distribution][50]" ) {
   CHECK( d2->volume(mycoord)==nlocal );
   for (int i=0; i<nlocal; i++) {
     index_int iglobal = 3*(mytid/2)+i; // proc 0,1 have same data, likewise 2,3, 4,5
-    CHECK( d2->contains_element(mycoord,domain_coordinate(vector<index_int>{iglobal})) );
+    CHECK( d2->contains_element(mycoord,coordinate<index_int,d>(vector<index_int>{iglobal})) );
     CHECK( d2->find_index(iglobal,mytid)==mytid );
     CHECK( d2->find_index(iglobal)==2*(mytid/2) ); // the first proc with my data is 2*(p/2)
   }
@@ -560,7 +514,7 @@ TEST_CASE( "Distribution transformations","[distribution][operate][abut][60]" ) 
 
   index_int gsize = block->global_volume();
   CHECK( gsize==globalsize );
-  domain_coordinate first_coord(1),last_coord(1);
+  coordinate<index_int,d> first_coord(1),last_coord(1);
   decltype( block->get_enclosing_structure() ) enc;
   REQUIRE_NOTHROW( enc = block->get_enclosing_structure() );
   //  REQUIRE( enc!=nullptr );
@@ -646,7 +600,7 @@ TEST_CASE( "Distribution transformations","[distribution][operate][abut][60]" ) 
 
 #if 0
 shared_ptr<multi_indexstruct> transform_by_shift
-    (shared_ptr<distribution> unbalance,processor_coordinate &me,shared_ptr<distribution> load) {
+    (shared_ptr<distribution> unbalance,coordinate<int,d> &me,shared_ptr<distribution> load) {
   if (!load->has_type_replicated())
     throw(string("Load description needs to be replicated"));
   if (load->volume(me)!=unbalance->domains_volume())
@@ -678,11 +632,11 @@ TEST_CASE( "Distribution operation by simple shift","[distribution][operate][61]
   shared_ptr<distribution> newblock;
   block->set_name("blockdist61");
   auto first = block->first_index_r(mycoord);
-  auto saved_mycoord = shared_ptr<processor_coordinate>
-    ( new processor_coordinate(mycoord) );
+  auto saved_mycoord = shared_ptr<coordinate<int,d>>
+    ( new coordinate<int,d>(mycoord) );
   auto average =
     distribution_sigma_operator
-    ( [load] (shared_ptr<distribution> d,processor_coordinate &p)
+    ( [load] (shared_ptr<distribution> d,coordinate<int,d> &p)
           -> shared_ptr<multi_indexstruct> { return transform_by_shift(d,p,load); } );
   CHECK( average.is_coordinate_based() );
   REQUIRE_NOTHROW( newblock = block->operate(average) );
@@ -697,7 +651,7 @@ TEST_CASE( "Distribution operation by simple shift","[distribution][operate][61]
 }
 
 shared_ptr<multi_indexstruct> transform_by_multi
-    (shared_ptr<distribution> unbalance,processor_coordinate &me,shared_ptr<distribution> load) {
+    (shared_ptr<distribution> unbalance,coordinate<int,d> &me,shared_ptr<distribution> load) {
   if (!load->has_type_replicated())
     throw(string("Load description needs to be replicated"));
   if (load->volume(me)!=unbalance->domains_volume())
@@ -729,11 +683,11 @@ TEST_CASE( "Distribution operation by local blowup","[distribution][operate][abu
     load = shared_ptr<distribution>( new mpi_replicated_distribution(decomp,ntids) );
   block->set_name("blockdist61");
   auto first = block->first_index_r(mycoord);
-  auto saved_mycoord = shared_ptr<processor_coordinate>
-    ( new processor_coordinate(mycoord) );
+  auto saved_mycoord = shared_ptr<coordinate<int,d>>
+    ( new coordinate<int,d>(mycoord) );
   auto average =
     distribution_sigma_operator
-    ( [load] (shared_ptr<distribution> d,processor_coordinate &p)
+    ( [load] (shared_ptr<distribution> d,coordinate<int,d> &p)
       -> shared_ptr<multi_indexstruct> {
       return transform_by_multi(d,p,load); } );
   REQUIRE_NOTHROW( newblock = block->operate(average) );
@@ -753,8 +707,8 @@ TEST_CASE( "Make a distribution abutting","[distribution][operate][abut][63]" ) 
   parallel_structure pstr;
   REQUIRE_NOTHROW( pstr = parallel_structure(decomp) );
   for (int p=0; p<ntids; p++) {
-    processor_coordinate pcoord( vector<int>{p} );
-    domain_coordinate
+    coordinate<int,d> pcoord( vector<int>{p} );
+    coordinate<index_int,d>
       first(vector<index_int>{p*nlocal}),
       last(vector<index_int>{(p+2)*nlocal-1});
     auto pstruct = shared_ptr<multi_indexstruct>
@@ -784,7 +738,7 @@ TEST_CASE( "Make a distribution abutting","[distribution][operate][abut][63]" ) 
   shared_ptr<distribution> clean;
   REQUIRE_NOTHROW( clean = messy->operate( distribution_abut_operator(mycoord) ) );
   for (int p=0; p<ntids; p++) {
-    processor_coordinate pcoord( vector<int>{p} );
+    coordinate<int,d> pcoord( vector<int>{p} );
     auto pstruct = clean->get_processor_structure(pcoord);
     INFO( fmt::format("P={}, struct={}",p,pstruct->as_string()) );
     CHECK( pstruct->first_index_r().at(0)==2*p*nlocal );
@@ -819,8 +773,8 @@ TEST_CASE( "Distribution stretch","[distribution][operate][stretch][64]" ) {
   INFO( fmt::format("Stretching {} by factor {}",block->as_string(),factor) );
   index_int gsize;
   REQUIRE_NOTHROW( gsize = factor*block->global_volume() );
-  domain_coordinate big;
-  REQUIRE_NOTHROW( big = domain_coordinate( vector<index_int>{gsize} ) );
+  coordinate<index_int,d> big;
+  REQUIRE_NOTHROW( big = coordinate<index_int,d>( vector<index_int>{gsize} ) );
   INFO( fmt::format("Stretching to {}",big.as_string()) );
   REQUIRE( big.get_dimensionality()==1 );
 
@@ -851,7 +805,7 @@ TEST_CASE( "Distribution operation by averaging","[distribution][operate][abut][
   auto
     block = shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,nlocal,-1) );
   index_int gsize = block->global_volume();
-  domain_coordinate glast = block->global_size();
+  coordinate<index_int,d> glast = block->global_size();
   block->set_name("blockdist61");
 
   // the load object is replicated
@@ -904,14 +858,14 @@ TEST_CASE( "Masked distribution creation","[distribution][mask][70]" ) {
   SECTION( "create mask by adding" ) { path.write("adding odd");
     REQUIRE_NOTHROW( mask = new processor_mask(decomp) );
     for (int p=1; p<ntids; p+=2 ) {
-      processor_coordinate c(1); c.set(0,p);
+      coordinate<int,d> c(1); c.set(0,p);
       REQUIRE_NOTHROW( mask->add(c) );
     }
   }
   SECTION( "create mask by subtracting" ) { path.write("subtracting odd");
     REQUIRE_NOTHROW( mask = new processor_mask(decomp,ntids) );
     for (int p=0; p<ntids; p+=2) {
-      processor_coordinate c(1); c.set(0,p);
+      coordinate<int,d> c(1); c.set(0,p);
       REQUIRE_NOTHROW( mask->remove(p) );
     }
   }
@@ -949,21 +903,21 @@ TEST_CASE( "processor sets","[processor][80]" ) {
   processor_set set;
   // add a vector
   REQUIRE_NOTHROW
-    ( set.add( processor_coordinate( vector<int>{1,2,3} ) ) );
+    ( set.add( coordinate<int,d>( vector<int>{1,2,3} ) ) );
   // check that it's there
   CHECK( set.size()==1 );
-  CHECK( set.contains( processor_coordinate( vector<int>{1,2,3} ) ) );
+  CHECK( set.contains( coordinate<int,d>( vector<int>{1,2,3} ) ) );
   // add another vector and check
   REQUIRE_NOTHROW
-    ( set.add( processor_coordinate( vector<int>{3,2,1} ) ) );
+    ( set.add( coordinate<int,d>( vector<int>{3,2,1} ) ) );
   CHECK( set.size()==2 );
-  CHECK( set.contains( processor_coordinate( vector<int>{3,2,1} ) ) );
+  CHECK( set.contains( coordinate<int,d>( vector<int>{3,2,1} ) ) );
   // we can not add a vector of a different dimension
-  CHECK_THROWS( set.add( processor_coordinate( vector<int>{3,2} ) ) );
+  CHECK_THROWS( set.add( coordinate<int,d>( vector<int>{3,2} ) ) );
   // we can not test a vector of a different dimension
-  CHECK_THROWS( set.contains( processor_coordinate( vector<int>{3,2} ) ) );
+  CHECK_THROWS( set.contains( coordinate<int,d>( vector<int>{3,2} ) ) );
   // everything still copacetic?
-  CHECK( set.contains( processor_coordinate( vector<int>{1,2,3} ) ) );
+  CHECK( set.contains( coordinate<int,d>( vector<int>{1,2,3} ) ) );
   CHECK( set.size()==2 );
 
   // see if we can iterate
@@ -971,11 +925,11 @@ TEST_CASE( "processor sets","[processor][80]" ) {
   for ( auto p : set ) {
     switch (count) {
     case 0 :
-      CHECK( p==processor_coordinate( vector<int>{1,2,3} ) );
+      CHECK( p==coordinate<int,d>( vector<int>{1,2,3} ) );
       sum += count;
       break;
     case 1 :
-      CHECK( p==processor_coordinate( vector<int>{3,2,1} ) );
+      CHECK( p==coordinate<int,d>( vector<int>{3,2,1} ) );
       sum += count;
       break;
     }
@@ -1031,7 +985,7 @@ TEST_CASE( "multidimensional distributions","[multi][distribution][100]" ) {
   CHECK( ntids==ntids_i*ntids_j );
   int mytid_j = mytid%ntids_j, mytid_i = mytid/ntids_j;
 
-  processor_coordinate layout;
+  coordinate<int,d> layout;
   REQUIRE_NOTHROW( layout = arch.get_proc_layout(2) );
   mpi_decomposition mdecomp;
   SECTION( "default splitting of processor grid" ) {
@@ -1042,7 +996,7 @@ TEST_CASE( "multidimensional distributions","[multi][distribution][100]" ) {
   //   REQUIRE_NOTHROW( mdecomp = mpi_decomposition(arch,grid) );
   // }
 
-  processor_coordinate mycoord; 
+  coordinate<int,d> mycoord; 
   REQUIRE_NOTHROW( mycoord = mdecomp.coordinate_from_linear(mytid) );
   INFO( "p: " << mytid << ", pcoord: " << mycoord.coord(0) << "," << mycoord.coord(1) );
   CHECK( mytid==mycoord.linearize(mdecomp) );
@@ -1058,7 +1012,7 @@ TEST_CASE( "multidimensional distributions","[multi][distribution][100]" ) {
 
   g = ntids_j*(nlocal+2);
   domain_layout.push_back(g);
-  domain_coordinate domain_size(domain_layout);
+  coordinate<index_int,d> domain_size(domain_layout);
 
   shared_ptr<distribution> d;
   REQUIRE_NOTHROW( d = shared_ptr<distribution>
@@ -1078,18 +1032,18 @@ TEST_CASE( "multidimensional distributions error test","[multi][distribution][10
 
   decomposition mdecomp;
   SECTION( "explicit splitting of processor grid" ) {
-    processor_coordinate endpoint = processor_coordinate(2);
+    coordinate<int,d> endpoint = coordinate<int,d>(2);
     endpoint.set(0,2); endpoint.set(1,2);
     REQUIRE_NOTHROW( mdecomp = mpi_decomposition(arch,endpoint) );
   }
   // we should not test this because we can overdecompose, true?
   // SECTION( "incorrect splitting of processor grid" ) {
-  //   processor_coordinate *endpoint = new processor_coordinate(2);
+  //   coordinate<int,d> *endpoint = new coordinate<int,d>(2);
   //   endpoint->set(0,2); endpoint->set(1,1);
   //   REQUIRE_THROWS( mdecomp = mpi_decomposition(arch,endpoint) );
   // }
   SECTION( "pencil splitting of processor grid" ) {
-    processor_coordinate endpoint = processor_coordinate(2);
+    coordinate<int,d> endpoint = coordinate<int,d>(2);
     endpoint.set(0,1); endpoint.set(1,4);
     REQUIRE_NOTHROW( mdecomp = mpi_decomposition(arch,endpoint) );
   }
@@ -1098,4 +1052,6 @@ TEST_CASE( "multidimensional distributions error test","[multi][distribution][10
 TEST_CASE( "pencil distribution","[multi][distribution][pencil][102]" ) {
 }
 
+#endif
+#endif
 #endif

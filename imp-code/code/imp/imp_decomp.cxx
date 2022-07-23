@@ -1,3 +1,14 @@
+/****************************************************************
+ ****
+ **** This file is part of the prototype implementation of
+ **** the Integrative Model for Parallelism
+ ****
+ **** copyright Victor Eijkhout 2014-2022
+ ****
+ **** imp_decomp.cxx: Implementations of the decomposition base classes
+ ****
+ ****************************************************************/
+
 #include "imp_decomp.h"
 #include <cassert>
 
@@ -166,9 +177,9 @@ std::string architecture::as_string() const {
  ****/
 
 //! Default decomposition uses all procs of the architecture in one-d manner.
-decomposition::decomposition( const architecture &arch )
-  : decomposition( arch, coordinate
-		   ( vector<int>{arch.nprocs()*arch.get_over_factor()} ) ) {
+template<int d>
+decomposition::decomposition( const environment& env )
+  : decomposition( endpoint<int,d>(environment.nprocs()) ) {
 };
 
 /*!
@@ -176,6 +187,7 @@ decomposition::decomposition( const architecture &arch )
   The processor coordinate is a size specification, to make it compatible with nprocs
 */
 //snippet decompfromcoord
+template<int d>
 decomposition::decomposition( const architecture &arch,coordinate &sizes )
   : architecture(arch) {
   int dim = sizes.get_dimensionality();
@@ -185,27 +197,21 @@ decomposition::decomposition( const architecture &arch,coordinate &sizes )
   set_corners();
 };
 //snippet end
-decomposition::decomposition( const architecture &arch,coordinate &&sizes )
-  : architecture(arch) {
-  int dim = sizes.get_dimensionality();
-  if (dim<=0)
-    throw(string("Non-positive decomposition dimensionality"));
-  domain_layout = sizes; //new coordinate(sizes);
-  set_corners();
-};
 
 //! Get dimensionality.
+template<int d>
 int decomposition::get_dimensionality() const {
-  int dim = domain_layout.get_dimensionality();
-  return dim;
+  return d;
 };
 
 //! Number of domains
+template<int d>
 int decomposition::domains_volume() const {
   int p = domain_layout.volume();
   return p;
 };
 
+template<int d>
 const coordinate &decomposition::first_local_domain() const {
   if (mdomains.size()==0)
     throw(format("Decomposition has no domains"));
@@ -218,7 +224,8 @@ const coordinate &decomposition::last_local_domain() const {
 };
 
 //! Get the local number where this domain is stored. Domains are multi-dimensionally numbered.
-int decomposition::get_domain_local_number( const coordinate &d ) const {
+template<int d>
+int decomposition::get_domain_local_number( const coordinate &dcoord ) const {
   // print("get domain local number of {} in decomp: <<{}>>\n",
   // 	d.as_string(),this->as_string());
   for ( int i=0; i<mdomains.size(); i++) {
@@ -230,17 +237,17 @@ int decomposition::get_domain_local_number( const coordinate &d ) const {
 };
 
 //! Get dimensionality, which has to be the same as something else.
-int decomposition::get_same_dimensionality( int d ) const {
-  if (d!=domain_layout.get_dimensionality())
-    throw(format("Coordinate dimensionality mismatch decomposition:{} vs layout{}",
-		 d,domain_layout.as_string()));
-  return d;
+template<int d>
+int decomposition::get_same_dimensionality( int dd ) const {
+  return d=dd;
 };
 
+template<int d>
 void decomposition::copy_embedded_decomposition( decomposition &other ) {
   embedded_decomposition = other.embedded_decomposition;
 };
 
+template<int d>
 const decomposition &decomposition::get_embedded_decomposition() const {
   if (embedded_decomposition==nullptr)
     throw(string("Null embedded decomposition"));
@@ -251,9 +258,10 @@ const decomposition &decomposition::get_embedded_decomposition() const {
   \todo test for 1d-ness
   \todo use std_ptr to indexstruct*
 */
-void decomposition::add_domains( indexstruct *d ) {
+template<int d>
+void decomposition::add_domains( indexstruct<int,d> *dom ) {
   //print("adding domains from indexstruct <<{}>>\n",d->as_string());
-  for ( auto i=d->first_index(); i<=d->last_index(); i++ ) {
+  for ( auto i=dom->first_index(); i<=dom->last_index(); i++ ) {
     int ii = (int)i; // std::static_cast<int>(i);
     add_domain( coordinate( vector<int>{ ii } ),false );
   }
@@ -261,15 +269,17 @@ void decomposition::add_domains( indexstruct *d ) {
 };
 
 //! Add a multi-d local domain.
-void decomposition::add_domain( coordinate d,bool recompute ) {
+template<int d>
+void decomposition::add_domain( coordinate<int,d> dom,bool recompute ) {
   //print("adding domain at coordinate <<{}>>\n",d.as_string());
-  int dim = d.get_same_dimensionality( domain_layout.get_dimensionality() );
-  mdomains.push_back(d);
+  int dim = dom.get_same_dimensionality( domain_layout.get_dimensionality() );
+  mdomains.push_back(dd);
   if (recompute) set_corners();
 };
 
 //! Get the multi-dimensional coordinate of a linear one. \todo check this calculation
 //! http://stackoverflow.com/questions/10903149/how-do-i-compute-the-linear-index-of-a-3d-coordinate-and-vice-versa
+template<int d>
 coordinate decomposition::coordinate_from_linear(int p) const {
   int dim = domain_layout.get_dimensionality();
   if (dim<=0) throw(string("Zero dim layout"));

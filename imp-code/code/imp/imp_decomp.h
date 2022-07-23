@@ -1,3 +1,15 @@
+// -*- c++ -*-
+/****************************************************************
+ ****
+ **** This file is part of the prototype implementation of
+ **** the Integrative Model for Parallelism
+ ****
+ **** copyright Victor Eijkhout 2014-2022
+ ****
+ **** imp_decomp.h: Header file for the decomposition base classes
+ ****
+ ****************************************************************/
+
 #pragma once
 
 #include <array>
@@ -16,24 +28,97 @@ std::array<I,d> endpoint(I s);
 // template<class I,int d>
 // std::array<I,d> farpoint(I s);
 
+template<int d>
 class decomposition;
 class message;
+template<int d>
 class distribution;
 class object;
 class task;
 
 template<int d>
-class parallel_structure {
-protected:
-  coordinate<int,d> procs;
-  coordinate<index_int,d> points;
-  std::vector< std::shared_ptr<indexstruct> > structs;
+class decomposition {
 public:
-  parallel_structure( const coordinate<int,d>& );
-  parallel_structure& from_global( const coordinate<index_int,d>& );
-  std::shared_ptr<indexstruct> get_processor_structure(int p) const;
-  parallel_structure<d> operate( ioperator<d,index_int> ) const;
-  indexstruct<index_int,d> enclosing_structure() const;
+  decomposition() {}; //!< default constructor
+  // with explicit layout
+  decomposition( const coordinate<int,d> &nd );
+  decomposition( const environment& env );
+  /*
+   * Global info
+   */
+private:
+  //! A vector of the sizes in all the dimensions
+  coordinate<int,d> domain_layout;
+  coordinate<int,d> closecorner,farcorner;
+public:
+  int get_dimensionality() const; int get_same_dimensionality(int dd) const;
+  void set_corners();
+  const coordinate<int,d> &get_domain_layout() const { return domain_layout; };
+  const coordinate<int,d> &get_origin_processor() const;
+  const coordinate<int,d> &get_farpoint_processor() const;
+  int get_size_of_dimension(int nd) const { return domain_layout.coord(nd); };
+  //! \todo do we really need this?
+  std::vector<int> get_global_domain_descriptor() { return domain_layout.data(); };
+
+  /*
+   * Domain handling
+   */
+protected:
+  std::vector< coordinate<int,d> > mdomains;
+  processor_set known_domains;
+public:
+  int domains_volume() const;
+  void add_domain(coordinate<int,d>,bool=true); void add_domains(indexstruct*);
+  //! Return the domains object, for 1d only
+  const std::vector< coordinate<int,d> > get_domains() const { return mdomains; };
+  //! Get a domain by local number; see \ref get_local_domain_number for global for translation
+  int get_local_domain( int dom ) { return mdomains[dom].coord(0); };
+  const coordinate<int,d> &first_local_domain() const;
+  const coordinate<int,d> &last_local_domain() const;
+  //! The local number of domains.
+  int local_ndomains() const { return mdomains.size(); };
+  int get_domain_local_number( const coordinate<int,d> &d ) const;
+
+  virtual std::string as_string() const override;
+
+  /*
+   * Factory routines
+   */
+  std::function< std::shared_ptr<distribution>(index_int) > new_block_distribution;
+  // {
+  //   [] (index_int i) -> std::shared_ptr<distribution> {
+  //     throw(std::string("base new_block_distr")); } };
+
+protected:
+  bool range_linear{true},range_twoside{false};
+public:
+  void set_range_twoside() { 
+    range_linear = false; range_twoside = true;
+  };
+  int linearize( const coordinate<int,d> &p ) const {
+    return p.linearize( *this);
+  };
+  coordinate<int,d> coordinate_from_linear(int p) const;
+
+protected:
+  std::shared_ptr<decomposition> embedded_decomposition{nullptr};
+  void copy_embedded_decomposition( decomposition &other );
+public:
+  const decomposition &get_embedded_decomposition() const;
+
+  /*
+   * Ranging
+   */
+protected:
+  int iterate_count{0},start_id{-1};
+  coordinate<int,d> cur_coord,start_coord;
+public:
+  decomposition &begin();
+  decomposition &end();
+  void operator++();
+  bool operator!=( const decomposition& ) const;
+  bool operator==( const decomposition& ) const;
+  coordinate<int,d> &operator*();
 };
 
 #if 0
@@ -243,16 +328,17 @@ public:
   /*
    * Distribution factory
    */
-  virtual std::shared_ptr<distribution> new_scalar_distribution() {
-    throw(std::string("Error: can not call base case")); };
+  virtual std::shared_ptr<distribution> new_scalar_distribution() ;
+  // {
+  //   throw(std::string("Error: can not call base case")); };
 
-  std::function< void(architecture&,std::shared_ptr<message>,
-		      std::string& /* char*,int */ ) > message_as_buffer {
-    [] (architecture &a,std::shared_ptr<message>m,
-	// char *buf,int len) -> void {
-	std::string &b) -> void {
-      throw(std::string("message_as_buffer not set")); }
-  };
+  // std::function< void(architecture&,std::shared_ptr<message>,
+  // 		      std::string& /* char*,int */ ) > message_as_buffer {
+  //   [] (architecture &a,std::shared_ptr<message>m,
+  // 	// char *buf,int len) -> void {
+  // 	std::string &b) -> void {
+  //     throw(std::string("message_as_buffer not set")); }
+  // };
   
   // I/O
   virtual std::string as_string() const;

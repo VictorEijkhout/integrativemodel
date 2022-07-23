@@ -8,7 +8,7 @@
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
  ****
- **** unit tests for MPI architecture
+ **** unit tests for MPI decompositions
  ****
  ****************************************************************/
 
@@ -23,28 +23,56 @@
 using fmt::format;
 using fmt::print;
 
-TEST_CASE( "parallel structure" ) {
-  /*
-   * Simple 1D structure
-   */
-  const int nprocs = 2;
-  const int points_per_proc = 3;
-  auto twoprocs   = coordinate<int,1>(nprocs);
-  REQUIRE( twoprocs.span()==nprocs );
-  auto sixpoints = coordinate<index_int,1>(points_per_proc*nprocs);
-  REQUIRE( sixpoints.span()==points_per_proc*nprocs );
-  auto parallel   = parallel_structure<1>( twoprocs );
-  REQUIRE_NOTHROW( parallel.from_global(sixpoints) );
-  index_int first = 0;
-  for (int iproc=0; iproc<nprocs; iproc++) {
-    INFO( format("proc {}",iproc) );
-    decltype( parallel.get_processor_structure(iproc) ) istruct;
-    REQUIRE_NOTHROW( istruct = parallel.get_processor_structure(iproc) );
-    REQUIRE( istruct->first_index()==first );
-    REQUIRE( istruct->volume()==points_per_proc );
-    first = istruct->last_index()+1;
-  }
-  REQUIRE_THROWS( parallel.get_processor_structure(-1) );
-  REQUIRE_THROWS( parallel.get_processor_structure(nprocs) );
-};
+TEST_CASE( "decomposition constructors" ) {
+  REQUIRE_NOTHROW( mpi_decomposition<1>( {5} ) );
+  REQUIRE_NOTHROW( mpi_decomposition<2>( {5,6} ) );
+}
 
+#if 0
+TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
+  INFO( "mytid=" << mytid );
+  int over;
+  REQUIRE_NOTHROW( over = arch.get_over_factor() );
+  vector<coordinate<int,d>> domains;
+  REQUIRE_NOTHROW( domains = decomp.get_domains() );
+  int count = 0;
+  for ( auto dom : domains ) { int lindom = dom.coord(0);
+    INFO( "domain=" << lindom );
+    CHECK( lindom==over*mytid+count );
+    count++;
+  }
+}
+
+TEST_CASE( "coordinate conversion","[mpi][decomposition][02]" ) {
+  decomposition oned;
+  REQUIRE_NOTHROW( oned = mpi_decomposition
+		   (arch,new coordinate<int,d>( vector<int>{4} ) ) );
+  CHECK( oned.get_dimensionality()==1 );
+  CHECK( oned.domains_volume()==4 );
+  coordinate<int,d> onep;
+  REQUIRE_NOTHROW( onep = oned.coordinate_from_linear(1) );
+  CHECK( onep==coordinate<int,d>( vector<int>{1} ) );
+
+  decomposition twod;
+  REQUIRE_NOTHROW( twod = mpi_decomposition
+		   (arch,new coordinate<int,d>( vector<int>{2,4} ) ) );
+  CHECK( twod.get_dimensionality()==2 );
+  CHECK( twod.domains_volume()==8 );
+  coordinate<int,d> twop;
+  REQUIRE_NOTHROW( twop = twod.coordinate_from_linear(6) );
+  INFO( "6 translates to " << twop.as_string() );
+  CHECK( twop==coordinate<int,d>( vector<int>{1,2} ) );
+
+  decomposition threed;
+  REQUIRE_NOTHROW( threed = mpi_decomposition
+		   (arch,new coordinate<int,d>( vector<int>{6,2,4} ) ) );
+  CHECK( threed.get_dimensionality()==3 );
+  CHECK( threed.domains_volume()==6*2*4 ); 
+  coordinate<int,d> threep; // {2,0,1} -> 2*(2*4) 0*2 + 1 = 17
+  REQUIRE_NOTHROW( threep = threed.coordinate_from_linear(17) );
+  INFO( "17 translates to " << threep.as_string() );
+  CHECK( threep== coordinate<int,d>( vector<int>{2,0,1} ) );
+
+}
+
+#endif

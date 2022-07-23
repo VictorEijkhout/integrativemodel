@@ -12,9 +12,6 @@
  ****
  ****************************************************************/
 
-#include <stdlib.h>
-#include <math.h>
-
 #include "catch2/catch_all.hpp"
 
 #include "mpi_env.h"

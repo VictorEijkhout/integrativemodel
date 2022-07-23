@@ -4,7 +4,7 @@
 #### This makefile is part of the prototype implementation of
 #### the Integrative Model for Parallelism
 ####
-#### copyright Victor Eijkhout 2014-9
+#### copyright Victor Eijkhout 2014-2022
 ####
 #### Unit tests for the MPI backend of IMP
 ####
@@ -104,6 +104,7 @@ unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
 	  ${LIBCXX}
 ${IMPCODEDIR}/imp_coord.o : ${IMPCODEDIR}/imp_coord.cxx ${IMPCODEDIR}/imp_coord.h
 	cd ${IMPCODEDIR} && make imp_coord.o
+
 #
 # architecture and decomposition
 #
