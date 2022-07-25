@@ -65,10 +65,10 @@ public:
    */
 protected:
   std::vector< coordinate<int,d> > mdomains;
-  processor_set known_domains;
+  coordinate_set<int,d> known_domains;
 public:
   int domains_volume() const;
-  void add_domain(coordinate<int,d>,bool=true); void add_domains(indexstruct*);
+  void add_domain(coordinate<int,d>,bool=true); void add_domains( const indexstruct<int,d>& );
   //! Return the domains object, for 1d only
   const std::vector< coordinate<int,d> > get_domains() const { return mdomains; };
   //! Get a domain by local number; see \ref get_local_domain_number for global for translation
@@ -77,7 +77,7 @@ public:
   const coordinate<int,d> &last_local_domain() const;
   //! The local number of domains.
   int local_ndomains() const { return mdomains.size(); };
-  int get_domain_local_number( const coordinate<int,d> &d ) const;
+  int get_domain_local_number( const coordinate<int,d>& ) const;
 
   virtual std::string as_string() const override;
 
@@ -120,6 +120,7 @@ public:
   bool operator==( const decomposition& ) const;
   coordinate<int,d> &operator*();
 };
+
 
 #if 0
 

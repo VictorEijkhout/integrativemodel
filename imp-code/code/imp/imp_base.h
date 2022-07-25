@@ -263,40 +263,6 @@ public:
  **** Decomposition & Domainset
  ****/
 
-class processor_set {
-private:
-  std::vector< processor_coordinate > set;
-public:
-  bool contains( processor_coordinate &p ) {
-    for ( auto pp : set )
-      if (p==pp)
-	return true;
-    return false;
-  };
-  bool contains( processor_coordinate &&p ) {
-    for ( auto pp : set )
-      if (p==pp)
-	return true;
-    return false;
-  };
-  void add( processor_coordinate p ) {
-    if (set.size()>0 &&
-	p.get_dimensionality()!=set.at(0).get_dimensionality())
-      throw(fmt::format("Can not add vector of dim {}: previous {}",
-			p.get_dimensionality(),set.at(0).get_dimensionality()));
-    if (!contains(p))
-      set.push_back(p);
-  };
-  int size() { return set.size(); };
-private:
-  int cur{0};
-public:
-  processor_set &begin() { cur = 0; return *this; };
-  processor_set &end() { return *this; };
-  bool operator!=( processor_set & s ) { return cur<set.size(); };
-  void operator++() { cur += 1; };
-  processor_coordinate &operator*() { return set.at(cur); };
-};
 
 class parallel_structure;
 /*!

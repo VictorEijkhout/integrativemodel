@@ -900,7 +900,7 @@ TEST_CASE( "Masked distribution creation","[distribution][mask][70]" ) {
 }
 
 TEST_CASE( "processor sets","[processor][80]" ) {
-  processor_set set;
+  coordinate_set<int,1> set;
   // add a vector
   REQUIRE_NOTHROW
     ( set.add( coordinate<int,d>( vector<int>{1,2,3} ) ) );

@@ -259,9 +259,8 @@ const decomposition &decomposition::get_embedded_decomposition() const {
   \todo use std_ptr to indexstruct*
 */
 template<int d>
-void decomposition::add_domains( indexstruct<int,d> *dom ) {
-  //print("adding domains from indexstruct <<{}>>\n",d->as_string());
-  for ( auto i=dom->first_index(); i<=dom->last_index(); i++ ) {
+void decomposition::add_domains( const indexstruct<int,d> doms ) {
+  for ( auto i=doms->first_index(); i<=doms->last_index(); i++ ) {
     int ii = (int)i; // std::static_cast<int>(i);
     add_domain( coordinate( vector<int>{ ii } ),false );
   }

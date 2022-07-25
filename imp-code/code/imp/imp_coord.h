@@ -128,3 +128,25 @@ std::ostream &operator<<(std::ostream &os,const std::shared_ptr<coordinate<I,d>>
   return os;
 };
 
+/*
+ * Coordinate sets
+ */
+
+template<typename I,int d>
+class coordinate_set {
+private:
+  std::vector< coordinate<I,d> > set;
+public:
+  bool contains( const coordinate<I,d> &p ) const;
+  void add( const coordinate<I,d>& p );
+  int size() { return set.size(); };
+private:
+  int cur{0};
+public:
+  coordinate_set &begin() { cur = 0; return *this; };
+  coordinate_set &end() { return *this; };
+  bool operator!=( coordinate_set & s ) { return cur<set.size(); };
+  void operator++() { cur += 1; };
+  coordinate<I,d> &operator*() { return set.at(cur); };
+};
+

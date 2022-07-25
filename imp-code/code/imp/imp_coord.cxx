@@ -306,25 +306,23 @@ string coordinate<I,d>::as_string() const {
   return ss.str();
 };
 
-// template<typename I,int d>
-// //template <>
-// struct fmt::formatter<coordinate<I,d>> {
-//  constexpr
-//  auto parse(format_parse_context& ctx)
-//        -> decltype(ctx.begin()) {
-//    auto it = ctx.begin(),
-//      end = ctx.end();
-//    if (it != end && *it != '}')
-//      throw format_error("invalid format");
-//    return it;
-//   }
-//   template <typename FormatContext>
-//   auto format
-//     (const coordinate<I,d>& p, FormatContext& ctx)
-//         -> decltype(ctx.out()) {
-//     return format_to(ctx.out(),"{}", p.as_string());
-//   }
-// };
+template<typename I,int d>
+bool coordinate_set::contains( const coordinate<I,d> &p ) const {
+  for ( auto pp : set )
+    if (p==pp)
+      return true;
+  return false;
+};
+
+template<typename I,int d>
+void coordinate_set::add( const coordinate<I,d>& p ) {
+  if (set.size()>0 &&
+      p.get_dimensionality()!=set.at(0).get_dimensionality())
+    throw(fmt::format("Can not add vector of dim {}: previous {}",
+		      p.get_dimensionality(),set.at(0).get_dimensionality()));
+  if (!contains(p))
+    set.push_back(p);
+};
 
 /*
  * Specializations
@@ -348,6 +346,13 @@ template class coordinate<int,3>;
 template class coordinate<index_int,1>;
 template class coordinate<index_int,2>;
 template class coordinate<index_int,3>;
+
+template class coordinate_set<int,1>;
+template class coordinate_set<int,2>;
+template class coordinate_set<int,3>;
+template class coordinate_set<index_int,1>;
+template class coordinate_set<index_int,2>;
+template class coordinate_set<index_int,3>;
 
 template struct fmt::formatter<coordinate<int,1>>;
 template struct fmt::formatter<coordinate<int,2>>;
