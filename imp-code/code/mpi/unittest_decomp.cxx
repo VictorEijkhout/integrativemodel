@@ -24,8 +24,9 @@ using fmt::format;
 using fmt::print;
 
 TEST_CASE( "decomposition constructors" ) {
-  REQUIRE_NOTHROW( mpi_decomposition<1>( {5} ) );
-  REQUIRE_NOTHROW( mpi_decomposition<2>( {5,6} ) );
+  auto &the_env = mpi_environment::instance();
+  REQUIRE_NOTHROW( mpi_decomposition<1>( the_env,{5} ) );
+  REQUIRE_NOTHROW( mpi_decomposition<2>( the_env,{5,6} ) );
 }
 
 #if 0

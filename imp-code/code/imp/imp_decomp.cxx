@@ -181,22 +181,26 @@ template<int d>
 decomposition::decomposition( const environment& env )
   : decomposition( endpoint<int,d>(environment.nprocs()) ) {
 };
+template<int d>
+decomposition::decomposition( const coordinate<int,d> grid )
+  : domain_layout(grid) {
+};
 
 /*!
   In multi-d the user needs to indicate how the domains are laid out.
   The processor coordinate is a size specification, to make it compatible with nprocs
 */
-//snippet decompfromcoord
-template<int d>
-decomposition::decomposition( const architecture &arch,coordinate &sizes )
-  : architecture(arch) {
-  int dim = sizes.get_dimensionality();
-  if (dim<=0)
-    throw(string("Non-positive decomposition dimensionality"));
-  domain_layout = sizes; //new coordinate(sizes);
-  set_corners();
-};
-//snippet end
+// //snippet decompfromcoord
+// template<int d>
+// decomposition::decomposition( const architecture &arch,coordinate &sizes )
+//   : architecture(arch) {
+//   int dim = sizes.get_dimensionality();
+//   if (dim<=0)
+//     throw(string("Non-positive decomposition dimensionality"));
+//   domain_layout = sizes; //new coordinate(sizes);
+//   set_corners();
+// };
+// //snippet end
 
 //! Get dimensionality.
 template<int d>

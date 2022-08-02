@@ -13,6 +13,7 @@
 #pragma once
 
 #include "mpi.h"
+#include "mpi_env.h"
 #include "imp_decomp.h"
 
 /*!
@@ -26,27 +27,12 @@ template<int d>
 class mpi_decomposition : public decomposition<d> {
 public:
   mpi_decomposition() : decomposition<d>() {};
-  //! Multi-d decomposition from explicit processor grid layout
-  mpi_decomposition( const coordinate<int,d> &grid)
-    : decomposition<d>(grid) {
-    int mytid = arch.mytid(); int over = arch.get_over_factor();
-    for ( int local=0; local<over; local++) {
-      auto mycoord = this->coordinate_from_linear(over*mytid+local);
-      try {
-	add_domain(mycoord);
-      } catch (...) { fmt::print("trouble adding domain\n"); };
-      //fmt::print("Tid {} translates to domain <<{}>>\n",mytid,mycoord->as_string());
-    }
-    set_decomp_factory(); 
-  };
-  //! Default mpi constructor is one-d.
-  mpi_decomposition( const architecture &arch )
-    : mpi_decomposition(arch,arch.get_proc_layout(1)) {};
-
+  mpi_decomposition( const mpi_environment& env,const coordinate<int,d> &grid);
   void set_decomp_factory();
   virtual std::string as_string() const override;
 };
 
+#if 0
 void make_mpi_communicator(communicator *cator,const decomposition &d);
 
 /****
@@ -222,3 +208,7 @@ void mpi_architecture( architecture&, int=-1, int=-1 );
 // };
 
 #endif
+#endif
+
+template class decomposition<1>;
+template class decomposition<2>;

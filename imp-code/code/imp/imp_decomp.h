@@ -56,9 +56,9 @@ public:
   const coordinate<int,d> &get_domain_layout() const { return domain_layout; };
   const coordinate<int,d> &get_origin_processor() const;
   const coordinate<int,d> &get_farpoint_processor() const;
-  int get_size_of_dimension(int nd) const { return domain_layout.coord(nd); };
+  int get_size_of_dimension(int nd) const { return domain_layout.at(nd); };
   //! \todo do we really need this?
-  std::vector<int> get_global_domain_descriptor() { return domain_layout.data(); };
+  auto get_global_domain_descriptor() { return domain_layout.data(); };
 
   /*
    * Domain handling
@@ -72,19 +72,19 @@ public:
   //! Return the domains object, for 1d only
   const std::vector< coordinate<int,d> > get_domains() const { return mdomains; };
   //! Get a domain by local number; see \ref get_local_domain_number for global for translation
-  int get_local_domain( int dom ) { return mdomains[dom].coord(0); };
+  int get_local_domain( int dom ) { return mdomains[dom].at(0); };
   const coordinate<int,d> &first_local_domain() const;
   const coordinate<int,d> &last_local_domain() const;
   //! The local number of domains.
   int local_ndomains() const { return mdomains.size(); };
   int get_domain_local_number( const coordinate<int,d>& ) const;
 
-  virtual std::string as_string() const override;
+  virtual std::string as_string() const;
 
   /*
    * Factory routines
    */
-  std::function< std::shared_ptr<distribution>(index_int) > new_block_distribution;
+  std::function< std::shared_ptr<distribution<d>>(index_int) > new_block_distribution;
   // {
   //   [] (index_int i) -> std::shared_ptr<distribution> {
   //     throw(std::string("base new_block_distr")); } };
