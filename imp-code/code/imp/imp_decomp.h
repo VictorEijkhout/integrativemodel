@@ -43,9 +43,6 @@ public:
   // with explicit layout
   decomposition( const coordinate<int,d> &nd );
   decomposition( const environment& env );
-  /*
-   * Global info
-   */
 private:
   //! A vector of the sizes in all the dimensions
   coordinate<int,d> domain_layout;
@@ -81,13 +78,7 @@ public:
 
   virtual std::string as_string() const;
 
-  /*
-   * Factory routines
-   */
   std::function< std::shared_ptr<distribution<d>>(index_int) > new_block_distribution;
-  // {
-  //   [] (index_int i) -> std::shared_ptr<distribution> {
-  //     throw(std::string("base new_block_distr")); } };
 
 protected:
   bool range_linear{true},range_twoside{false};

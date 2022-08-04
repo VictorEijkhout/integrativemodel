@@ -30,17 +30,15 @@ public :
   I &operator[](int i); const I &operator[](int i) const;
   I span() const;
   bool before( const coordinate<I,d>& ) const;
-  I linear( const coordinate<I,d>& ) const;
+  //  I linear( const coordinate<I,d>& ) const;
 
-  // // linearization
-  // int linearize( const coordinate&) const; // linear number wrt cube layout
-  // int linearize( const decomposition& ) const; // linear number wrt cube
+  // linearization
+  I linear_location_of( const coordinate<I,d>& ) const;
+  I linear_location_in( const coordinate<I,d>& ) const;
 
   // equality operation
   coordinate negate();
   bool is_zero();
-  // coordinate operate( const ioperator<I,d> &op );
-  // coordinate operate( const ioperator<I,d> &&op );
   coordinate<I,d> operate( const ioperator<I,d> &op );
   coordinate<I,d> operate( const ioperator<I,d> &&op );
   std::string as_string() const;

@@ -8,7 +8,7 @@
  **** Unit tests for the IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
  ****
- **** unit tests for the indexstruct package
+ **** unit tests for coordinates and indexstructs
  **** (tests do not actually rely on MPI)
  ****
  ****************************************************************/
@@ -46,6 +46,15 @@ TEST_CASE( "coordinates" ) {
   REQUIRE( not (twofives==five1) );
   REQUIRE( (twofives!=fours) );
   REQUIRE( (twofives!=five1) );
+}
+
+TEST_CASE( "linear location" ) {
+  coordinate<int,1> five(5);
+  coordinate<int,1> two(2);
+  REQUIRE_THROWS( two.linear_location_of(five) );
+  int loc;
+  REQUIRE_NOTHROW( loc = five.linear_location_of(two) );
+  REQUIRE( loc==2 );
 }
 
 TEST_CASE( "contiguous indexstruct","[indexstruct][1]" ) {

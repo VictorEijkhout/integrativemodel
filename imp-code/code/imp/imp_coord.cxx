@@ -243,16 +243,28 @@ bool coordinate<I,d>::operator>( coordinate<I,d> other ) const {
   return r;
 };
 
-// stuff
+// linearization
 template<typename I,int d>
-I coordinate<I,d>::linear( const coordinate<I,d>& layout ) const {
-  int s = coordinates.at(0);
+I coordinate<I,d>::linear_location_in( const coordinate<I,d>& layout ) const {
+  int id=0;
+  if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
+    throw( "coordinate not contained" );
+  int s = coordinates.at(id);
+
   for (int id=1; id<d; id++) {
     auto layout_dim = layout.coordinates[id];
+    if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
+      throw( "coordinate not contained" );
     s = s*layout_dim + coordinates[id];
   }
   return s;
 };
+template<typename I,int d>
+I coordinate<I,d>::linear_location_of( const coordinate<I,d>& inside ) const {
+  return inside.linear_location_in( *this );
+};
+
+// stuff
 template<typename I,int d>
 coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other ) {
   auto r(current);
@@ -307,7 +319,7 @@ string coordinate<I,d>::as_string() const {
 };
 
 template<typename I,int d>
-bool coordinate_set::contains( const coordinate<I,d> &p ) const {
+bool coordinate_set<I,d>::contains( const coordinate<I,d> &p ) const {
   for ( auto pp : set )
     if (p==pp)
       return true;
@@ -315,11 +327,11 @@ bool coordinate_set::contains( const coordinate<I,d> &p ) const {
 };
 
 template<typename I,int d>
-void coordinate_set::add( const coordinate<I,d>& p ) {
+void coordinate_set<I,d>::add( const coordinate<I,d>& p ) {
   if (set.size()>0 &&
-      p.get_dimensionality()!=set.at(0).get_dimensionality())
+      p.dimensionality()!=set.at(0).dimensionality())
     throw(fmt::format("Can not add vector of dim {}: previous {}",
-		      p.get_dimensionality(),set.at(0).get_dimensionality()));
+		      p.dimensionality(),set.at(0).dimensionality()));
   if (!contains(p))
     set.push_back(p);
 };
