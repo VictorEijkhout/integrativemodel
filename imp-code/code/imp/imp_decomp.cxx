@@ -216,6 +216,11 @@ int decomposition::domains_volume() const {
 };
 
 template<int d>
+int decomposition::linearize( const coordinate<int,d> &p ) const {
+  return domain_layout.linear_location_of(p);
+};
+
+template<int d>
 const coordinate &decomposition::first_local_domain() const {
   if (mdomains.size()==0)
     throw(format("Decomposition has no domains"));
@@ -387,4 +392,6 @@ coordinate &decomposition::operator*() {
 
 #endif
 
-template class parallel_structure<1>;
+template class decomposition<1>;
+template class decomposition<2>;
+

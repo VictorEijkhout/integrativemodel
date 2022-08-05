@@ -56,6 +56,8 @@ public:
   int get_size_of_dimension(int nd) const { return domain_layout.at(nd); };
   //! \todo do we really need this?
   auto get_global_domain_descriptor() { return domain_layout.data(); };
+  int linearize( const coordinate<int,d> &p ) const;
+  coordinate<int,d> coordinate_from_linear(int p) const;
 
   /*
    * Domain handling
@@ -86,10 +88,6 @@ public:
   void set_range_twoside() { 
     range_linear = false; range_twoside = true;
   };
-  int linearize( const coordinate<int,d> &p ) const {
-    return p.linearize( *this);
-  };
-  coordinate<int,d> coordinate_from_linear(int p) const;
 
 protected:
   std::shared_ptr<decomposition> embedded_decomposition{nullptr};

@@ -210,5 +210,3 @@ void mpi_architecture( architecture&, int=-1, int=-1 );
 #endif
 #endif
 
-template class decomposition<1>;
-template class decomposition<2>;

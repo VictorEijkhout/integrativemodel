@@ -73,6 +73,8 @@ public:
     [] () -> int { throw("Function undefined: nprocs"); return -1; } };
   std::function< int() > procid{
     [] () -> int { throw("Function undefined: procid"); return -1; } };
+  std::function< int() > get_over_factor{
+    [] () -> int { return 1; } };
 
 protected:
   int debug_level{0};
@@ -87,7 +89,7 @@ public:
   std::function< void(void) > delete_environment{
     [] () -> void { return; } };
 protected:
-  std::string environment_name{""};
+  std::string environment_name{"base environment"};
 public:
   void set_name(std::string n) { environment_name = n; };
   auto get_name() const { return environment_name; };
