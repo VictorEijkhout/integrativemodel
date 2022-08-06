@@ -67,7 +67,8 @@ protected:
   coordinate_set<int,d> known_domains;
 public:
   int domains_volume() const;
-  void add_domain(coordinate<int,d>,bool=true); void add_domains( const indexstruct<int,d>& );
+  void add_domain(coordinate<int,d>,bool=true);
+  void add_domains( const indexstruct<int,d>& );
   //! Return the domains object, for 1d only
   const std::vector< coordinate<int,d> > get_domains() const { return mdomains; };
   //! Get a domain by local number; see \ref get_local_domain_number for global for translation

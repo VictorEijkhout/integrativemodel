@@ -23,6 +23,236 @@ using std::array,std::vector,std::string;
 using std::shared_ptr,std::make_shared;
 using fmt::format,fmt::print;
 
+/****
+ **** Decomposition
+ ****/
+
+//! Default decomposition uses all procs of the architecture in one-d manner.
+template<int d>
+decomposition<d>::decomposition( const environment& env )
+  : decomposition<d>( endpoint<int,d>(environment.nprocs()) ) {
+};
+template<int d>
+decomposition<d>::decomposition( const coordinate<int,d> grid )
+  : domain_layout(grid) {
+};
+
+/*!
+  In multi-d the user needs to indicate how the domains are laid out.
+  The processor coordinate is a size specification, to make it compatible with nprocs
+*/
+// //snippet decompfromcoord
+// template<int d>
+// decomposition::decomposition( const architecture &arch,coordinate &sizes )
+//   : architecture(arch) {
+//   int dim = sizes.get_dimensionality();
+//   if (dim<=0)
+//     throw(string("Non-positive decomposition dimensionality"));
+//   domain_layout = sizes; //new coordinate(sizes);
+//   set_corners();
+// };
+// //snippet end
+
+//! Get dimensionality.
+template<int d>
+int decomposition<d>::get_dimensionality() const {
+  return d;
+};
+
+//! Number of domains
+template<int d>
+int decomposition<d>::domains_volume() const {
+  int p = domain_layout.volume();
+  return p;
+};
+
+template<int d>
+int decomposition<d>::linearize( const coordinate<int,d> &p ) const {
+  return domain_layout.linear_location_of(p);
+};
+
+template<int d>
+const coordinate<int,d> &decomposition<d>::first_local_domain() const {
+  if (mdomains.size()==0)
+    throw(format("Decomposition has no domains"));
+  return mdomains.at(0);
+};
+template<int d>
+const coordinate<int,d> &decomposition<d>::last_local_domain() const {
+  if (mdomains.size()==0)
+    throw(format("Decomposition has no domains"));
+  return mdomains.at(mdomains.size()-1);
+};
+
+//! Get the local number where this domain is stored. Domains are multi-dimensionally numbered.
+template<int d>
+int decomposition<d>::get_domain_local_number( const coordinate<int,d> &dcoord ) const {
+  // print("get domain local number of {} in decomp: <<{}>>\n",
+  // 	d.as_string(),this->as_string());
+  for ( int i=0; i<mdomains.size(); i++) {
+    // print("compare domain {}: {} to match coordinate {}\n",
+    // 	  i,mdomains.at(i).as_string(),d.as_string());
+    if (mdomains.at(i)==d) return i;
+  }
+  throw(fmt::format("Domain has no localization"));
+};
+
+//! Get dimensionality, which has to be the same as something else.
+template<int d>
+int decomposition<d>::get_same_dimensionality( int dd ) const {
+  return d=dd;
+};
+
+template<int d>
+void decomposition<d>::copy_embedded_decomposition( decomposition<d> &other ) {
+  embedded_decomposition = other.embedded_decomposition;
+};
+
+template<int d>
+const decomposition<d> &decomposition<d>::get_embedded_decomposition() const {
+  if (embedded_decomposition==nullptr)
+    throw(string("Null embedded decomposition"));
+  return *(embedded_decomposition.get());
+};
+
+/*! Add a bunch of 1d local domains
+  \todo test for 1d-ness
+  \todo use std_ptr to indexstruct*
+*/
+template<int d>
+void decomposition<d>::add_domains( const indexstruct<int,d> doms ) {
+  for ( auto i=doms->first_index(); i<=doms->last_index(); i++ ) {
+    int ii = (int)i; // std::static_cast<int>(i);
+    add_domain( coordinate<int,d>( vector<int>{ ii } ),false );
+  }
+  set_corners();
+};
+
+//! Add a multi-d local domain.
+template<int d>
+void decomposition<d>::add_domain( coordinate<int,d> dom,bool recompute ) {
+  //print("adding domain at coordinate <<{}>>\n",d.as_string());
+  int dim = dom.get_same_dimensionality( domain_layout.get_dimensionality() );
+  mdomains.push_back(dd);
+  if (recompute) set_corners();
+};
+
+//! Get the multi-dimensional coordinate of a linear one. \todo check this calculation
+//! http://stackoverflow.com/questions/10903149/how-do-i-compute-the-linear-index-of-a-3d-coordinate-and-vice-versa
+template<int d>
+coordinate<int,d> decomposition<d>::coordinate_from_linear(int p) const {
+  int dim = domain_layout.get_dimensionality();
+  if (dim<=0) throw(string("Zero dim layout"));
+  coordinate<int,d> pp(dim);
+  for (int id=dim-1; id>=0; id--) {
+    int dsize = domain_layout.coord(id);
+    if (dsize==0)
+      throw(format("weird layout <<{}>>",domain_layout.as_string()));
+    pp.set(id,p%dsize); p = p/dsize;
+  };
+  return pp;
+};
+
+template<int d>
+void decomposition<d>::set_corners() {
+  // origin; we set this to all zeros, which may not be enough.
+  int d = get_dimensionality();
+  closecorner = coordinate<int,d>( vector<int>(d,0) );
+  // farcorner; explicit endpoint.
+  int P = domains_volume();
+  farcorner = coordinate<int,d>( make_endpoint(d,P) );
+};
+
+//! \todo why can't we declare this const?
+template<int d>
+const coordinate<int,d> &decomposition<d>::get_origin_processor() const {
+  return closecorner;
+};
+template<int d>
+const coordinate<int,d> &decomposition<d>::get_farpoint_processor() const {
+  return farcorner;
+};
+
+template<int d>
+string decomposition<d>::as_string() const {
+  return "decomp";
+  // format
+  //   ("{}; dim={}, #domains: {}",
+  //    architecture::as_string(),get_dimensionality(),domains_volume());
+};
+
+/*!
+  We begin iteration by giving the first coordinate.
+  We store the current iterate as a private coordinate: `cur_coord'.
+  Iteration is done C-style: the last coordinate varies quickest.
+
+  Note: iterating is only defined for bricks.
+*/
+template<int d>
+decomposition<d> &decomposition<d>::begin() {
+  iterate_count = 0;
+  if (start_coord.get_dimensionality()>0) {
+    start_id = linearize(start_coord);
+  } else {
+    try { start_id = mytid();
+    } catch (...) { print("should have been able to get mytid\n");
+      throw("can not begin iterate over decomposition");
+    }
+    start_coord = coordinate_from_linear(start_id);
+  }
+  cur_coord = start_coord;
+  //  print("begin {} @{}+{}",cur_coord.as_string(),start_id,iterate_count);
+  return *this;
+};
+
+template<int d>
+decomposition<d> &decomposition<d>::end() {
+  // we end when we've counted all the tids
+  iterate_count = domains_volume();
+  return *this;
+};
+
+/*!
+  Here's how to iterate: 
+  - from last to first dimensions, find the dimension where you are not at the far edge
+  - increase the coordinate in that dimension
+  - all higher dimensions are reset to the first coordinate.
+*/
+template<int d>
+void decomposition<d>::operator++() {
+  start_id = linearize(start_coord); // !!! VLE should not be necessary
+  int ntids = domains_volume();
+  int range_id{-1};
+  //  print("increment {} @{}+{}",cur_coord.as_string(),start_id,iterate_count);
+  iterate_count++;
+  if (range_linear || (range_twoside && iterate_count>=0) ) {
+    range_id = (start_id+iterate_count) % ntids;
+  } else {
+    range_id = (start_id-iterate_count+ntids) % ntids;
+  }
+  cur_coord = coordinate_from_linear(range_id);
+  // print(".. to {} @{}+{}\n",cur_coord.as_string(),start_id,iterate_count);
+
+  return;
+};
+
+template<int d>
+bool decomposition<d>::operator!=( const decomposition<d> &other ) const {
+  return iterate_count!=other.iterate_count;
+};
+
+template<int d>
+bool decomposition<d>::operator==( const decomposition<d> &other ) const {
+  return iterate_count==other.iterate_count;
+};
+
+template<int d>
+coordinate<int,d> &decomposition<d>::operator*() {
+  //print("decomp::deref: {}\n",cur_coord.as_string());
+  return cur_coord;
+};
+
+#if 0
 /*
  * Parallel structure
  */
@@ -67,7 +297,6 @@ template<int d>
 coordinate<index_int,d> parallel_structure::enclosing_structure() const {
 };
 
-#if 0
 /*
  * Architectures
  */
@@ -79,15 +308,15 @@ architecture::architecture()
   See \ref architecture::get_proc_endpoint
   \todo this one is never used. Do away?
 */
-coordinate architecture::get_proc_origin(int d) const {
-  return coordinate( vector<int>(d,0) );
+coordinate<int,d> architecture::get_proc_origin(int d) const {
+  return coordinate<int,d>( vector<int>(d,0) );
 };
 
 //! Multi-d descriptor of number of processes. This is actually the highest proc number.
 //! \todo find a much better way of deducing or setting a processor grid
-coordinate architecture::get_proc_endpoint(int d) const {
+coordinate<int,d> architecture::get_proc_endpoint(int d) const {
   int P = nprocs()*get_over_factor();
-  return coordinate( make_endpoint(d,P) );
+  return coordinate<int,d>( make_endpoint(d,P) );
  //  coordinate *coord;
  //  if (d==1) {
  //    coord = new coordinate(1); coord->set(0,P-1);
@@ -171,224 +400,6 @@ std::string architecture::as_string() const {
     ("Type: {}, #procs: {}",architecture_type_as_string(type),arch_nprocs);
 };
 
-
-/****
- **** Decomposition
- ****/
-
-//! Default decomposition uses all procs of the architecture in one-d manner.
-template<int d>
-decomposition::decomposition( const environment& env )
-  : decomposition( endpoint<int,d>(environment.nprocs()) ) {
-};
-template<int d>
-decomposition::decomposition( const coordinate<int,d> grid )
-  : domain_layout(grid) {
-};
-
-/*!
-  In multi-d the user needs to indicate how the domains are laid out.
-  The processor coordinate is a size specification, to make it compatible with nprocs
-*/
-// //snippet decompfromcoord
-// template<int d>
-// decomposition::decomposition( const architecture &arch,coordinate &sizes )
-//   : architecture(arch) {
-//   int dim = sizes.get_dimensionality();
-//   if (dim<=0)
-//     throw(string("Non-positive decomposition dimensionality"));
-//   domain_layout = sizes; //new coordinate(sizes);
-//   set_corners();
-// };
-// //snippet end
-
-//! Get dimensionality.
-template<int d>
-int decomposition::get_dimensionality() const {
-  return d;
-};
-
-//! Number of domains
-template<int d>
-int decomposition::domains_volume() const {
-  int p = domain_layout.volume();
-  return p;
-};
-
-template<int d>
-int decomposition::linearize( const coordinate<int,d> &p ) const {
-  return domain_layout.linear_location_of(p);
-};
-
-template<int d>
-const coordinate &decomposition::first_local_domain() const {
-  if (mdomains.size()==0)
-    throw(format("Decomposition has no domains"));
-  return mdomains.at(0);
-};
-const coordinate &decomposition::last_local_domain() const {
-  if (mdomains.size()==0)
-    throw(format("Decomposition has no domains"));
-  return mdomains.at(mdomains.size()-1);
-};
-
-//! Get the local number where this domain is stored. Domains are multi-dimensionally numbered.
-template<int d>
-int decomposition::get_domain_local_number( const coordinate &dcoord ) const {
-  // print("get domain local number of {} in decomp: <<{}>>\n",
-  // 	d.as_string(),this->as_string());
-  for ( int i=0; i<mdomains.size(); i++) {
-    // print("compare domain {}: {} to match coordinate {}\n",
-    // 	  i,mdomains.at(i).as_string(),d.as_string());
-    if (mdomains.at(i)==d) return i;
-  }
-  throw(fmt::format("Domain has no localization"));
-};
-
-//! Get dimensionality, which has to be the same as something else.
-template<int d>
-int decomposition::get_same_dimensionality( int dd ) const {
-  return d=dd;
-};
-
-template<int d>
-void decomposition::copy_embedded_decomposition( decomposition &other ) {
-  embedded_decomposition = other.embedded_decomposition;
-};
-
-template<int d>
-const decomposition &decomposition::get_embedded_decomposition() const {
-  if (embedded_decomposition==nullptr)
-    throw(string("Null embedded decomposition"));
-  return *(embedded_decomposition.get());
-};
-
-/*! Add a bunch of 1d local domains
-  \todo test for 1d-ness
-  \todo use std_ptr to indexstruct*
-*/
-template<int d>
-void decomposition::add_domains( const indexstruct<int,d> doms ) {
-  for ( auto i=doms->first_index(); i<=doms->last_index(); i++ ) {
-    int ii = (int)i; // std::static_cast<int>(i);
-    add_domain( coordinate( vector<int>{ ii } ),false );
-  }
-  set_corners();
-};
-
-//! Add a multi-d local domain.
-template<int d>
-void decomposition::add_domain( coordinate<int,d> dom,bool recompute ) {
-  //print("adding domain at coordinate <<{}>>\n",d.as_string());
-  int dim = dom.get_same_dimensionality( domain_layout.get_dimensionality() );
-  mdomains.push_back(dd);
-  if (recompute) set_corners();
-};
-
-//! Get the multi-dimensional coordinate of a linear one. \todo check this calculation
-//! http://stackoverflow.com/questions/10903149/how-do-i-compute-the-linear-index-of-a-3d-coordinate-and-vice-versa
-template<int d>
-coordinate decomposition::coordinate_from_linear(int p) const {
-  int dim = domain_layout.get_dimensionality();
-  if (dim<=0) throw(string("Zero dim layout"));
-  coordinate pp(dim);
-  for (int id=dim-1; id>=0; id--) {
-    int dsize = domain_layout.coord(id);
-    if (dsize==0)
-      throw(format("weird layout <<{}>>",domain_layout.as_string()));
-    pp.set(id,p%dsize); p = p/dsize;
-  };
-  return pp;
-};
-
-void decomposition::set_corners() {
-  // origin; we set this to all zeros, which may not be enough.
-  int d = get_dimensionality();
-  closecorner = coordinate( vector<int>(d,0) );
-  // farcorner; explicit endpoint.
-  int P = domains_volume();
-  farcorner = coordinate( make_endpoint(d,P) );
-};
-
-//! \todo why can't we declare this const?
-const coordinate &decomposition::get_origin_processor() const {
-  return closecorner;
-};
-const coordinate &decomposition::get_farpoint_processor() const {
-  return farcorner;
-};
-
-string decomposition::as_string() const {
-  return "decomp";
-  // format
-  //   ("{}; dim={}, #domains: {}",
-  //    architecture::as_string(),get_dimensionality(),domains_volume());
-};
-
-/*!
-  We begin iteration by giving the first coordinate.
-  We store the current iterate as a private coordinate: `cur_coord'.
-  Iteration is done C-style: the last coordinate varies quickest.
-
-  Note: iterating is only defined for bricks.
-*/
-decomposition &decomposition::begin() {
-  iterate_count = 0;
-  if (start_coord.get_dimensionality()>0) {
-    start_id = linearize(start_coord);
-  } else {
-    try { start_id = mytid();
-    } catch (...) { print("should have been able to get mytid\n");
-      throw("can not begin iterate over decomposition");
-    }
-    start_coord = coordinate_from_linear(start_id);
-  }
-  cur_coord = start_coord;
-  //  print("begin {} @{}+{}",cur_coord.as_string(),start_id,iterate_count);
-  return *this;
-};
-
-decomposition &decomposition::end() {
-  // we end when we've counted all the tids
-  iterate_count = domains_volume();
-  return *this;
-};
-
-/*!
-  Here's how to iterate: 
-  - from last to first dimensions, find the dimension where you are not at the far edge
-  - increase the coordinate in that dimension
-  - all higher dimensions are reset to the first coordinate.
-*/
-void decomposition::operator++() {
-  start_id = linearize(start_coord); // !!! VLE should not be necessary
-  int ntids = domains_volume();
-  int range_id{-1};
-  //  print("increment {} @{}+{}",cur_coord.as_string(),start_id,iterate_count);
-  iterate_count++;
-  if (range_linear || (range_twoside && iterate_count>=0) ) {
-    range_id = (start_id+iterate_count) % ntids;
-  } else {
-    range_id = (start_id-iterate_count+ntids) % ntids;
-  }
-  cur_coord = coordinate_from_linear(range_id);
-  // print(".. to {} @{}+{}\n",cur_coord.as_string(),start_id,iterate_count);
-
-  return;
-};
-
-bool decomposition::operator!=( const decomposition &other ) const {
-  return iterate_count!=other.iterate_count;
-};
-
-bool decomposition::operator==( const decomposition &other ) const {
-  return iterate_count==other.iterate_count;
-};
-
-coordinate &decomposition::operator*() {
-  //print("decomp::deref: {}\n",cur_coord.as_string());
-  return cur_coord;
-};
 
 #endif
 

@@ -11,6 +11,7 @@
 
 #include "mpi_env.h"
 #include "mpi_decomp.h"
+using fmt::print;
 
 //! Multi-d decomposition from explicit processor grid layout
 template<int d>
@@ -21,8 +22,8 @@ mpi_decomposition<d>::mpi_decomposition
   for ( int local=0; local<over; local++) {
     auto mycoord = this->coordinate_from_linear(over*procid+local);
     try {
-      add_domain(mycoord);
-    } catch (...) { fmt::print("trouble adding domain\n"); };
+      this->add_domain(mycoord);
+    } catch (...) { print("trouble adding domain\n"); };
   }
   set_decomp_factory(); 
 };
@@ -32,9 +33,9 @@ mpi_decomposition<d>::mpi_decomposition
 */
 template<int d>
 void mpi_decomposition<d>::set_decomp_factory() {
-  new_block_distribution = [this] (index_int g) -> shared_ptr<distribution> {
-    return shared_ptr<distribution>( make_shared<mpi_block_distribution>(*this,g) );
-  };
+  // new_block_distribution = [this] (index_int g) -> shared_ptr<distribution> {
+  //   return shared_ptr<distribution>( make_shared<mpi_block_distribution>(*this,g) );
+  // };
 };
 
 template<int d>
