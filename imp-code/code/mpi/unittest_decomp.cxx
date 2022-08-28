@@ -22,11 +22,12 @@
 
 using fmt::format;
 using fmt::print;
+using std::array;
 
 TEST_CASE( "decomposition constructors" ) {
   auto &the_env = mpi_environment::instance();
-  REQUIRE_NOTHROW( mpi_decomposition<1>( the_env,coordinate<int,1>( {5} ) ) );
-  REQUIRE_NOTHROW( mpi_decomposition<2>( the_env,coordinate<int,2>( {5,6} )) );
+  REQUIRE_NOTHROW( mpi_decomposition<1>( the_env,coordinate<int,1>( array<int,1>({5}) ) ) );
+  REQUIRE_NOTHROW( mpi_decomposition<2>( the_env,coordinate<int,2>( {5,6} ) ) );
 }
 
 #if 0

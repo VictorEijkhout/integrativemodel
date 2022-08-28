@@ -26,6 +26,7 @@ public :
   
   // basic manipulation
   constexpr int dimensionality() const { return d; }
+  constexpr bool same_dimensionality(int dd) const { return d==dd; }
   I &at(int i); const I &at(int i) const;
   I &operator[](int i); const I &operator[](int i) const;
   I span() const;

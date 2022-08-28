@@ -33,7 +33,7 @@ using Eigen::VectorXd;
 //snippet transform_average
 shared_ptr<distribution> transform_by_average
     (shared_ptr<distribution> unbalance,double *stats_data) {
-  if (unbalance->get_dimensionality()!=1)
+  if (unbalance->dimensionality()!=1)
     throw(string("Can only average in 1D"));
   if (!unbalance->is_known_globally())
     throw(fmt::format
@@ -186,7 +186,7 @@ void work_moving_weight( kernel_function_args , int globalstep, int laststep ) {
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
   int
-    dim = p.get_same_dimensionality(outdistro->get_dimensionality()),
+    dim = p.same_dimensionality(outdistro->dimensionality()),
     k = outdistro->get_orthogonal_dimension();
   if (k>1)
     throw(fmt::format("Moving weight not implemented for k>1: got {}",k));

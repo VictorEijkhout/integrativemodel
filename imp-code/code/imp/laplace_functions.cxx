@@ -20,7 +20,7 @@ void laplace_bilinear_fn( kernel_function_args ) {
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
 
-  int dim = outdistro->get_same_dimensionality(indistro->get_dimensionality());
+  int dim = outdistro->same_dimensionality(indistro->dimensionality());
   auto indata = invector->get_data(p),
     outdata = outvector->get_data(p);
 

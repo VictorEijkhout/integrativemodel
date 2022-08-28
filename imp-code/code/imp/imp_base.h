@@ -931,7 +931,7 @@ public:
   // multi-d from enclosing
   block_distribution(  const decomposition &d,std::shared_ptr<multi_indexstruct> idx )
     : distribution(d) {
-    int dim = d.get_same_dimensionality(idx->get_dimensionality());
+    int dim = d.same_dimensionality(idx->dimensionality());
     create_from_indexstruct(idx);
   };
 };
@@ -1046,7 +1046,7 @@ public:
   distribution_abut_operator( const processor_coordinate &me )
     : distribution_sigma_operator
       ( [me] ( const std::shared_ptr<distribution> d ) -> std::shared_ptr<distribution> {
-	if (d->get_same_dimensionality(me.get_dimensionality())!=1)
+	if (d->same_dimensionality(me.dimensionality())!=1)
 	  throw(fmt::format("Can only abut in 1d"));
 	// get the local block
 	index_int localsize;
@@ -1091,7 +1091,7 @@ public:
   distribution_stretch_operator(domain_coordinate big) // also a ref variant?
     : distribution_sigma_operator
       ( [big] ( std::shared_ptr<distribution> d ) -> std::shared_ptr<distribution> {
-	if (d->get_dimensionality()!=1)
+	if (d->dimensionality()!=1)
 	  throw(fmt::format("Can only stretch in 1d, not {}",d->as_string()));
 	if (!d->is_known_globally())
 	  throw(fmt::format("Can only stretch globally known, not {}",d->as_string()));
@@ -1448,8 +1448,8 @@ public:
   auto get_embedded_distribution() const {
     return get_distribution()->get_embedded_distribution(); };
   auto get_communicator() { return get_distribution()->get_communicator(); };
-  auto get_dimensionality() const { return get_distribution()->get_dimensionality(); };
-  auto get_same_dimensionality(int d) const { return get_distribution()->get_same_dimensionality(d); };
+  auto dimensionality() const { return get_distribution()->dimensionality(); };
+  auto same_dimensionality(int d) const { return get_distribution()->same_dimensionality(d); };
   auto get_visibility(processor_coordinate &p) const {
     return get_distribution()->get_visibility(p); };
   auto domains_volume() const { return get_distribution()->domains_volume(); };

@@ -2067,7 +2067,7 @@ TEST_CASE( "multi-dimensional operations","[multi][120]" ) {
     (1,shared_ptr<indexstruct<index_int,1>>(  new strided_indexstruct<index_int,1>(25,50,5) ) );
 
   multi_ioperator *op; REQUIRE_NOTHROW( op = new multi_ioperator(2) );
-  CHECK( op->get_dimensionality()==2 );
+  CHECK( op->dimensionality()==2 );
 
   SECTION( "first dim" ) {
     REQUIRE_NOTHROW( op->set_operator(0,ioperator(">>2")) );
@@ -2123,7 +2123,7 @@ TEST_CASE( "multi dimensional iteration, 1d","[multi][range][125]" ) {
   CHECK( (*begin).at(0)==f );
   REQUIRE_NOTHROW( end = segment.end() );
   CHECK( (*end).at(0)==l+1 );
-  CHECK( segment.get_dimensionality()==dim );
+  CHECK( segment.dimensionality()==dim );
   int count = f;
   for ( auto ii=begin; !( ii==end ); ++ii) {
     domain_coordinate i = *ii;
@@ -2161,25 +2161,25 @@ TEST_CASE( "operate domain_coordinates","[multi][coordinate][operate][130]" ) {
     shifted(3),divided(3),multiplied(3);
   
   REQUIRE_NOTHROW( shifted = coord+2 );
-  CHECK( shifted.get_dimensionality()==3 );
+  CHECK( shifted.dimensionality()==3 );
   CHECK( shifted[0]==12 );
   CHECK( shifted[1]==22 );
   CHECK( shifted[2]==32 );
 
   REQUIRE_NOTHROW( multiplied = coord*2 );
-  CHECK( multiplied.get_dimensionality()==3 );
+  CHECK( multiplied.dimensionality()==3 );
   CHECK( multiplied[0]==20 );
   CHECK( multiplied[1]==40 );
   CHECK( multiplied[2]==60 );
 
   REQUIRE_NOTHROW( divided = coord/2 );
-  CHECK( divided.get_dimensionality()==3 );
+  CHECK( divided.dimensionality()==3 );
   CHECK( divided[0]==05 );
   CHECK( divided[1]==10 );
   CHECK( divided[2]==15 );
 
   REQUIRE_NOTHROW( shifted=domain_coordinate(multiplied+divided));
-  CHECK( shifted.get_dimensionality()==3 );
+  CHECK( shifted.dimensionality()==3 );
   CHECK( shifted[0]==25 );
   CHECK( shifted[1]==50 );
   CHECK( shifted[2]==75 );
@@ -2303,7 +2303,7 @@ TEST_CASE( "multi-dimensional derived types","[multi][139]" ) {
   domain_coordinate
     first( vector<index_int>{10,20,30} ),
     last( vector<index_int>{19,29,39} );
-  CHECK( first.get_dimensionality()==3 );
+  CHECK( first.dimensionality()==3 );
   CHECK( first[0]==10 );
   CHECK( first[1]==20 );
   CHECK( first[2]==30 );
@@ -2328,7 +2328,7 @@ TEST_CASE( "multi sigma operators","[multi][sigma][140]" ) {
   SECTION( "operator from pointwise" ) { path = "pointwise";
     REQUIRE_NOTHROW( op = multi_sigma_operator
 		     (dim,[] (const domain_coordinate &in) -> domain_coordinate {
-		       int dim = in.get_dimensionality();
+		       int dim = in.dimensionality();
 		       domain_coordinate out(dim);
 		       for (int id=0; id<dim; id++)
 			 out.set(id,in.coord(id)+2);
@@ -2342,7 +2342,7 @@ TEST_CASE( "multi sigma operators","[multi][sigma][140]" ) {
     REQUIRE_NOTHROW
       ( op = multi_sigma_operator
 	(dim,[] (const domain_coordinate &c) -> shared_ptr<multi_indexstruct<index_int,1>> {
-	  int dim = c.get_dimensionality();
+	  int dim = c.dimensionality();
 	  //print("Apply multi sigma in d={}\n",dim);
 	  auto m = shared_ptr<multi_indexstruct<index_int,1>>( new multi_indexstruct<index_int,1>(dim) );
 	  for (int id=0; id<dim; id++) {

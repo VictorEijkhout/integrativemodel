@@ -48,7 +48,7 @@ private:
   coordinate<int,d> domain_layout;
   coordinate<int,d> closecorner,farcorner;
 public:
-  int get_dimensionality() const; int get_same_dimensionality(int dd) const;
+  int dimensionality() const; int same_dimensionality(int dd) const;
   void set_corners();
   const coordinate<int,d> &get_domain_layout() const { return domain_layout; };
   const coordinate<int,d> &get_origin_processor() const;
@@ -67,7 +67,7 @@ protected:
   coordinate_set<int,d> known_domains;
 public:
   int domains_volume() const;
-  void add_domain(coordinate<int,d>,bool=true);
+  void add_domain( const coordinate<int,d>&,bool=true);
   void add_domains( const indexstruct<int,d>& );
   //! Return the domains object, for 1d only
   const std::vector< coordinate<int,d> > get_domains() const { return mdomains; };

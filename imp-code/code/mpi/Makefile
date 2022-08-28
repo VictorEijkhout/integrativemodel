@@ -20,13 +20,20 @@ include ../imp/Make.common
 IMPCODEDIR = ../imp
 OMPCODEDIR = ../omp
 MPICODEDIR = ../mpi
-include ../imp/Make.imp
+## include ../imp/Make.imp
 
 CXXFLAGS = ${CXX_OPTFLAGS} -I${IMPCODEDIR} -I${CPPFORMAT_INC}
+# ${IMPCODEDIR}/%.o : ${IMPCODEDIR}/%.cxx
+# 	echo "MPI requires IMP compilation of $<" \
+# 	 && cd ${IMPCODEDIR} \
+# 	 && file=$< && make --no-print-directory $(nodir $$file)
 %.o : %.cxx
-	${MPICXX} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} \
+	@tgt=$@ && tgtdir=$(dir $$tgt ) \
+	echo "Generic MPI compilation of $<" \
+	 && ${MPICXX} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} \
 	    -I${CATCH_INC} -I${EIGEN_INC} -I${GSL_INC} \
 	    -c $<
+
 LIBCXX = -lstdc++
 
 ####
@@ -44,10 +51,10 @@ UNITTESTS = \
   unittest_kmeans unittest_lapack unittest_ops unittest_cg unittest_nbody \
   unittest_lulesh
 UNITTEST_OFILES = ${patsubst %,%.o,${UNITTESTS}}
-include ../imp/Make.apps
+## include ../imp/Make.apps
 include ../imp/Make.unit
-UNITTEST_OBJS := \
-    mpi_base.o mpi_functions.o unittest_functions.o ${UNITTEST_OBJS}
+# UNITTEST_OBJS := \
+#     mpi_base.o mpi_functions.o unittest_functions.o ${UNITTEST_OBJS}
 SPECIFIC_OBJECTS_unittest_ops = ${IMPCODEDIR}/laplace_functions.o
 .SECONDEXPANSION:
 ${UNITTESTS} ::  \
@@ -81,6 +88,7 @@ info ::
 NEW_TESTS := unittest_env
 ENV_OBJS := mpi_env.o ${IMPCODEDIR}/imp_env.o
 unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
+	@echo "Linking $@"
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
 	  unittest_main.o $@.o \
 	  ${ENV_OBJS} \
@@ -93,9 +101,10 @@ ${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
 #
 # coordinate
 #
-NEW_TESTS := unittest_coord
+NEW_TESTS += unittest_coord
 COORD_OBJS := ${IMPCODEDIR}/imp_coord.o ${ENV_OBJS}
 unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
+	@echo "Linking $@"
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
 	  unittest_main.o $@.o \
 	  ${COORD_OBJS} \
@@ -108,18 +117,22 @@ ${IMPCODEDIR}/imp_coord.o : ${IMPCODEDIR}/imp_coord.cxx ${IMPCODEDIR}/imp_coord.
 #
 # architecture and decomposition
 #
-NEW_TESTS := ${NEW_TESTS} unittest_decomp
-DECOMP_OBJS := mpi_decomp.o ${IMPCODEDIR}/imp_decomp.o ${ENV_OBJS}
+NEW_TESTS += unittest_decomp
+DECOMP_OBJS := mpi_decomp.o ${IMPCODEDIR}/imp_decomp.o ${IMPCODEDIR}/indexstruct.o \
+        ${ENV_OBJS}
 unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
+	@echo "Linking $@"
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
 	  unittest_main.o $@.o \
-	  ${DECOMP_OBJS} ${IMPCODEDIR}/indexstruct.o \
+	  ${DECOMP_OBJS} \
 	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
 	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
 mpi_decomp.o : mpi_decomp.h ${IMPCODEDIR}/imp_decomp.h
 ${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
-	cd ${IMPCODEDIR} && make imp_decomp.o
+	@cd ${IMPCODEDIR} && make --no-print-directory imp_decomp.o
+${IMPCODEDIR}/indexstruct.o : ${IMPCODEDIR}/indexstruct.cxx ${IMPCODEDIR}/indexstruct.hpp
+	@cd ${IMPCODEDIR} && make --no-print-directory indexstruct.o
 
 info ::
 	@echo "make newtests : do new unit tests"
@@ -133,12 +146,13 @@ newtests :
 # old rules
 #
 ${patsubst %,%.o,${UNITTESTS}} : \
-    ${IMPCODEDIR}/unittest_functions.h ${IMPCODEDIR}/imp_functions.h ${IMPCODEDIR}/indexstruct.hpp \
+    ${IMPCODEDIR}/unittest_functions.h ${IMPCODEDIR}/imp_functions.h \
+    ${IMPCODEDIR}/indexstruct.hpp \
     mpi_base.h ../imp/imp_base.h mpi_ops.h ../imp/imp_ops.h mpi_static_vars.h
 
-${patsubst %,${IMPCODEDIR}/%.o,${UNITTESTS}} : \
-            ${patsubst %,${IMPCODEDIR}/%.cxx,${UNITTESTS}}
-	cd ${IMPCODEDIR} && make $@
+# ${patsubst %,${IMPCODEDIR}/%.o,${UNITTESTS}} : \
+#             ${patsubst %,${IMPCODEDIR}/%.cxx,${UNITTESTS}}
+# 	cd ${IMPCODEDIR} && make $@
 
 # this rule is slightly over generous
 unittest_kmeans_main.o unittest_kmeans.o mpi_apps/mpi_kmeans_kernel.o : \

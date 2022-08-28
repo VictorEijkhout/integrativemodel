@@ -24,7 +24,7 @@ public:
   mpi_lulesh_element_to_local_kernel( shared_ptr<object>elements,shared_ptr<object>local_nodes)
     : mpi_kernel(elements,local_nodes),kernel(elements,local_nodes)
   {
-    int dim = elements->get_same_dimensionality(local_nodes->get_dimensionality());
+    int dim = elements->same_dimensionality(local_nodes->dimensionality());
     set_name("element_to_local_nodes");
     set_last_dependency().set_signature_function_function
       ( multi_sigma_operator
@@ -44,7 +44,7 @@ class mpi_lulesh_local_to_global_kernel : public mpi_kernel,virtual public kerne
   ( shared_ptr<object> local_nodes,shared_ptr<object> global_nodes)
     : mpi_kernel(local_nodes,global_nodes),kernel(local_nodes,global_nodes)
   {
-    int dim = global_nodes->get_same_dimensionality(local_nodes->get_dimensionality());
+    int dim = global_nodes->same_dimensionality(local_nodes->dimensionality());
     set_last_dependency().set_signature_function_function
       ( multi_sigma_operator
 	( dim,
@@ -65,7 +65,7 @@ public:
   ( shared_ptr<object> global_nodes,shared_ptr<object> local_nodes )
     : mpi_kernel(global_nodes,local_nodes),kernel(global_nodes,local_nodes)
   {
-    int dim = global_nodes->get_same_dimensionality(local_nodes->get_dimensionality());
+    int dim = global_nodes->same_dimensionality(local_nodes->dimensionality());
     set_last_dependency().set_signature_function_function
       ( multi_sigma_operator
 	(dim,
@@ -87,7 +87,7 @@ public:
   ( shared_ptr<object> local_nodes,shared_ptr<object> elements )
     : mpi_kernel(local_nodes,elements),kernel(local_nodes,elements)
   {
-    int dim = elements->get_same_dimensionality(local_nodes->get_dimensionality());
+    int dim = elements->same_dimensionality(local_nodes->dimensionality());
     set_last_dependency().set_signature_function_function
       ( multi_sigma_operator
 	( dim,

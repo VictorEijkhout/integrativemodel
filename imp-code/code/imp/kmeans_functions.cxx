@@ -42,7 +42,7 @@ void set_initial_centers( std::shared_ptr<object> mpi_centers,processor_coordina
  **** Kernel for initial data generation
  ****/
 void generate_random_coordinates( kernel_function_args ) {
-  int dim = p.get_same_dimensionality(outvector->get_dimensionality());
+  int dim = p.same_dimensionality(outvector->dimensionality());
 
   const auto outdistro = outvector->get_distribution();
 

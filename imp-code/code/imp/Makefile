@@ -30,6 +30,7 @@ implib : ${IMP_OBJS}
 	    -dynamiclib -Wl,-undefined -Wl,dynamic_lookup \
 	    ${IMP_OBJS}
 %.o : %.cxx
+	@echo "Generic compilation of $<"
 	${CXX_COMPILER} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} \
 	  -I${CATCH_INC} -I${CPPFORMAT_INC} -I${EIGEN_INC} -I${GSL_INC} \
 	  -c $<
@@ -38,7 +39,7 @@ imp_entity.o : imp_entity.h
 imp_env.o : imp_env.h
 imp_coord.o : imp_coord.h
 imp_base.o utils.o : utils.h
-imp_base.o : imp_base.h imp_entity.h indexstruct.hpp
+## imp_base.o : imp_base.h imp_entity.h indexstruct.hpp
 
 
 ##
@@ -52,7 +53,7 @@ unittest_indexstruct : unittest_indexstruct.o unittest_main.o indexstruct.o imp_
 	    -o $@ $^ \
 	    -L${CATCH_LIB} -lCatch2Main -lCatch2 \
 	    ${CPPFORMAT_LIB}/${LIBFORMAT} ${LIBCXX}
-${patsubst %,%.o,${UNITTESTS}} : imp_base.h imp_base.cxx
+## ${patsubst %,%.o,${UNITTESTS}} : imp_base.h imp_base.cxx
 unittest_indexstruct.o indexstruct.o : indexstruct.hpp
 
 include ../imp/Make.regress

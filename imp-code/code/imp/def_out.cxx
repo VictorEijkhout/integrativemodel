@@ -1,7 +1,7 @@
 std::shared_ptr<distribution> indistro,
   outdistro = outvector->get_distribution();
 int
-  dim = p.get_same_dimensionality(outdistro->get_dimensionality()),
+  dim = p.same_dimensionality(outdistro->dimensionality()),
   k   = outdistro->get_orthogonal_dimension();
 
 data_pointer indata,outdata;

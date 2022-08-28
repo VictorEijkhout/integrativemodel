@@ -654,7 +654,7 @@ const decomposition &parallel_structure::get_decomposition() const {
 };
 
 vector<index_int> parallel_structure::partitioning_points() const {
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   if (dim!=1) { print("d={}\n",dim);
     throw(format("partitioning points only defined in dim=1")); }
   if (!has_type_contiguous()) { print("t={}\n",type_as_string()); 
@@ -680,7 +680,7 @@ parallel_structure parallel_structure::operate( const ioperator &&op ) {
   rstruct.set_is_orthogonal(orth);
 
   if (orth) {
-    for (int is=0; is<get_dimensionality(); is++) {
+    for (int is=0; is<dimensionality(); is++) {
       auto base_structure = get_dimension_structure(is);
       auto operated_structure = base_structure->operate(op);
       rstruct.set_dimension_structure(is,operated_structure);
@@ -715,7 +715,7 @@ parallel_structure parallel_structure::operate
   parallel_structure rstruct(this->get_decomposition());
 
   if (get_is_orthogonal()) {
-    for (int id=0; id<get_dimensionality(); id++) {
+    for (int id=0; id<dimensionality(); id++) {
       rstruct.set_dimension_structure
 	(id,get_dimension_structure(id)->operate(op,trunc.get_component(id)));
     }
@@ -745,11 +745,11 @@ parallel_structure parallel_structure::operate
   \todo can we collapse this with the single ioperator case?
 */
 parallel_structure parallel_structure::operate( multi_ioperator *op ) {
-  int dim = get_same_dimensionality(op->get_dimensionality());
+  int dim = same_dimensionality(op->dimensionality());
   parallel_structure rstruct(this->get_decomposition());
 
   if (get_is_orthogonal()) {
-    for (int is=0; is<get_dimensionality(); is++) {
+    for (int is=0; is<dimensionality(); is++) {
       rstruct.set_dimension_structure
 	(is,get_dimension_structure(is)->operate(op->get_operator(is)));
     }
@@ -775,7 +775,7 @@ parallel_structure parallel_structure::operate( multi_ioperator *op ) {
 
 //! \todo write unit test
 parallel_structure parallel_structure::operate(const multi_sigma_operator &op) {
-  int dim = get_same_dimensionality(op.get_dimensionality());
+  int dim = same_dimensionality(op.dimensionality());
   parallel_structure rstruct(this->get_decomposition());
 
   if (0) {
@@ -813,7 +813,7 @@ parallel_structure parallel_structure::operate_base( const ioperator &op ) {
   parallel_structure rstruct(this->get_decomposition());
 
   if (get_is_orthogonal()) {
-    for (int is=0; is<get_dimensionality(); is++) {
+    for (int is=0; is<dimensionality(); is++) {
       rstruct.set_dimension_structure
 	(is,get_dimension_structure(is)->operate_base(op));
     }
@@ -833,7 +833,7 @@ parallel_structure parallel_structure::operate_base( const ioperator &&op ) {
   parallel_structure rstruct(this->get_decomposition());
 
   if (get_is_orthogonal()) {
-    for (int is=0; is<get_dimensionality(); is++) {
+    for (int is=0; is<dimensionality(); is++) {
       rstruct.set_dimension_structure
 	(is,get_dimension_structure(is)->operate_base(op));
     }
@@ -854,7 +854,7 @@ parallel_structure parallel_structure::operate_base( const ioperator &&op ) {
   \todo this actually gives the convex hull of the union. good? bad?
 */
 parallel_structure parallel_structure::struct_union( const parallel_structure &merge) {
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   parallel_structure rstruct(this->get_decomposition());
 
   for (int id=0; id<dim; id++)
@@ -909,7 +909,7 @@ string parallel_structure::as_string() const {
       	format_to(w.end(),"<<p={}: {}>>,",is,multi_structures[is]->as_string());
     } else {
       format_to(w.end(),"unconverted, ");
-      for (int d=0; d<get_dimensionality(); d++)
+      for (int d=0; d<dimensionality(); d++)
       	format_to(w.end(),"d={}: {}, ",d,get_dimension_structure(d)->as_string());
     }
     format_to(w.end()," ]");
@@ -925,8 +925,8 @@ string parallel_structure::as_string() const {
 
 //! Create coordinate from linearized number, against decomposition \todo unnecessary?
 coordinate::coordinate(int p,const decomposition &dec)
-  : coordinate(dec.get_dimensionality()) {
-  int dim = dec.get_dimensionality();
+  : coordinate(dec.dimensionality()) {
+  int dim = dec.dimensionality();
   auto pcoord = dec.coordinate_from_linear(p);
   for (int d=0; d<dim; d++)
     set(d,pcoord.coord(d));
@@ -951,14 +951,14 @@ coordinate::coordinate( coordinate *other ) {
 
 //! Create from the dimensionality of a decomposition.
 coordinate_zero::coordinate_zero( const decomposition &d)
-  :  coordinate_zero(d.get_dimensionality()) {};
+  :  coordinate_zero(d.dimensionality()) {};
 
 /*!
   Get the dimensionality by the size of the coordinate vector.
   The dimension zero case corresponds to the default constructor,
   which is used for processor coordinate objects stored in a decomposition object.
 */
-int coordinate::get_dimensionality() const {
+int coordinate::dimensionality() const {
   int s = coordinates.size();
   if (s<0)
     throw(string("Non-positive processor-coordinate dimensionality"));
@@ -966,15 +966,15 @@ int coordinate::get_dimensionality() const {
 };
 
 //! Get the dimensionality, and it should be the same as someone else's.
-int coordinate::get_same_dimensionality( int d ) const {
-  int rd = get_dimensionality();
+int coordinate::same_dimensionality( int d ) const {
+  int rd = dimensionality();
   if (rd!=d)
     throw(format("Non-conforming dimensionalities {} vs {}",rd,d));
   return rd;
 };
 
 void coordinate::set(int d,int v) {
-  if (d<0 || d>=get_dimensionality())
+  if (d<0 || d>=dimensionality())
     throw(format("Can not set dimension {}",d));
   coordinates.at(d) = v;
 };
@@ -996,7 +996,7 @@ int coordinate::volume() const {
 
 //! Equality test
 bool coordinate::operator==( const coordinate &&other ) const {
-  int dim = get_same_dimensionality(other.get_dimensionality());
+  int dim = same_dimensionality(other.dimensionality());
   for (int id=0; id<dim; id++)
     if (coord(id)!=other.coord(id)) return false;
   return true;
@@ -1020,7 +1020,7 @@ bool coordinate::is_zero() { auto z = 1;
 };
 
 bool coordinate::operator>( index_int other) const {
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   for (int id=0; id<dim; id++)
     if (coord(id)<=other) return false;
   return true;
@@ -1028,7 +1028,7 @@ bool coordinate::operator>( index_int other) const {
 
 //! Operate plus with second coordinate an integer
 coordinate coordinate::operator+( index_int iplus) const {
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   coordinate pls(dim);
   for (int id=0; id<dim; id++)
     pls.set(id,coord(id)+iplus);
@@ -1037,7 +1037,7 @@ coordinate coordinate::operator+( index_int iplus) const {
 
 //! Operate plus with second coordinate a coordinate
 coordinate coordinate::operator+( const coordinate &cplus) const {
-  int dim = get_same_dimensionality(cplus.get_dimensionality());
+  int dim = same_dimensionality(cplus.dimensionality());
   coordinate pls(dim);
   for (int id=0; id<dim; id++)
     pls.set(id,coord(id)+cplus.coord(id));
@@ -1046,7 +1046,7 @@ coordinate coordinate::operator+( const coordinate &cplus) const {
 
 //! Operate minus with second coordinate an integer
 coordinate coordinate::operator-(index_int iminus) const {
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   coordinate pls(dim);
   for (int id=0; id<dim; id++)
     pls.set(id,coord(id)-iminus);
@@ -1055,7 +1055,7 @@ coordinate coordinate::operator-(index_int iminus) const {
 
 //! Operate minus with second coordinate a coordinate
 coordinate coordinate::operator-( const coordinate &cminus) const {
-  int dim = get_same_dimensionality(cminus.get_dimensionality());
+  int dim = same_dimensionality(cminus.dimensionality());
   coordinate pls(dim);
   for (int id=0; id<dim; id++)
     pls.set(id,coord(id)-cminus.coord(id));
@@ -1064,7 +1064,7 @@ coordinate coordinate::operator-( const coordinate &cminus) const {
 
 //! Module each component wrt a layout vector \todo needs unittest
 coordinate coordinate::operator%( const coordinate modvec) const {
-  int dim = get_same_dimensionality(modvec.get_dimensionality());
+  int dim = same_dimensionality(modvec.dimensionality());
   coordinate pls(dim);
   for (int id=0; id<dim; id++)
     pls.set(id, coord(id)%modvec.coord(id));
@@ -1074,7 +1074,7 @@ coordinate coordinate::operator%( const coordinate modvec) const {
 //! Rotate a processor coordinate in a grid \todo needs unittest
 coordinate coordinate::rotate
     ( vector<int> v, const coordinate &m) const {
-  int dim = get_same_dimensionality(v.size());
+  int dim = same_dimensionality(v.size());
   auto pv = coordinate(v);
   return ( (*this)+pv )%m;
 };
@@ -1083,7 +1083,7 @@ coordinate coordinate::rotate
  * operations
  */
 domain_coordinate coordinate::operate( const ioperator &op ) {
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   domain_coordinate opped(dim); // = new coordinate(dim);
   for (int id=0; id<dim; id++)
     opped.set(id, op.operate(coord(id)) );
@@ -1091,7 +1091,7 @@ domain_coordinate coordinate::operate( const ioperator &op ) {
 };
 
 domain_coordinate coordinate::operate( const ioperator &&op ) {
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   domain_coordinate opped(dim); // = new coordinate(dim);
   for (int id=0; id<dim; id++)
     opped.set(id, op.operate(coord(id)) );
@@ -1100,7 +1100,7 @@ domain_coordinate coordinate::operate( const ioperator &&op ) {
 
 //! Unary minus
 coordinate coordinate::negate() {
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   coordinate n(dim);
   for (int id=0; id<dim; id++)
     n.set(id,-coord(id));
@@ -1111,7 +1111,7 @@ coordinate coordinate::negate() {
   Get a process linear number wrt a surrounding cube.
 */
 int coordinate::linearize( const coordinate &layout ) const {
-  int dim = get_same_dimensionality(layout.get_dimensionality());
+  int dim = same_dimensionality(layout.dimensionality());
   int s = coord(0);
   for (int id=1; id<dim; id++) {
     auto layout_dim = layout[id];
@@ -1135,7 +1135,7 @@ int coordinate::linearize( const decomposition &procstruct ) const {
 */
 coordinate coordinate::left_face_proc
     (int d,coordinate &&farcorner) const {
-  int dim = get_same_dimensionality( farcorner.get_dimensionality() );
+  int dim = same_dimensionality( farcorner.dimensionality() );
   coordinate left(dim);
   for (int id=0; id<dim; id++)
     if (id!=d) left.set(id,coord(id));
@@ -1145,7 +1145,7 @@ coordinate coordinate::left_face_proc
 
 coordinate coordinate::left_face_proc
     (int d,const coordinate &farcorner) const {
-  int dim = get_same_dimensionality( farcorner.get_dimensionality() );
+  int dim = same_dimensionality( farcorner.dimensionality() );
   coordinate left(dim);
   for (int id=0; id<dim; id++)
     if (id!=d) left.set(id,coord(id));
@@ -1159,7 +1159,7 @@ coordinate coordinate::left_face_proc
 */
 coordinate coordinate::right_face_proc
     (int d,const coordinate &farcorner) const {
-  int dim = get_same_dimensionality( farcorner.get_dimensionality() );
+  int dim = same_dimensionality( farcorner.dimensionality() );
   coordinate right(dim);
   for (int id=0; id<dim; id++)
     if (id!=d) right.set(id,coord(id));
@@ -1168,7 +1168,7 @@ coordinate coordinate::right_face_proc
 };
 coordinate coordinate::right_face_proc
     (int d,coordinate &&farcorner) const {
-  int dim = get_same_dimensionality( farcorner.get_dimensionality() );
+  int dim = same_dimensionality( farcorner.dimensionality() );
   coordinate right(dim);
   for (int id=0; id<dim; id++)
     if (id!=d) right.set(id,coord(id));
@@ -1179,7 +1179,7 @@ coordinate coordinate::right_face_proc
 //! Is this coordinate on any face of the processor brick? \todo farcorner by reference
 bool coordinate::is_on_left_face( const decomposition &procstruct ) const {
   const auto origin = procstruct.get_origin_processor();
-  for (int id=0; id<get_dimensionality(); id++)
+  for (int id=0; id<dimensionality(); id++)
     if (coord(id)==origin[id]) return true;
   return false;
 };
@@ -1187,7 +1187,7 @@ bool coordinate::is_on_left_face( const decomposition &procstruct ) const {
 //! Is this coordinate on any face of the processor brick? \todo farcorner by reference
 bool coordinate::is_on_right_face( const decomposition &procstruct ) const {
   const auto farcorner = procstruct.get_farpoint_processor();
-  for (int id=0; id<get_dimensionality(); id++)
+  for (int id=0; id<dimensionality(); id++)
     if (coord(id)==farcorner[id]) return true;
   return false;
 };
@@ -1205,7 +1205,7 @@ bool coordinate::is_on_face( const object &proc ) const {
 
 //! Is this coordinate the origin?
 bool coordinate::is_null() const {
-  for (int id=0; id<get_dimensionality(); id++)
+  for (int id=0; id<dimensionality(); id++)
     if (coord(id)!=0) return false;
   return true;
 };
@@ -1222,7 +1222,7 @@ string coordinate::as_string() const {
 //! Mask constructor. Right now only for 1d and 2d
 processor_mask::processor_mask( const decomposition &d )
   : decomposition(d) {
-  int dim = get_dimensionality(), np = domains_volume();
+  int dim = dimensionality(), np = domains_volume();
   included.reserve(np);
   for (int p=0; p<np; p++)
     included.push_back(Fuzz::NO);
@@ -1240,7 +1240,7 @@ processor_mask::processor_mask( processor_mask& other )
   : decomposition(other) {
   throw(string("no processor mask copy constructor"));
 }
-//   int dim = get_dimensionality(), np = domains_volume(); auto P = d->get_farcorner();
+//   int dim = dimensionality(), np = domains_volume(); auto P = d->get_farcorner();
 //   //  if (dim==1) { int np  = P->coord(0)+1;
 //     include1d = new Fuzz[np];
 //     for (int p=0; p<P->coord(0); p++) include1d[p] = other.include1d[p];
@@ -1253,7 +1253,7 @@ processor_mask::processor_mask( const decomposition &d,int P ) : processor_mask(
   for (int p=0; p<P; p++)
     included[p] = Fuzz::YES;
 };
-//   if (get_dimensionality()!=1)
+//   if (dimensionality()!=1)
 //     throw(string("Can not add linear procs to mask in multi-d"));
 //   for (int p=0; p<P; p++) {
 //     coordinate *c = new coordinate(1);
@@ -1271,7 +1271,7 @@ void processor_mask::add( const coordinate &p) {
 //! Render mask as list of integers. This is only used in \ref mpi_distribution::add_mask.
 vector<int> processor_mask::get_includes() { vector<int> includes;
   throw(string("get includes is totally wrong"));
-  // int dim = get_dimensionality();
+  // int dim = dimensionality();
   // if (dim==1) {
   //   for (int i=0; i<domains_volume(); i++)
   //     includes.push_back( include1d[i]==Fuzz::YES );
@@ -1305,7 +1305,7 @@ parallel_structure::parallel_structure( const decomposition &d )
 parallel_structure::parallel_structure
     ( const decomposition &d,shared_ptr<parallel_indexstruct> pidx )
   : parallel_structure(d) {
-  if (d.get_dimensionality()>1)
+  if (d.dimensionality()>1)
     throw(string("One dimensional constructor only works in 1D"));
   set_dimension_structure(0,pidx);
 };
@@ -1318,7 +1318,7 @@ parallel_structure::parallel_structure(parallel_structure *p)
   if (p->has_type(distribution_type::UNDEFINED))
     throw(string("Can not copy undefined parallel structure"));
 
-  int dim = get_dimensionality();
+  int dim = dimensionality();
 
   if (p->is_orthogonal) {
     is_orthogonal = true;
@@ -1359,7 +1359,7 @@ parallel_structure::parallel_structure(parallel_structure *p)
 void parallel_structure::allocate_structure() {
   decomposition *d = dynamic_cast<decomposition*>(this);
   if (d==nullptr) throw(string("Could not cast to decomposition"));
-  int dim = d->get_dimensionality();
+  int dim = d->dimensionality();
 
   // set unknown multi structures
   try {
@@ -1397,7 +1397,7 @@ void parallel_structure::push_dimension_structure(shared_ptr<parallel_indexstruc
 */
 void parallel_structure::set_dimension_structure
     (int d,shared_ptr<parallel_indexstruct> pidx) {
-  if (d<0 || d>=get_dimensionality())
+  if (d<0 || d>=dimensionality())
     throw(format("Invalid dimension <<{}>> to set structure",d));
   dimension_structures_ref().at(d) = pidx;
   unset_memoization();
@@ -1405,11 +1405,11 @@ void parallel_structure::set_dimension_structure
 
 //! Get the parallel structure in a specific dimension.
 shared_ptr<parallel_indexstruct> parallel_structure::get_dimension_structure(int d) const {
-  if (d<0 || d>=get_dimensionality())
+  if (d<0 || d>=dimensionality())
     throw
       (format
        ("Invalid dimension <<{}>> to get_dimension_structure in parallel_structure of d={}",
-	d,get_dimensionality()));
+	d,dimensionality()));
   auto rstruct = dimension_structures().at(d);
   if (rstruct==nullptr)
     throw(format("Parallel indexstruct in dimension <<{}>> uninitialized",d));
@@ -1473,7 +1473,7 @@ void parallel_structure::set_processor_structure
 
 //! Set a processor structure, shortcut for one-d.
 void parallel_structure::set_processor_structure(int p,shared_ptr<indexstruct> pstruct) {
-  if (get_dimensionality()>1)
+  if (dimensionality()>1)
     throw(string("Can not set unqualified pstruct in multi-d pidx"));
   get_dimension_structure(0)->set_processor_structure(p,pstruct);
   multi_structures.at(p) = shared_ptr<multi_indexstruct>( new multi_indexstruct(pstruct) );
@@ -1486,8 +1486,8 @@ void parallel_structure::set_processor_structure(int p,shared_ptr<indexstruct> p
  */
 //! Create from global size
 void parallel_structure::create_from_global_size(index_int gsize) {
-  if (get_dimensionality()>1)
-    throw(format("Trying to create 1D for structure of dim={}",get_dimensionality()));
+  if (dimensionality()>1)
+    throw(format("Trying to create 1D for structure of dim={}",dimensionality()));
   get_dimension_structure(0)->create_from_global_size(gsize);
   set_structure_type( distribution_type::CONTIGUOUS );
   set_is_known_globally(); set_is_orthogonal(); set_is_converted(false);
@@ -1512,7 +1512,7 @@ void parallel_structure::create_from_indexstruct( shared_ptr<indexstruct> idx) {
 
 //! Create from indexstruct, multi-d
 void parallel_structure::create_from_indexstruct(multi_indexstruct &&idx) {
-  int dim = get_same_dimensionality( idx.get_dimensionality() );
+  int dim = same_dimensionality( idx.dimensionality() );
   for (int id=0; id<dim; id++)
     get_dimension_structure(id)->create_from_indexstruct(idx.get_component(id));
   set_structure_type( distribution_type::BLOCKED );
@@ -1526,7 +1526,7 @@ void parallel_structure::create_from_indexstruct(multi_indexstruct &idx) {
 
 //! Create from indexstruct, multi-d
 void parallel_structure::create_from_indexstruct( shared_ptr<multi_indexstruct> idx) {
-  int dim = get_same_dimensionality( idx->get_dimensionality() );
+  int dim = same_dimensionality( idx->dimensionality() );
   for (int id=0; id<dim; id++)
     get_dimension_structure(id)->create_from_indexstruct(idx->get_component(id));
   set_structure_type( distribution_type::BLOCKED );
@@ -1544,7 +1544,7 @@ void parallel_structure::create_from_replicated_indexstruct( shared_ptr<indexstr
 
 //! Create from replicated indexstruct, multi-d
 void parallel_structure::create_from_replicated_indexstruct(shared_ptr<multi_indexstruct> idx) {
-  int dim = get_same_dimensionality( idx->get_dimensionality() );
+  int dim = same_dimensionality( idx->dimensionality() );
   for (int id=0; id<dim; id++)
     get_dimension_structure(id)->create_from_replicated_indexstruct
       (idx->get_component(id));
@@ -1554,7 +1554,7 @@ void parallel_structure::create_from_replicated_indexstruct(shared_ptr<multi_ind
 };
 
 void parallel_structure::create_from_uniform_local_size(index_int lsize) {
-  get_same_dimensionality(1);
+  same_dimensionality(1);
   get_dimension_structure(0)->create_from_uniform_local_size(lsize);
   set_structure_type( distribution_type::CONTIGUOUS );
   set_is_known_globally();
@@ -1562,7 +1562,7 @@ void parallel_structure::create_from_uniform_local_size(index_int lsize) {
 };
 
 void parallel_structure::create_from_local_sizes( vector<index_int> szs ) {
-  get_same_dimensionality(1);
+  same_dimensionality(1);
   get_dimension_structure(0)->create_from_local_sizes(szs);
   set_structure_type( distribution_type::CONTIGUOUS );
   set_is_known_globally();
@@ -1570,7 +1570,7 @@ void parallel_structure::create_from_local_sizes( vector<index_int> szs ) {
 };
 
 void parallel_structure::create_from_replicated_local_size(index_int lsize) {
-  get_same_dimensionality(1);
+  same_dimensionality(1);
   get_dimension_structure(0)->create_from_replicated_local_size(lsize);
   set_structure_type( distribution_type::REPLICATED );
   set_is_known_globally();
@@ -1578,7 +1578,7 @@ void parallel_structure::create_from_replicated_local_size(index_int lsize) {
 }
 
 void parallel_structure::create_cyclic(index_int lsize,index_int gsize) {
-  get_same_dimensionality(1);
+  same_dimensionality(1);
   get_dimension_structure(0)->create_cyclic(lsize,gsize);
   set_structure_type( distribution_type::CYCLIC );
   //convert_to_multi_structures();
@@ -1587,7 +1587,7 @@ void parallel_structure::create_cyclic(index_int lsize,index_int gsize) {
 };
 
 void parallel_structure::create_blockcyclic(index_int bs,index_int nb,index_int gsize) {
-  get_same_dimensionality(1);
+  same_dimensionality(1);
   get_dimension_structure(0)->create_blockcyclic(bs,nb,gsize);
   set_structure_type( distribution_type::GENERAL);
   //convert_to_multi_structures();
@@ -1595,7 +1595,7 @@ void parallel_structure::create_blockcyclic(index_int bs,index_int nb,index_int 
 };
 
 void parallel_structure::create_from_explicit_indices(index_int *nidx,index_int **idx) {
-  get_same_dimensionality(1);
+  same_dimensionality(1);
   get_dimension_structure(0)->create_from_explicit_indices(nidx,idx);
   set_structure_type( distribution_type::GENERAL);
   //convert_to_multi_structures();
@@ -1603,7 +1603,7 @@ void parallel_structure::create_from_explicit_indices(index_int *nidx,index_int 
 };
 
 void parallel_structure::create_from_function( index_int(*f)(int,index_int),index_int n) {
-  get_same_dimensionality(1);
+  same_dimensionality(1);
   // from p,i
   get_dimension_structure(0)->create_from_function(f,n);
   set_structure_type( distribution_type::GENERAL);
@@ -1613,7 +1613,7 @@ void parallel_structure::create_from_function( index_int(*f)(int,index_int),inde
 
 //! \todo add explicit bins to the create call; min and max become kernels
 void parallel_structure::create_by_binning(object *o) {
-  get_same_dimensionality(1);
+  same_dimensionality(1);
   double mn = o->get_min_value(),mx = o->get_max_value();
   get_dimension_structure(0)->create_by_binning(o,mn-0.5,mx+0.5,0);
   set_structure_type( distribution_type::GENERAL );
@@ -1625,7 +1625,7 @@ void parallel_structure::create_by_binning(object *o) {
 //! We don't do this if the structure is no longer orthgonal
 void parallel_structure::convert_to_multi_structures(bool trace) const {
   if (get_is_converted()) return;
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   if (trace) print("Converting {}D\n",dim);
   try {
     if (dim==1) {
@@ -1852,10 +1852,10 @@ block_distribution::block_distribution(  const decomposition &d,domain_coordinat
   : distribution(d) {
   int dim;
   try {
-     dim = d.get_same_dimensionality(sizes.get_dimensionality());
+     dim = d.same_dimensionality(sizes.dimensionality());
   } catch (string c) {
     print("Decomposition dim {}, vs endpoint {}\n",
-	       d.get_dimensionality(),sizes.get_dimensionality());
+	       d.dimensionality(),sizes.dimensionality());
     throw(format("block distro failed <<{}>>",c));
   }
   create_from_indexstruct( multi_indexstruct(domain_coordinate_zero(dim),sizes-1) );
@@ -1864,10 +1864,10 @@ block_distribution::block_distribution(  const decomposition &d,domain_coordinat
   : distribution(d) {
   int dim;
   try {
-     dim = d.get_same_dimensionality(sizes.get_dimensionality());
+     dim = d.same_dimensionality(sizes.dimensionality());
   } catch (string c) {
     print("Decomposition dim {}, vs endpoint {}\n",
-	       d.get_dimensionality(),sizes.get_dimensionality());
+	       d.dimensionality(),sizes.dimensionality());
     throw(format("block distro failed <<{}>>",c));
   }
   create_from_indexstruct( multi_indexstruct(domain_coordinate_zero(dim),sizes-1) );
@@ -1876,16 +1876,16 @@ block_distribution::block_distribution(  const decomposition &d,domain_coordinat
 //! Constructor for one-d: we supply a vector of local sizes
 block_distribution::block_distribution(  const decomposition &d,const vector<index_int> lsizes )
   : distribution(d) {
-  if (d.get_dimensionality()!=1)
+  if (d.dimensionality()!=1)
     throw(format("Can only create block dist from local sizes in d=1, not d={}",
-		 d.get_dimensionality()));
+		 d.dimensionality()));
   create_from_local_sizes(lsizes);
 };
 
 void distribution::create_from_unique_local( shared_ptr<multi_indexstruct> strct) {
   index_int lsize;
   try {
-    get_same_dimensionality(1);
+    same_dimensionality(1);
     int P = domains_volume(); lsize = strct->local_size(0);
     vector<index_int> sizes(P); gather64(lsize,sizes);
     create_from_local_sizes(sizes);
@@ -1918,7 +1918,7 @@ index_int distribution::local_allocation_p( coordinate &p ) {
 void parallel_structure::compute_enclosing_structure() {
   if (is_memoized())
     return;
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   try {
     auto first = global_first_index(), last = global_last_index();
     set_enclosing_structure(contiguous_multi_indexstruct(first,last));
@@ -2205,7 +2205,7 @@ shared_ptr<distribution> distribution::distr_union( shared_ptr<distribution> oth
   if (get_orthogonal_dimension()!=other->get_orthogonal_dimension())
     throw(format("Incompatible orthogonal dimensions: this={}, other={}",
 		      get_orthogonal_dimension(),other->get_orthogonal_dimension()));
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   auto union_struct = new parallel_structure(this);
   if (get_is_orthogonal() && other->get_is_orthogonal()) {
     for (int id=0; id<dim; id++) {
@@ -2509,7 +2509,7 @@ vector<shared_ptr<message>> distribution::messages_for_segment
     print("{}: deriving msgs to cover {} from {}\n",
 	  mycoord.as_string(),beta_block->as_string(),this->as_string());
   vector<shared_ptr<message>> messages;
-  int dim = get_dimensionality();
+  int dim = dimensionality();
   auto buildup = shared_ptr<multi_indexstruct>( new multi_indexstruct(dim) );
   // Wow! Iterating over decomposition
   for ( const auto &pcoord : decomposition(get_decomposition(),mycoord) ) { // start at me
@@ -2879,7 +2879,7 @@ shared_ptr<indexstruct> sparse_matrix::all_columns() {
 */
 shared_ptr<indexstruct> sparse_matrix::all_columns_from
     ( shared_ptr<multi_indexstruct> multi_wanted ) {
-  if (multi_wanted->get_dimensionality()>1)
+  if (multi_wanted->dimensionality()>1)
     throw(string("Can not get all columns from in multi-d"));
   auto wanted = multi_wanted->get_component(0);
   if (wanted->is_empty())
@@ -2910,7 +2910,7 @@ sparse_matrix *sparse_matrix::transpose() const {
 void sparse_matrix::multiply
     ( shared_ptr<object> in,shared_ptr<object> out,coordinate &p) {
   const auto distro = out->get_distribution();
-  if (distro->get_dimensionality()>1)
+  if (distro->dimensionality()>1)
     throw(string("spmvp not in multi-d"));
   if (distro->has_type_locally_contiguous()) {
     auto data = out->get_data(p);
@@ -3210,13 +3210,13 @@ message::message(const decomposition &d,
 
 //! Return the message sender.
 coordinate &message::get_sender() {
-  if (sender.get_dimensionality()<=0)
+  if (sender.dimensionality()<=0)
     throw(string("Invalid sender"));
   return sender; };
 
 //! Return the message receiver.
 coordinate &message::get_receiver() {
-  if (receiver.get_dimensionality()<=0)
+  if (receiver.dimensionality()<=0)
     throw(string("Invalid receiver"));
   return receiver; };
 
@@ -3253,7 +3253,7 @@ void message::set_in_object( shared_ptr<object> in ) { in_object = in; };
 //snippet subarray
 void message::compute_subarray
 ( shared_ptr<multi_indexstruct> outer,shared_ptr<multi_indexstruct> inner,int ortho) {
-  int dim = outer->get_same_dimensionality(inner->get_dimensionality());
+  int dim = outer->same_dimensionality(inner->dimensionality());
   numa_sizes = new int[dim+1]; struct_sizes = new int[dim+1]; struct_starts = new int[dim+1];
   //  annotation.write("tar subarray:");
   auto loc = outer->location_of(inner);
@@ -3361,7 +3361,7 @@ void message::as_char_buffer(char *buf,int *len) {
   if (*len<14) {
     throw(string("Insufficient buffer provided for message->as_string"));
   }
-  int dim = global_struct->get_dimensionality();
+  int dim = global_struct->dimensionality();
   if (dim>1)
     throw(format("Can not convert msg to buffer in {} dim\n",dim));
   sprintf(buf,"%2d->%2d:[%2lld-%2lld]",
@@ -3588,7 +3588,7 @@ parallel_structure signature_function::derive_beta_structure_pattern_based
     (shared_ptr<distribution> gamma) const {
   const auto decomp = gamma->get_decomposition();
   parallel_structure beta_struct( decomp );
-  if (gamma->get_dimensionality()>1)
+  if (gamma->dimensionality()>1)
     throw(string("Several bugs in beta from type pattern"));
   //snippet pstructfrompattern
   for (auto dom : gamma->get_domains()) {
@@ -3631,7 +3631,7 @@ shared_ptr<multi_indexstruct> signature_function::make_beta_struct_from_ops
   shared_ptr<multi_indexstruct> gamma_struct,
   const vector<multi_ioperator*> &ops,
   const multi_indexstruct &truncation ) const {
-  int dim = gamma_struct->get_dimensionality();
+  int dim = gamma_struct->dimensionality();
   if (ops.size()==0)
     throw(string("Somehow no operators"));
   if (gamma_struct->is_empty())
@@ -4223,7 +4223,7 @@ void task::local_execute
     int s = get_step_counter(); 
     auto p = get_domain();
     double flopcount = 0.;
-    if (!p.get_same_dimensionality(outobj->get_distribution()->get_dimensionality()))
+    if (!p.same_dimensionality(outobj->get_distribution()->dimensionality()))
       throw(format("Random sanity check: p={}, obj={}",
 			p.as_string(),outobj->get_name()));
     try {

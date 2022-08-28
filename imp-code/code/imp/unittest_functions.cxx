@@ -76,7 +76,7 @@ void threepointsumbump( kernel_function_args ) {
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
 
-  if (outdistro->get_dimensionality()>1)
+  if (outdistro->dimensionality()>1)
     throw(std::string("threepointsumbump: only for 1-d"));
 
   auto indata = invector->get_data(p),

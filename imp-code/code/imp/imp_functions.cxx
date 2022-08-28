@@ -107,7 +107,7 @@ void veccopy( kernel_function_args )
 void vecdelta( kernel_function_args, domain_coordinate& delta)
 {
   const auto outdistro = outvector->get_distribution();
-  int dim = outdistro->get_dimensionality();
+  int dim = outdistro->dimensionality();
 
   auto outdata = outvector->get_data(p);
 
@@ -150,7 +150,7 @@ void vecdelta( kernel_function_args, domain_coordinate& delta)
 void vecsetlinear( kernel_function_args )
 {
   const auto outdistro = outvector->get_distribution();
-  int dim = outdistro->get_dimensionality();
+  int dim = outdistro->dimensionality();
   auto outdata = outvector->get_data(p);
 
   // description of the indices on which we work
@@ -199,7 +199,7 @@ void vecsetlinear( kernel_function_args )
 void vecsetlinear2d( kernel_function_args )
 {
   const auto outdistro = outvector->get_distribution();
-  int dim = p.get_same_dimensionality( outdistro->get_dimensionality() );
+  int dim = p.same_dimensionality( outdistro->dimensionality() );
   auto outdata = outvector->get_data(p);
 
   index_int
@@ -266,8 +266,8 @@ void vecsetconstantp( kernel_function_args ) {
   const auto outdistro = outvector->get_distribution();
   int dim;
   try {
-    int dim0 = outdistro->get_dimensionality();
-    dim = p.get_same_dimensionality(dim0);
+    int dim0 = outdistro->dimensionality();
+    dim = p.same_dimensionality(dim0);
   } catch (string c) {
     throw(format("Error <<c>> checking dim coordinate <<{}>> against <<{}>>",
 		      c,p.as_string(),outvector->as_string()));
@@ -324,8 +324,8 @@ void vector_gen(kernel_function_args ) {
   const auto outdistro = outvector->get_distribution();
   int dim;
   try {
-    int dim0 = outdistro->get_dimensionality();
-    dim = p.get_same_dimensionality(dim0);
+    int dim0 = outdistro->dimensionality();
+    dim = p.same_dimensionality(dim0);
   } catch (string c) {
     throw(format("Error <<c>> checking dim coordinate <<{}>> against <<{}>>",
 		      c,p.as_string(),outvector->as_string()));
@@ -470,7 +470,7 @@ void scansumk( kernel_function_args,int k ) {
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
   int
-    dim = p.get_same_dimensionality(outdistro->get_dimensionality());
+    dim = p.same_dimensionality(outdistro->dimensionality());
 
   auto indata = invector->get_data(p);
   int insize = indistro->volume(p);
@@ -539,7 +539,7 @@ void summing( kernel_function_args ) {
     outdistro = outvector->get_distribution();
 
   int
-    dim = p.get_same_dimensionality(indistro->get_dimensionality()),
+    dim = p.same_dimensionality(indistro->dimensionality()),
     k = indistro->get_orthogonal_dimension();
 
   auto indata = invector->get_data(p),
@@ -980,7 +980,7 @@ void central_difference_damp( kernel_function_args,double damp)
     outdistro = outvector->get_distribution();
   //snippet end
   int
-    dim = p.get_same_dimensionality(outdistro->get_dimensionality()),
+    dim = p.same_dimensionality(outdistro->dimensionality()),
     k = outdistro->get_orthogonal_dimension();
   if (dim>1) throw(string("Central differences only 1d"));
   if (k>1) throw(string("Central differences no ortho"));
@@ -1068,7 +1068,7 @@ void central_difference_anyd( kernel_function_args ) {
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
   int
-    dim = p.get_same_dimensionality(outdistro->get_dimensionality()),
+    dim = p.same_dimensionality(outdistro->dimensionality()),
     k = outdistro->get_orthogonal_dimension();
   if (k>1) throw(string("Central differences no ortho"));
 

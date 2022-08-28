@@ -100,7 +100,7 @@ void element_to_local_function( kernel_function_args,int dim )
 //snippet luleshng2nl
 shared_ptr<multi_indexstruct> signature_local_from_global
     ( const multi_indexstruct &g,const multi_indexstruct &enc ) {
-  int dim = g.get_same_dimensionality(enc.get_dimensionality());
+  int dim = g.same_dimensionality(enc.dimensionality());
   domain_coordinate_allones allones(dim);
   auto range = shared_ptr<multi_indexstruct>
     ( new contiguous_multi_indexstruct
@@ -118,7 +118,7 @@ void local_to_global_function
     outdistro = outvector->get_distribution();
   auto indata = invector->get_data(p),
     outdata = outvector->get_data(p);
-  int dim = outdistro->get_same_dimensionality( indistro->get_dimensionality() );
+  int dim = outdistro->same_dimensionality( indistro->dimensionality() );
 
   index_int
     tar0 = outdistro->location_of_first_index(outdistro,p),
@@ -209,7 +209,7 @@ void function_global_node_to_local
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
 
-  int dim = p.get_same_dimensionality(outdistro->get_dimensionality());
+  int dim = p.same_dimensionality(outdistro->dimensionality());
   auto global_nodes = invectors.at(0), local_nodes = outvector;
   const auto global_distro = global_nodes->get_distribution(),
     local_distro = local_nodes->get_distribution();
@@ -310,7 +310,7 @@ void local_node_to_element_function( kernel_function_args )
   auto invector = invectors.at(0);
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
-  int dim = outdistro->get_same_dimensionality(indistro->get_dimensionality());
+  int dim = outdistro->same_dimensionality(indistro->dimensionality());
   auto indata = invector->get_data(p),
     outdata = outvector->get_data(p);
 
