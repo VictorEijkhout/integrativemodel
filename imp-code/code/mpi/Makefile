@@ -102,7 +102,7 @@ ${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
 # coordinate
 #
 NEW_TESTS += unittest_coord
-COORD_OBJS := ${IMPCODEDIR}/imp_coord.o ${ENV_OBJS}
+COORD_OBJS = ${IMPCODEDIR}/imp_coord.o ${ENV_OBJS}
 unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
 	@echo "Linking $@"
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
@@ -118,8 +118,8 @@ ${IMPCODEDIR}/imp_coord.o : ${IMPCODEDIR}/imp_coord.cxx ${IMPCODEDIR}/imp_coord.
 # architecture and decomposition
 #
 NEW_TESTS += unittest_decomp
-DECOMP_OBJS := mpi_decomp.o ${IMPCODEDIR}/imp_decomp.o ${IMPCODEDIR}/indexstruct.o \
-        ${ENV_OBJS}
+DECOMP_OBJS = mpi_decomp.o ${IMPCODEDIR}/imp_decomp.o ${IMPCODEDIR}/indexstruct.o \
+	${COORD_OBJS}
 unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	@echo "Linking $@"
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
