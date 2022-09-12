@@ -78,10 +78,19 @@ TEST_CASE( "MPI coordinates" ) {
   auto &mpi_env = mpi_environment::instance();
   int np; MPI_Comm_size(MPI_COMM_WORLD,&np);
 
-  auto mpi_grid1 = coordinate<int,1>( mpi_env.nprocs() );
-  REQUIRE( mpi_grid1.span()==np );
+  SECTION( "using proc counts" ) {
+    auto mpi_grid1 = coordinate<int,1>( mpi_env.nprocs() );
+    REQUIRE( mpi_grid1.span()==np );
 
-  auto mpi_grid2 = coordinate<int,2>( mpi_env.nprocs() );
-  REQUIRE( mpi_grid2.span()==np );
+    auto mpi_grid2 = coordinate<int,2>( mpi_env.nprocs() );
+    REQUIRE( mpi_grid2.span()==np );
+  }
+  SECTION( "using env itself" ) {
+    auto mpi_grid1 = coordinate<int,1>( mpi_env );
+    REQUIRE( mpi_grid1.span()==np );
+
+    auto mpi_grid2 = coordinate<int,2>( mpi_env );
+    REQUIRE( mpi_grid2.span()==np );
+  }
 }
 

@@ -81,7 +81,7 @@ coordinate<I,d>::coordinate( std::array<I,d> c)
   : coordinates( c ) {
 };
 template<typename I,int d>
-coordinate<I,d>::coordinate( environment& e )
+coordinate<I,d>::coordinate( const environment& e )
   : coordinate( e.nprocs() ) {
 };
 //snippet end

@@ -20,7 +20,7 @@ public :
   coordinate();
   coordinate(I span);
   coordinate( std::array<I,d> );
-  coordinate( environment& );
+  coordinate( const environment& );
   auto &data() { return coordinates; };
   const auto& data() const { return coordinates; };
   

@@ -32,6 +32,9 @@ template<int d>
 decomposition<d>::decomposition( const environment& env )
   : decomposition<d>( endpoint<int,d>(env.nprocs()) ) {
 };
+/*! Define decomposition from processor grid.
+  The subdomains owned by a process will be set by the derived classes.
+*/
 template<int d>
 decomposition<d>::decomposition( const coordinate<int,d>& grid )
   : domain_layout(grid) {

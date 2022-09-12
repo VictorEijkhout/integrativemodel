@@ -37,7 +37,7 @@ class object;
 class task;
 
 template<int d>
-class decomposition {
+class decomposition : std::vector<coordinate<int,d>> {
 public:
   decomposition() {}; //!< default constructor
   // with explicit layout

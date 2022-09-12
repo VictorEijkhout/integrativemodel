@@ -13,6 +13,12 @@
 #include "mpi_decomp.h"
 using fmt::print;
 
+//! Multi-d decomposition from default grid from environment
+template<int d>
+mpi_decomposition<d>::mpi_decomposition( const mpi_environment& env )
+  : decomposition<d>(grid) {
+};
+
 //! Multi-d decomposition from explicit processor grid layout
 template<int d>
 mpi_decomposition<d>::mpi_decomposition
