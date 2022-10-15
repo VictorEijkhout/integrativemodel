@@ -20,9 +20,8 @@
 #include "mpi_env.h"
 #include "mpi_decomp.h"
 
-using fmt::format;
-using fmt::print;
-using std::array;
+using fmt::format, fmt::print;
+using std::array, std::vector;
 
 TEST_CASE( "decomposition constructors" ) {
   auto &the_env = mpi_environment::instance();
@@ -30,21 +29,26 @@ TEST_CASE( "decomposition constructors" ) {
   REQUIRE_NOTHROW( mpi_decomposition<2>( the_env,coordinate<int,2>( {5,6} ) ) );
 }
 
-#if 0
 TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
+  auto &the_env = mpi_environment::instance();
+  auto mytid = the_env.procid();
   INFO( "mytid=" << mytid );
   int over;
-  REQUIRE_NOTHROW( over = arch.get_over_factor() );
+  REQUIRE_NOTHROW( over = the_env.get_over_factor() );
+  const int d=0;
+  mpi_decomposition<d> decomp(the_env);
   vector<coordinate<int,d>> domains;
   REQUIRE_NOTHROW( domains = decomp.get_domains() );
   int count = 0;
-  for ( auto dom : domains ) { int lindom = dom.coord(0);
+  for ( auto dom : domains ) {
+    int lindom = dom.at(0);
     INFO( "domain=" << lindom );
     CHECK( lindom==over*mytid+count );
     count++;
   }
 }
 
+#if 0
 TEST_CASE( "coordinate conversion","[mpi][decomposition][02]" ) {
   decomposition oned;
   REQUIRE_NOTHROW( oned = mpi_decomposition

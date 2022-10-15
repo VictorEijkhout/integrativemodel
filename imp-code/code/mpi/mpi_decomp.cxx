@@ -16,22 +16,18 @@ using fmt::print;
 //! Multi-d decomposition from default grid from environment
 template<int d>
 mpi_decomposition<d>::mpi_decomposition( const mpi_environment& env )
-  : decomposition<d>(grid) {
+  : mpi_decomposition<d>( coordinate<int,d>(env) ) {
 };
 
 //! Multi-d decomposition from explicit processor grid layout
 template<int d>
 mpi_decomposition<d>::mpi_decomposition
         ( const mpi_environment& env,const coordinate<int,d> &grid)
-  : decomposition<d>(grid) {
+  : mpi_decomposition<d>(grid) {
   int procid = env.procid(); int over = env.get_over_factor();
   for ( int local=0; local<over; local++) {
-    auto mycoord = this->coordinate_from_linear(over*procid+local);
-    try {
-      this->add_domain(mycoord);
-    } catch (...) { print("trouble adding domain\n"); };
+    push_back( coordinate_from_linear(over*procid+local) );
   }
-  set_decomp_factory(); 
 };
 
 /*!

@@ -53,7 +53,9 @@ upload :
 	-cd docs ; \
 	  ln -f latex/refman.pdf .. ; \
 	  if [ `whoami` = "eijkhout" ] ; then \
-	    cp latex/refman.pdf ${HOME}/DropBox/IMP/ ; \
+	    mkdir -p ${HOME}/DropBox/Scicomp/IMP \
+	     && cp latex/refman.pdf ${HOME}/DropBox/Scicomp/IMP \
+	  ; \
 	  fi
 notarget :
 	  for f in *.tex ; do \
