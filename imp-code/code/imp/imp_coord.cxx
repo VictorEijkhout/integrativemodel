@@ -265,6 +265,7 @@ I coordinate<I,d>::linear_location_of( const coordinate<I,d>& inside ) const {
 };
 
 // stuff
+/*! Pointwise max of two coordinates */
 template<typename I,int d>
 coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other ) {
   auto r(current);
@@ -274,6 +275,7 @@ coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other ) {
   }
   return r;
 };
+/*! Pointwise min of two coordinates */
 template<typename I,int d>
 coordinate<I,d>  coordmin( coordinate<I,d> current,coordinate<I,d> other ) {
   auto r(current);
@@ -284,6 +286,9 @@ coordinate<I,d>  coordmin( coordinate<I,d> current,coordinate<I,d> other ) {
   return r;
 };
 
+/*! Require a vector of coordinates to be sorted increasing,
+  otherwise throw an exception
+*/
 template<typename I,int d>
 void require_sorted( vector<coordinate<I,d>> idxs ) {
   auto v = idxs.front();
@@ -295,6 +300,7 @@ void require_sorted( vector<coordinate<I,d>> idxs ) {
   }    
 };
 
+/*! Test whether this coordinate comes lexicographically before another */
 template<typename I,int d>
 bool coordinate<I,d>::before( const coordinate<I,d>& other ) const {
   return other.span()>=span();
@@ -304,6 +310,7 @@ bool coordinate<I,d>::before( const coordinate<I,d>& other ) const {
  * String-ifying
  */
 
+/*! Render a coordinate as string */
 template<typename I,int d>
 string coordinate<I,d>::as_string() const {
   stringstream ss;
@@ -318,6 +325,7 @@ string coordinate<I,d>::as_string() const {
   return ss.str();
 };
 
+/*! Test if a coordinate_set contains some coordinate */
 template<typename I,int d>
 bool coordinate_set<I,d>::contains( const coordinate<I,d> &p ) const {
   for ( auto pp : set )
@@ -326,6 +334,7 @@ bool coordinate_set<I,d>::contains( const coordinate<I,d> &p ) const {
   return false;
 };
 
+/*! Add a coordinate to a coordinate set */
 template<typename I,int d>
 void coordinate_set<I,d>::add( const coordinate<I,d>& p ) {
   if (set.size()>0 &&

@@ -131,6 +131,9 @@ std::ostream &operator<<(std::ostream &os,const std::shared_ptr<coordinate<I,d>>
  * Coordinate sets
  */
 
+/*! A coordinate_set is a vector of coordinates
+  with some obvious methods. This is used in \see decomposition
+*/
 template<typename I,int d>
 class coordinate_set {
 private:
