@@ -7,7 +7,7 @@ using fmt::format_to;
  **** Environment
  ****/
 
-//! \todo set the trace parameters by function call
+/*! For now, only store argc/argv */
 void environment::init(int argc,char **argv,bool dothis) {
   //  entity::set_env(this);
   set_command_line(argc,argv);

@@ -16,11 +16,15 @@ using gsl::span;
   - store a communicator and a task id.
   - disable printing for task id not zero
  */
-
 mpi_environment::mpi_environment()
   : environment() {
 };
 
+/*!
+  - Initialize MPI
+  - set the comm_size/rank functions
+  - initialize the singleton instance
+*/
 void mpi_environment::init( int &argc,char **&argv ) {
   MPI_Init(&argc,&argv);
   comm = MPI_COMM_WORLD;

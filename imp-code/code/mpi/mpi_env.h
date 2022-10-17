@@ -4,6 +4,7 @@
 
 class mpi_environment : public environment {
 public:
+  /*! Static method for getting the singleton instance */
   static mpi_environment& instance() {
     static mpi_environment the_instance;
     return the_instance;
