@@ -16,17 +16,18 @@ using fmt::print;
 //! Multi-d decomposition from default grid from environment
 template<int d>
 mpi_decomposition<d>::mpi_decomposition( const mpi_environment& env )
-  : mpi_decomposition<d>( coordinate<int,d>(env) ) {
+  : mpi_decomposition<d>( env,coordinate<int,d>(env) ) {
 };
 
 //! Multi-d decomposition from explicit processor grid layout
 template<int d>
 mpi_decomposition<d>::mpi_decomposition
         ( const mpi_environment& env,const coordinate<int,d> &grid)
-  : mpi_decomposition<d>(grid) {
+  : decomposition<d>(grid) {
   int procid = env.procid(); int over = env.get_over_factor();
   for ( int local=0; local<over; local++) {
-    push_back( coordinate_from_linear(over*procid+local) );
+    // coordinate_from_linear
+    push_back( get_domain_layout().location_of_linear(over*procid+local) );
   }
 };
 

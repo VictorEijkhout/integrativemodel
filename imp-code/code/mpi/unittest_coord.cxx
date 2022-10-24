@@ -54,8 +54,15 @@ TEST_CASE( "coordinates" ) {
     REQUIRE( ci1.dimensionality()==1 );
   }
   {
-    auto ci1_2 = coordinate<int,1>(2);
-    REQUIRE( ci1_2.span()==2 );
+    int top=5;
+    auto ci1_5 = coordinate<int,1>(top);
+    REQUIRE( ci1_5.span()==top );
+    coordinate<int,1> last(top-1);
+    REQUIRE( ci1_5.linear_location_of(last)==top-1 );
+    coordinate<int,1> again;
+    REQUIRE_NOTHROW( again = ci1_5.location_of_linear(top-1) );
+    INFO( "reinterpret as coord: " << again );
+    REQUIRE( again.span()==top-1 );
   }
   {
     auto ci2_14 = coordinate<int,2>(14);

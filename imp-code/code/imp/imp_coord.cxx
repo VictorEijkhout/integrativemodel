@@ -7,12 +7,20 @@ using std::string;
 #include <vector>
 using std::vector;
 #include <sstream>
-using std::stringstream;
+using std::ostream, std::stringstream;
+
+#include <memory>
+using std::shared_ptr, std::make_shared;
 
 #include <cassert>
 #include <fmt/format.h>
 using fmt::print,fmt::format;
 
+/*! Construct non-inclusive upper bound on
+  a brick of size `s', the input.
+
+  Probably only works for d=1 and d=2
+*/
 template<typename I,int d>
 array<I,d> endpoint(I s) {
   array<I,d> endpoint; constexpr I last=d-1;
@@ -66,12 +74,14 @@ array<I,d> endpoint(I s) {
  * Coordinates
  * constructors
  */
+//! Make a coordinate with all components invalid
 //snippet pcoorddim
 template<typename I,int d>
 coordinate<I,d>::coordinate() {
   for (int id=0; id<d; id++)
     coordinates.at(id) = -1;
 };
+//! Make a coordinate from a given span
 template<typename I,int d>
 coordinate<I,d>::coordinate( I s )
   : coordinate( endpoint<I,d>(s) ) {
@@ -80,6 +90,7 @@ template<typename I,int d>
 coordinate<I,d>::coordinate( std::array<I,d> c)
   : coordinates( c ) {
 };
+//! Make a coordinate with one point per process
 template<typename I,int d>
 coordinate<I,d>::coordinate( const environment& e )
   : coordinate( e.nprocs() ) {
@@ -89,6 +100,9 @@ coordinate<I,d>::coordinate( const environment& e )
 /*
  * Access
  */
+/*! Span is another word for volume,
+  if the coordinate is the non-inclusive upper bound
+*/
 template<typename I,int d>
 I coordinate<I,d>::span() const {
   I res = 1;
@@ -243,7 +257,11 @@ bool coordinate<I,d>::operator>( coordinate<I,d> other ) const {
   return r;
 };
 
-// linearization
+/*
+ * Linearization
+ */
+
+/*! Linear location of this coordinate in a span */
 template<typename I,int d>
 I coordinate<I,d>::linear_location_in( const coordinate<I,d>& layout ) const {
   int id=0;
@@ -259,9 +277,22 @@ I coordinate<I,d>::linear_location_in( const coordinate<I,d>& layout ) const {
   }
   return s;
 };
+/*! Linear location in this span of another coordinate */
 template<typename I,int d>
 I coordinate<I,d>::linear_location_of( const coordinate<I,d>& inside ) const {
   return inside.linear_location_in( *this );
+};
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::location_of_linear( I s ) const {
+  coordinate<I,d> loc;
+  for (int id=0; id<d; id++) {
+    I trail_block{1};
+    for (int idd=id+1; idd<d; idd++)
+      trail_block *= data()[idd];
+    loc[id] = s / trail_block;
+    s = s % trail_block;
+  }
+  return loc;
 };
 
 // stuff
@@ -346,20 +377,56 @@ void coordinate_set<I,d>::add( const coordinate<I,d>& p ) {
 };
 
 /*
+ * Formatters
+ */
+template<typename I,int d>
+struct fmt::formatter<coordinate<I,d>> {
+ constexpr
+ auto parse(format_parse_context& ctx)
+       -> decltype(ctx.begin()) {
+   auto it = ctx.begin(),
+     end = ctx.end();
+   if (it != end && *it != '}')
+     throw format_error("invalid format");
+   return it;
+  }
+  template <typename FormatContext>
+  auto format
+    (const coordinate<I,d>& p, FormatContext& ctx)
+        -> decltype(ctx.out()) {
+    return format_to(ctx.out(),"{}", p.as_string());
+  }
+};
+template<typename I, int d>
+ostream &operator<<(ostream &os,const coordinate<I,d> &c) {
+  os << c.as_string();
+  return os;
+};
+template<typename I, int d>
+ostream &operator<<(ostream &os,const shared_ptr<coordinate<I,d>> &c) {
+  os << c->as_string();
+  return os;
+};
+
+/*
  * Specializations
  */
 
 template array<int,1> endpoint<int,1>(int);
 template array<int,2> endpoint<int,2>(int);
 template array<int,3> endpoint<int,3>(int);
+
 template array<index_int,1> endpoint<index_int,1>(index_int);
 template array<index_int,2> endpoint<index_int,2>(index_int);
 template array<index_int,3> endpoint<index_int,3>(index_int);
 
 template void require_sorted( vector<coordinate<int,1>> idxs );
 template void require_sorted( vector<coordinate<int,2>> idxs );
+template void require_sorted( vector<coordinate<int,3>> idxs );
+
 template void require_sorted( vector<coordinate<index_int,1>> idxs );
 template void require_sorted( vector<coordinate<index_int,2>> idxs );
+template void require_sorted( vector<coordinate<index_int,3>> idxs );
 
 template class coordinate<int,1>;
 template class coordinate<int,2>;
@@ -377,14 +444,32 @@ template class coordinate_set<index_int,3>;
 
 template struct fmt::formatter<coordinate<int,1>>;
 template struct fmt::formatter<coordinate<int,2>>;
+template struct fmt::formatter<coordinate<int,3>>;
+
 template struct fmt::formatter<coordinate<index_int,1>>;
 template struct fmt::formatter<coordinate<index_int,2>>;
+template struct fmt::formatter<coordinate<index_int,3>>;
 
 template coordinate<int,1> coordmax<int,1>( coordinate<int,1>,coordinate<int,1> );
 template coordinate<int,2> coordmax<int,2>( coordinate<int,2>,coordinate<int,2> );
+template coordinate<int,3> coordmax<int,3>( coordinate<int,3>,coordinate<int,3> );
+
 template coordinate<index_int,1> coordmax<index_int,1>( coordinate<index_int,1>,coordinate<index_int,1> );
 template coordinate<index_int,2> coordmax<index_int,2>( coordinate<index_int,2>,coordinate<index_int,2> );
+template coordinate<index_int,3> coordmax<index_int,3>( coordinate<index_int,3>,coordinate<index_int,3> );
+
 template coordinate<int,1> coordmin<int,1>( coordinate<int,1>,coordinate<int,1> );
 template coordinate<int,2> coordmin<int,2>( coordinate<int,2>,coordinate<int,2> );
+template coordinate<int,3> coordmin<int,3>( coordinate<int,3>,coordinate<int,3> );
+
 template coordinate<index_int,1> coordmin<index_int,1>( coordinate<index_int,1>,coordinate<index_int,1> );
 template coordinate<index_int,2> coordmin<index_int,2>( coordinate<index_int,2>,coordinate<index_int,2> );
+template coordinate<index_int,3> coordmin<index_int,3>( coordinate<index_int,3>,coordinate<index_int,3> );
+
+template ostream &operator<<(ostream &os,const coordinate<int,1> &c);
+template ostream &operator<<(ostream &os,const coordinate<int,2> &c);
+template ostream &operator<<(ostream &os,const coordinate<int,3> &c);
+
+template ostream &operator<<(ostream &os,const coordinate<index_int,1> &c);
+template ostream &operator<<(ostream &os,const coordinate<index_int,2> &c);
+template ostream &operator<<(ostream &os,const coordinate<index_int,3> &c);

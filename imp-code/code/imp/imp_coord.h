@@ -31,11 +31,11 @@ public :
   I &operator[](int i); const I &operator[](int i) const;
   I span() const;
   bool before( const coordinate<I,d>& ) const;
-  //  I linear( const coordinate<I,d>& ) const;
 
   // linearization
   I linear_location_of( const coordinate<I,d>& ) const;
   I linear_location_in( const coordinate<I,d>& ) const;
+  coordinate<I,d> location_of_linear( I s ) const;
 
   // equality operation
   coordinate negate();
@@ -103,29 +103,11 @@ template<typename I,int d>
 void require_sorted( std::vector<coordinate<I,d>> idxs );
 
 template<typename I,int d>
-struct fmt::formatter<coordinate<I,d>> {
- constexpr
- auto parse(format_parse_context& ctx)
-       -> decltype(ctx.begin()) {
-   auto it = ctx.begin(),
-     end = ctx.end();
-   if (it != end && *it != '}')
-     throw format_error("invalid format");
-   return it;
-  }
-  template <typename FormatContext>
-  auto format
-    (const coordinate<I,d>& p, FormatContext& ctx)
-        -> decltype(ctx.out()) {
-    return format_to(ctx.out(),"{}", p.as_string());
-  }
-};
-
+struct fmt::formatter<coordinate<I,d>>;
 template<typename I, int d>
-std::ostream &operator<<(std::ostream &os,const std::shared_ptr<coordinate<I,d>> &c) {
-  os << c->as_string();
-  return os;
-};
+std::ostream &operator<<(std::ostream &os,const coordinate<I,d> &c);
+template<typename I, int d>
+std::ostream &operator<<(std::ostream &os,const std::shared_ptr<coordinate<I,d>> &c);
 
 /*
  * Coordinate sets
