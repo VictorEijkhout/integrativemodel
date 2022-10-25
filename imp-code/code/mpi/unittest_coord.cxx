@@ -69,6 +69,14 @@ TEST_CASE( "coordinates" ) {
     REQUIRE( ci2_14.span()==14 );
     REQUIRE( ci2_14.at(0)==7 );
     REQUIRE( ci2_14.at(1)==2 );
+    // 7x2 : 3,0 = 6, 2,1 = 5
+    coordinate<int,2> c5,c6;
+    REQUIRE_NOTHROW( c5 = ci2_14.location_of_linear(5) );
+    INFO( "5 in 14:" << c5 );
+    REQUIRE( ci2_14.linear_location_of(c5)==5 );
+    REQUIRE_NOTHROW( c6 = ci2_14.location_of_linear(6) );
+    INFO( "6 in 14:" << c6 );
+    REQUIRE( ci2_14.linear_location_of(c6)==6 );
   }
   // {
   //   auto c2_61 = coordinate<int,2>( {6,1} );
