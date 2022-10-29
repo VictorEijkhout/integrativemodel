@@ -23,14 +23,15 @@
 using fmt::format, fmt::print;
 using std::array, std::vector;
 
+auto &the_env = mpi_environment::instance();
+
 TEST_CASE( "decomposition constructors" ) {
-  auto &the_env = mpi_environment::instance();
   REQUIRE_NOTHROW( mpi_decomposition<1>( the_env,coordinate<int,1>( array<int,1>({5}) ) ) );
   REQUIRE_NOTHROW( mpi_decomposition<2>( the_env,coordinate<int,2>( {5,6} ) ) );
 }
 
 TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
-  auto &the_env = mpi_environment::instance();
+  //  auto &the_env = mpi_environment::instance();
   auto mytid = the_env.procid();
   INFO( "mytid=" << mytid );
   int over;
@@ -58,6 +59,9 @@ TEST_CASE( "coordinate conversion","[mpi][decomposition][02]" ) {
   coordinate<int,d> onep;
   REQUIRE_NOTHROW( onep = oned.coordinate_from_linear(1) );
   CHECK( onep==coordinate<int,d>( vector<int>{1} ) );
+}
+
+TEST_CASE( "coordinate conversion","[mpi][decomposition][02]" ) {
 
   decomposition twod;
   REQUIRE_NOTHROW( twod = mpi_decomposition

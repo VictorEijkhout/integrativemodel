@@ -20,10 +20,9 @@
 #include <functional>
 #include <memory>
 #include <vector>
+
 // cppformat
 #include "fmt/format.h"
-using fmt::format_to;
-using fmt::to_string;
 
 // imp stuff
 #include "utils.h"
@@ -830,7 +829,7 @@ struct fmt::formatter<std::shared_ptr<indexstruct<I,d>>> {
   auto format
       (const std::shared_ptr<indexstruct<I,d>>& p, FormatContext& ctx)
         -> decltype(ctx.out()) {
-    return format_to(ctx.out(),"{}", p->as_string());
+    return fmt::format_to(ctx.out(),"{}", p->as_string());
   }
 };
 
@@ -1162,13 +1161,13 @@ public:
 
   std::string as_string() {
     fmt::memory_buffer w;
-    format_to(w.end(),"["); int id=0; const char *sep="";
+    fmt::format_to(w.end(),"["); int id=0; const char *sep="";
     for ( auto iop : operators ) {
-      format_to(w.end(),"{}op{}:{}",sep,id++,iop.as_string());
+      fmt::format_to(w.end(),"{}op{}:{}",sep,id++,iop.as_string());
       sep = ", ";
     }
-    format_to(w.end(),"]");
-    return to_string(w);
+    fmt::format_to(w.end(),"]");
+    return fmt::to_string(w);
   };
 };
 

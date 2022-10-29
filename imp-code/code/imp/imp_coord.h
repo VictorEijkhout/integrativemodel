@@ -3,6 +3,7 @@
 #include <array>
 #include <vector>
 #include "imp_env.h"
+#include "fmt/format.h"
 
 template<class I,int d>
 class ioperator;

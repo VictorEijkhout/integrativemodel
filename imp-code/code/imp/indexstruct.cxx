@@ -15,6 +15,7 @@
 #include <sstream>
 using std::stringstream;
 
+#include "fmt/format.h"
 using fmt::format, fmt::print,fmt::memory_buffer, fmt::format_to, fmt::to_string;
 
 using std::function;
@@ -761,10 +762,10 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
     auto extstrided = this->make_clone();
     for (auto v : *indexed) {
       if (extstrided->contains_element(v)) {
-	if (trace) print("already contains element: {}\n",v);
+	if (trace) print("already contains element: {}\n",v.as_string()); // formatter broken
 	continue;
       } else if (extstrided->can_incorporate(v)) {
-	if (trace) print("can extend with element: {}\n",v);
+	if (trace) print("can extend with element: {}\n",v.as_string()); // formatter broken
 	extstrided = extstrided->add_element(v);
       } else { // an indexed struct can incorporate arbitrary crap
 	if (trace) print("can not incorporate: return as indexed\n");
@@ -1014,8 +1015,9 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &s
   for (I inext=ileft+1; inext<iright; inext++) {
     auto elt = get_ith_element(inext);
     auto inplace = (elt-first)%stride;
-    if (trace) print("element {}: {} has modulo: {}\n",
-		     inext,elt,inplace);
+    if (trace)
+      print("element {}: {} has modulo: {}\n",
+	    inext,elt.as_string(),inplace.as_string());  // formatter broken
     if ( not ( inplace==coordinate<I,d>(0) ) )
       // strange. why doesn't the != operator work here?
       return false;
@@ -1230,7 +1232,7 @@ string indexed_indexstruct<I,d>::as_string() const {
   memory_buffer w;
   format_to(std::back_inserter(w),"[");
   for ( const auto& i : indices )
-    format_to(std::back_inserter(w),"{}",i);
+    format_to(std::back_inserter(w),"{}",i.as_string());  // formatter broken
   format_to(std::back_inserter(w),"]");
   return to_string(w);
 };
@@ -2126,7 +2128,9 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
       new_last = op.operate(last_index()+1)-1;
     else {
       new_last = op.operate(last_index());
-      if (trace) print(", mult last={} gives {}",last_index(),new_last);
+      if (trace)
+	print(", mult last={} gives {}",
+	      last_index().as_string(),new_last.as_string()); // formatter broken
     }
     if (new_stride==1)
       operated = shared_ptr<indexstruct<I,d>>
@@ -2241,7 +2245,10 @@ string sigma_operator<I,d>::as_string() const {
   return to_string(w);
 };
 
-
+template struct fmt::formatter<shared_ptr<indexstruct<int,1>>>;
+template struct fmt::formatter<shared_ptr<indexstruct<index_int,1>>>;
+template struct fmt::formatter<shared_ptr<indexstruct<int,2>>>;
+template struct fmt::formatter<shared_ptr<indexstruct<index_int,2>>>;
 
 template class indexstructure<int,1>;
 template class indexstructure<index_int,1>;
@@ -2259,11 +2266,6 @@ template class strided_indexstruct<int,2>;
 template class strided_indexstruct<index_int,2>;
 template class indexed_indexstruct<int,2>;
 template class indexed_indexstruct<index_int,2>;
-
-template struct fmt::formatter<shared_ptr<indexstruct<int,1>>>;
-template struct fmt::formatter<shared_ptr<indexstruct<index_int,1>>>;
-template struct fmt::formatter<shared_ptr<indexstruct<int,2>>>;
-template struct fmt::formatter<shared_ptr<indexstruct<index_int,2>>>;
 
 template class ioperator<int,1>;
 template class ioperator<int,2>;

@@ -37,7 +37,7 @@ class object;
 class task;
 
 template<int d>
-class decomposition : std::vector<coordinate<int,d>> {
+class decomposition : protected std::vector<coordinate<int,d>> {
 public:
   decomposition() {}; //!< default constructor
   // with explicit layout
@@ -57,7 +57,7 @@ public:
   //! \todo do we really need this?
   auto get_global_domain_descriptor() { return domain_layout.data(); };
   int linearize( const coordinate<int,d> &p ) const;
-  //  coordinate<int,d> coordinate_from_linear(int p) const;
+  coordinate<int,d> coordinate_from_linear(int p) const;
 
   /*
    * Domain handling
