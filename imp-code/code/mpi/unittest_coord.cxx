@@ -63,9 +63,12 @@ TEST_CASE( "coordinates" ) {
     REQUIRE_NOTHROW( again = ci1_5.location_of_linear(top-1) );
     INFO( "reinterpret as coord: " << again );
     REQUIRE( again.span()==top-1 );
+    for ( int i=0; i<top; i++)
+      REQUIRE_NOTHROW( ci1_5.location_of_linear(i) );
   }
   {
     auto ci2_14 = coordinate<int,2>(14);
+    auto top = ci2_14.span();
     REQUIRE( ci2_14.span()==14 );
     REQUIRE( ci2_14.at(0)==7 );
     REQUIRE( ci2_14.at(1)==2 );
@@ -77,6 +80,8 @@ TEST_CASE( "coordinates" ) {
     REQUIRE_NOTHROW( c6 = ci2_14.location_of_linear(6) );
     INFO( "6 in 14:" << c6 );
     REQUIRE( ci2_14.linear_location_of(c6)==6 );
+    for ( int i=0; i<top; i++ )
+      REQUIRE_NOTHROW( ci2_14.location_of_linear(i) );
   }
   // {
   //   auto c2_61 = coordinate<int,2>( {6,1} );

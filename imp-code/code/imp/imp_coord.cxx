@@ -282,6 +282,7 @@ template<typename I,int d>
 I coordinate<I,d>::linear_location_of( const coordinate<I,d>& inside ) const {
   return inside.linear_location_in( *this );
 };
+/*! Coordinate from linear location */
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::location_of_linear( I s ) const {
   coordinate<I,d> loc;

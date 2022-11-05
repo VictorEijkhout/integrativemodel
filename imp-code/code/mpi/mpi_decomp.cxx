@@ -28,7 +28,7 @@ mpi_decomposition<d>::mpi_decomposition
   for ( int local=0; local<over; local++) {
     // coordinate_from_linear
     this->push_back
-      ( decomposition<d>::get_domain_layout().linear_location_of(over*procid+local) );
+      ( decomposition<d>::get_domain_layout().location_of_linear(over*procid+local) );
   }
 };
 
