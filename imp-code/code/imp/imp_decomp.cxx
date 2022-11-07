@@ -149,7 +149,6 @@ void decomposition<d>::set_corners() {
   farcorner = endpoint<int,d>(P);
 };
 
-//! \todo why can't we declare this const?
 template<int d>
 const coordinate<int,d> &decomposition<d>::get_origin_processor() const {
   return closecorner;
@@ -157,6 +156,11 @@ const coordinate<int,d> &decomposition<d>::get_origin_processor() const {
 template<int d>
 const coordinate<int,d> &decomposition<d>::get_farpoint_processor() const {
   return farcorner;
+};
+
+template<int d>
+int decomposition<d>::linear_location_of( const coordinate<int,d>& c ) const {
+  return domain_layout.linear_location_of(c);
 };
 
 template<int d>

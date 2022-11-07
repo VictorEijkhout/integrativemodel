@@ -36,27 +36,43 @@ TEST_CASE( "decomposition constructors" ) {
   }
 }
 
-#if 0
 TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
   //  auto &the_env = mpi_environment::instance();
   auto mytid = the_env.procid();
-  return;
-  //  INFO( "mytid=" << mytid );
+  INFO( "mytid=" << mytid );
   int over=1;
-  //  REQUIRE_NOTHROW( over = the_env.get_over_factor() );
-  const int d=1;
-  mpi_decomposition<d> decomp(the_env);
-  vector<coordinate<int,d>> domains;
-  REQUIRE_NOTHROW( domains = decomp.get_domains() );
-  int count = 0;
-  // for ( auto dom : domains ) {
-  //   int lindom = dom.at(0);
-  //   INFO( "domain=" << lindom );
-  //   CHECK( lindom==over*mytid+count );
-  //   count++;
-  // }
+  REQUIRE_NOTHROW( over = the_env.get_over_factor() );
+  SECTION( "1D" ) {
+    const int d=1;
+    INFO( "1D" );
+    mpi_decomposition<d> decomp(the_env);
+    vector<coordinate<int,d>> domains;
+    REQUIRE_NOTHROW( domains = decomp.get_domains() );
+    int count = 0;
+    for ( auto dom : domains ) {
+      int lindom = decomp.linear_location_of(dom); // dom.at(0);
+      INFO( "domain=" << lindom );
+      CHECK( lindom==over*mytid+count );
+      count++;
+    }
+  }
+  SECTION( "2D" ) {
+    const int d=2;
+    INFO( "2D" );
+    mpi_decomposition<d> decomp(the_env);
+    vector<coordinate<int,d>> domains;
+    REQUIRE_NOTHROW( domains = decomp.get_domains() );
+    int count = 0;
+    for ( auto dom : domains ) {
+      int lindom = decomp.linear_location_of(dom); // dom.at(0);
+      INFO( "domain=" << lindom );
+      CHECK( lindom==over*mytid+count );
+      count++;
+    }
+  };
 }
 
+#if 0
 TEST_CASE( "coordinate conversion","[mpi][decomposition][02]" ) {
   decomposition oned;
   REQUIRE_NOTHROW( oned = mpi_decomposition

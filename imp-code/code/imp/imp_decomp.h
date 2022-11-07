@@ -53,6 +53,7 @@ public:
   const coordinate<int,d> &get_domain_layout() const { return domain_layout; };
   const coordinate<int,d> &get_origin_processor() const;
   const coordinate<int,d> &get_farpoint_processor() const;
+  int linear_location_of( const coordinate<int,d>& ) const;
   int get_size_of_dimension(int nd) const { return domain_layout.at(nd); };
   //! \todo do we really need this?
   auto get_global_domain_descriptor() { return domain_layout.data(); };
