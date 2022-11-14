@@ -45,7 +45,7 @@ info ::
 .PHONY: unittests
 unittests : ${UNITTESTS}
 UNITTESTS = \
-  unittest_startup unittest_index unittest_proc unittest_sparse unittest_distribution \
+  unittest_startup unittest_index unittest_proc unittest_sparse \
   unittest_operator unittest_struct unittest_tree unittest_collective \
   unittest_over \
   unittest_kmeans unittest_lapack unittest_ops unittest_cg unittest_nbody \
@@ -131,6 +131,27 @@ unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 mpi_decomp.o : mpi_decomp.h ${IMPCODEDIR}/imp_decomp.h
 ${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
 	@cd ${IMPCODEDIR} && make --no-print-directory imp_decomp.o
+
+
+#
+# distribution
+#
+NEW_TESTS += unittest_distribution
+DISTR_OBJS = mpi_distribution.o ${IMPCODEDIR}/imp_distribution.o \
+    ${DECOMP_OBJS}
+unittest_distribution : unittest_main.o unittest_distribution.o ${DISTR_OBJS}
+	@echo "Linking $@"
+	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
+	  unittest_main.o $@.o \
+	  ${DISTR_OBJS} \
+	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
+	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
+	  ${LIBCXX}
+mpi_distribution.o : mpi_distribution.h ${IMPCODEDIR}/imp_distribution.h
+${IMPCODEDIR}/imp_distribution.o : ${IMPCODEDIR}/imp_distribution.cxx ${IMPCODEDIR}/imp_distribution.h
+	@cd ${IMPCODEDIR} && make --no-print-directory imp_distribution.o
+
+
 ${IMPCODEDIR}/indexstruct.o : ${IMPCODEDIR}/indexstruct.cxx ${IMPCODEDIR}/indexstruct.hpp
 	@cd ${IMPCODEDIR} && make --no-print-directory indexstruct.o
 

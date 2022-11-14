@@ -17,22 +17,25 @@
 
 #include "catch2/catch_all.hpp"
 
+#include "mpi_env.h"
 #include "mpi_decomp.h"
-using fmt::format;
-using fmt::print;
+#include "mpi_distribution.h"
 
-using std::make_shared;
-using std::shared_ptr;
+using fmt::format, fmt::print;
+
+using std::make_shared, std::shared_ptr;
 using std::string;
 using std::vector;
 
-#include "mpi_ops.h"
-#include "mpi_static_vars.h"
-#include "unittest_functions.h"
-// #include "imp_functions.h"
+// #include "mpi_ops.h"
+// #include "mpi_static_vars.h"
+// #include "unittest_functions.h"
+// // #include "imp_functions.h"
 
-// for the [61/2/3] tests
-#include "balance_functions.h"
+// // for the [61/2/3] tests
+// #include "balance_functions.h"
+
+auto &the_env = mpi_environment::instance();
 
 #if 0
 TEST_CASE( "coordinate operations","[mpi][decomposition][03]" ) {
