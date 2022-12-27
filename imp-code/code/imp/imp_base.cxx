@@ -1375,7 +1375,7 @@ void parallel_structure::allocate_structure() {
     for (int id=0; id<dim; id++)
       dimension_structures_ref().push_back(nullptr);
     for (int id=0; id<dim; id++) {
-      auto dimsize = d->get_size_of_dimension(id);
+      auto dimsize = d->size_of_dimension(id);
       auto dimstruct =
 	shared_ptr<parallel_indexstruct>( new parallel_indexstruct(dimsize) );
       set_dimension_structure( id,dimstruct );

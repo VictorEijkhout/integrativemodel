@@ -27,14 +27,6 @@ using std::make_shared, std::shared_ptr;
 using std::string;
 using std::vector;
 
-// #include "mpi_ops.h"
-// #include "mpi_static_vars.h"
-// #include "unittest_functions.h"
-// // #include "imp_functions.h"
-
-// // for the [61/2/3] tests
-// #include "balance_functions.h"
-
 auto &the_env = mpi_environment::instance();
 
 #if 0
