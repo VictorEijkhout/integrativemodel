@@ -132,7 +132,6 @@ mpi_decomp.o : mpi_decomp.h ${IMPCODEDIR}/imp_decomp.h
 ${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
 	@cd ${IMPCODEDIR} && make --no-print-directory imp_decomp.o
 
-
 #
 # distribution
 #
@@ -160,7 +159,9 @@ info ::
 .PHONY: newtests
 newtests :
 	for t in ${NEW_TESTS} ; do \
-	    make $$t && mpiexec -n 4 $$t \
+	    make $$t \
+	     && echo && echo "Unittesting: $$t" && echo \
+	     && mpiexec -n 4 $$t \
 	; done
 
 #

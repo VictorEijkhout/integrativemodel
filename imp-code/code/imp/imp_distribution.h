@@ -8,13 +8,13 @@ class distribution {
     std::vector< indexstructure<index_int,1> >
     ,d> patches;
  public:
-  distribution( const decomposition<d>&, const coordinate<index_int>& );
+  distribution( const decomposition<d>&, const coordinate<index_int,d>& );
 
   /*
    * Numa stuff
    */
  protected:
-  indexstructure<d> numa_structure;
+  indexstructure<index_int,d> numa_structure;
   auto get_numa_structure() { return numa_structure; };
   const auto& get_numa_structure() const { return numa_structure; };
  public:

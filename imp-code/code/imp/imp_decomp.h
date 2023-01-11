@@ -28,56 +28,63 @@ std::array<I,d> endpoint(I s);
 // template<class I,int d>
 // std::array<I,d> farpoint(I s);
 
-template<int d>
-class decomposition;
 class message;
 template<int d>
 class distribution;
 class object;
 class task;
 
+/*!
+  A decomposition is a layout of all available processors
+  in a d-dimensional grid.
+  It contains (through inheritance) a vector of the local domains.
+  For MPI that will be a single domain, for OpenMP all, because shared memory.
+ */
 template<int d>
 class decomposition : protected std::vector<coordinate<int,d>> {
 public:
   decomposition() {}; //!< default constructor
-  // with explicit layout
+  //! Constructor from explicit endpoint coordinate
   decomposition( const coordinate<int,d> &nd );
+  //! Constructor from environment: uses the endpoint coordinate of the env
   decomposition( const environment& env );
 private:
   //! A vector of the sizes in all the dimensions
   coordinate<int,d> domain_layout;
   coordinate<int,d> closecorner,farcorner;
 public:
-  int dimensionality() const; int same_dimensionality(int dd) const;
+  //  int dimensionality() const; int same_dimensionality(int dd) const;
   void set_corners();
   const coordinate<int,d> &get_domain_layout() const { return domain_layout; };
   const coordinate<int,d> &get_origin_processor() const;
   const coordinate<int,d> &get_farpoint_processor() const;
   int linear_location_of( const coordinate<int,d>& ) const;
-  int size_of_dimension(int nd) const { return domain_layout.at(nd); };
+  //! How many processors do we have in dimension `nd'?
+  int size_of_dimension(int nd) const;
   //! \todo do we really need this?
-  auto get_global_domain_descriptor() { return domain_layout.data(); };
+  //  auto get_global_domain_descriptor() { return domain_layout.data(); };
+  //! Conversion from grid coordinate to linear numbering.
   int linearize( const coordinate<int,d> &p ) const;
+  //! Conversion from linearly numbered process to coordinate in grid
   coordinate<int,d> coordinate_from_linear(int p) const;
 
   /*
    * Domain handling
    */
-protected:
-  std::vector< coordinate<int,d> > mdomains;
-  coordinate_set<int,d> known_domains;
 public:
-  int domains_volume() const;
   void add_domain( const coordinate<int,d>&,bool=true);
   void add_domains( const indexstruct<int,d>& );
-  //! Return the domains object, for 1d only
-  const std::vector< coordinate<int,d> > get_domains() const { return mdomains; };
-  //! Get a domain by local number; see \ref get_local_domain_number for global for translation
-  int get_local_domain( int dom ) { return mdomains[dom].at(0); };
+  int local_volume() const;
+  int global_volume() const;
+  // //! Return the domains object, for 1d only
+  const std::vector< coordinate<int,d> > get_domains() const { return *this; };
+  // //! Get a domain by local number; see \ref get_local_domain_number for global for translation
+  std::function<  coordinate<int,d>() > local_domain{
+    [] () -> coordinate<int,d> { throw("no local domain function defined"); } };
   const coordinate<int,d> &first_local_domain() const;
   const coordinate<int,d> &last_local_domain() const;
   //! The local number of domains.
-  int local_ndomains() const { return mdomains.size(); };
+  int local_ndomains() const { return this->size(); };
   int get_domain_local_number( const coordinate<int,d>& ) const;
 
   virtual std::string as_string() const;
@@ -101,8 +108,8 @@ public:
    * Ranging
    */
 protected:
-  int iterate_count{0},start_id{-1};
-  coordinate<int,d> cur_coord,start_coord;
+  int iterate_count{0};
+  coordinate<int,d> cur_coord;
 public:
   decomposition &begin();
   decomposition &end();

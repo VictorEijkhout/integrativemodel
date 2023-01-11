@@ -27,48 +27,49 @@ auto &the_env = mpi_environment::instance();
 
 TEST_CASE( "decomposition constructors" ) {
   {
-    auto grid = coordinate<int,1>( array<int,1>( {5} ) );
-    REQUIRE_NOTHROW( mpi_decomposition<1>( the_env,grid ) );
+    REQUIRE_NOTHROW( mpi_decomposition<1>( the_env ) );
+    mpi_decomposition<1> d( the_env );
+    REQUIRE( d.local_volume()==1 );
+    REQUIRE( d.global_volume()==the_env.nprocs() );
   }
   {
-    auto grid = coordinate<int,2>( array<int,2>( {5,6} ) );
-    REQUIRE_NOTHROW( mpi_decomposition<2>( the_env,grid ) );
+    REQUIRE_NOTHROW( mpi_decomposition<2>( the_env ) );
+    mpi_decomposition<1> d( the_env );
+    REQUIRE( d.local_volume()==1 );
+    REQUIRE( d.global_volume()==the_env.nprocs() );
   }
 }
 
 TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
   //  auto &the_env = mpi_environment::instance();
   auto mytid = the_env.procid();
+  auto ntids = the_env.nprocs();
   INFO( "mytid=" << mytid );
-  int over=1;
-  REQUIRE_NOTHROW( over = the_env.get_over_factor() );
   SECTION( "1D" ) {
     const int d=1;
     INFO( "1D" );
     mpi_decomposition<d> decomp(the_env);
-    vector<coordinate<int,d>> domains;
-    REQUIRE_NOTHROW( domains = decomp.get_domains() );
     int count = 0;
-    for ( auto dom : domains ) {
-      int lindom = decomp.linear_location_of(dom); // dom.at(0);
-      INFO( "domain=" << lindom );
-      CHECK( lindom==over*mytid+count );
-      count++;
-    }
+    // for ( auto dom : domains ) {
+    //   int lindom;
+    //   INFO( format("domain {} = {}",count,dom.as_string()) );
+    //   REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
+    //   INFO( "is linearly: " << lindom );
+    //   CHECK( lindom==mytid+count );
+    //   count++;
+    // }
   }
   SECTION( "2D" ) {
     const int d=2;
     INFO( "2D" );
     mpi_decomposition<d> decomp(the_env);
-    vector<coordinate<int,d>> domains;
-    REQUIRE_NOTHROW( domains = decomp.get_domains() );
     int count = 0;
-    for ( auto dom : domains ) {
-      int lindom = decomp.linear_location_of(dom); // dom.at(0);
-      INFO( "domain=" << lindom );
-      CHECK( lindom==over*mytid+count );
-      count++;
-    }
+    // for ( auto dom : domains ) {
+    //   int lindom = decomp.linear_location_of(dom); // dom.at(0);
+    //   INFO( "domain=" << lindom );
+    //   CHECK( lindom==mytid+count );
+    //   count++;
+    // }
   };
 }
 

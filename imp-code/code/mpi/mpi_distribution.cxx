@@ -1,5 +1,6 @@
 #include "imp_decomp.h"
 #include "mpi_decomp.h"
+#include "mpi_distribution.h"
 
 template<int d>
 mpi_distribution<d>::mpi_distribution

@@ -24,40 +24,45 @@ using std::shared_ptr,std::make_shared;
 using fmt::format,fmt::print;
 
 /****
- **** Decomposition
+ **** Construction
  ****/
 
-//! Default decomposition uses all procs of the architecture in one-d manner.
 template<int d>
 decomposition<d>::decomposition( const environment& env )
   : decomposition<d>( endpoint<int,d>(env.nprocs()) ) {
 };
-/*! Define decomposition from processor grid.
-  The subdomains owned by a process will be set by the derived classes.
-*/
+
 template<int d>
 decomposition<d>::decomposition( const coordinate<int,d>& grid )
-  : domain_layout(grid) {
+  : domain_layout(grid),
+    vector< coordinate<int,d> >(grid.span()) {
+  for ( int i=0; i<domain_layout.span(); i++ ) {
+    // the `coordinate_from_linear' function only uses the `domain_layout' vector
+    this->at(i) = this->coordinate_from_linear(i);
+  }
 };
 
-//! Get dimensionality.
-template<int d>
-int decomposition<d>::dimensionality() const {
-  return d;
-};
-
-//! Number of domains
-template<int d>
-int decomposition<d>::domains_volume() const {
-  int p = domain_layout.span();
-  return p;
-};
+// //! Get dimensionality.
+// template<int d>
+// int decomposition<d>::dimensionality() const {
+//   return d;
+// };
 
 template<int d>
-int decomposition<d>::linearize( const coordinate<int,d> &p ) const {
-  return domain_layout.linear_location_of(p);
+int decomposition<d>::size_of_dimension(int nd) const {
+  return domain_layout.at(nd);
 };
 
+
+//! number of local domains
+template<int d>
+int decomposition<d>::local_volume() const { return this->size(); };
+
+//! number of global domains
+template<int d>
+int decomposition<d>::global_volume() const { return domain_layout.span(); };
+
+#if 0
 template<int d>
 const coordinate<int,d> &decomposition<d>::first_local_domain() const {
   if (mdomains.size()==0)
@@ -70,24 +75,15 @@ const coordinate<int,d> &decomposition<d>::last_local_domain() const {
     throw(format("Decomposition has no domains"));
   return mdomains.at(mdomains.size()-1);
 };
+#endif
 
 //! Get the local number where this domain is stored. Domains are multi-dimensionally numbered.
 template<int d>
 int decomposition<d>::get_domain_local_number( const coordinate<int,d> &dcoord ) const {
-  // print("get domain local number of {} in decomp: <<{}>>\n",
-  // 	d.as_string(),this->as_string());
-  for ( int i=0; i<mdomains.size(); i++) {
-    // print("compare domain {}: {} to match coordinate {}\n",
-    // 	  i,mdomains.at(i).as_string(),d.as_string());
-    if (mdomains.at(i)==d) return i;
-  }
+  // for ( int i=0; i<mdomains.size(); i++) {
+  //   if (mdomains.at(i)==d) return i;
+  // }
   throw(fmt::format("Domain has no localization"));
-};
-
-//! Get dimensionality, which has to be the same as something else.
-template<int d>
-int decomposition<d>::same_dimensionality( int dd ) const {
-  return d==dd;
 };
 
 template<int d>
@@ -109,9 +105,10 @@ const decomposition<d> &decomposition<d>::get_embedded_decomposition() const {
 //! Add a multi-d local domain.
 template<int d>
 void decomposition<d>::add_domain( const coordinate<int,d>& dom,bool recompute ) {
-  int dim = dom.same_dimensionality( domain_layout.dimensionality() );
-  mdomains.push_back(dom);
-  if (recompute) set_corners();
+  throw("can not add domain");
+  // int dim = dom.same_dimensionality( domain_layout.dimensionality() );
+  // mdomains.push_back(dom);
+  // if (recompute) set_corners();
 };
 
 template<int d>
@@ -124,14 +121,22 @@ void decomposition<d>::add_domains( const indexstruct<int,d>& doms ) {
   // set_corners();
 };
 
-//! Get the multi-dimensional coordinate of a linear one. \todo check this calculation
-//! http://stackoverflow.com/questions/10903149/how-do-i-compute-the-linear-index-of-a-3d-coordinate-and-vice-versa
+/*
+ * Coordinate conversion stuff
+ */
+template<int d>
+int decomposition<d>::linearize( const coordinate<int,d> &p ) const {
+  return domain_layout.linear_location_of(p);
+};
+
+/*!
+  \todo check this calculation
+  Reference: http://stackoverflow.com/questions/10903149/how-do-i-compute-the-linear-index-of-a-3d-coordinate-and-vice-versa
+*/
 template<int d>
 coordinate<int,d> decomposition<d>::coordinate_from_linear(int p) const {
-  int dim = domain_layout.dimensionality();
-  if (dim<=0) throw(string("Zero dim layout"));
-  coordinate<int,d> pp(dim);
-  for (int id=dim-1; id>=0; id--) {
+  coordinate<int,d> pp;
+  for (int id=d-1; id>=0; id--) {
     int dsize = domain_layout.at(id);
     if (dsize==0)
       throw(format("weird layout <<{}>>",domain_layout.as_string()));
@@ -140,6 +145,7 @@ coordinate<int,d> decomposition<d>::coordinate_from_linear(int p) const {
   return pp;
 };
 
+#if 0
 template<int d>
 void decomposition<d>::set_corners() {
   // origin; we set this to all zeros, which may not be enough.
@@ -148,6 +154,7 @@ void decomposition<d>::set_corners() {
   int P = domains_volume();
   farcorner = endpoint<int,d>(P);
 };
+#endif
 
 template<int d>
 const coordinate<int,d> &decomposition<d>::get_origin_processor() const {
@@ -166,9 +173,6 @@ int decomposition<d>::linear_location_of( const coordinate<int,d>& c ) const {
 template<int d>
 string decomposition<d>::as_string() const {
   return "decomp";
-  // format
-  //   ("{}; dim={}, #domains: {}",
-  //    architecture::as_string(),dimensionality(),domains_volume());
 };
 
 /*!
@@ -181,24 +185,14 @@ string decomposition<d>::as_string() const {
 template<int d>
 decomposition<d> &decomposition<d>::begin() {
   iterate_count = 0;
-  start_coord = coordinate_from_linear(start_id);
-  // if (start_coord.dimensionality()>0) {
-  //   start_id = linearize(start_coord);
-  // } else {
-  //   try { start_id = mytid();
-  //   } catch (...) { print("should have been able to get mytid\n");
-  //     throw("can not begin iterate over decomposition");
-  //   }
-  //   start_coord = coordinate_from_linear(start_id);
-  // }
-  cur_coord = start_coord;
+  cur_coord = coordinate_from_linear(iterate_count);
   return *this;
 };
 
 template<int d>
 decomposition<d> &decomposition<d>::end() {
   // we end when we've counted all the tids
-  iterate_count = domains_volume();
+  iterate_count = domain_layout.span();
   return *this;
 };
 
@@ -210,19 +204,7 @@ decomposition<d> &decomposition<d>::end() {
 */
 template<int d>
 void decomposition<d>::operator++() {
-  start_id = linearize(start_coord); // !!! VLE should not be necessary
-  int ntids = domains_volume();
-  int range_id{-1};
-  //  print("increment {} @{}+{}",cur_coord.as_string(),start_id,iterate_count);
-  iterate_count++;
-  if (range_linear || (range_twoside && iterate_count>=0) ) {
-    range_id = (start_id+iterate_count) % ntids;
-  } else {
-    range_id = (start_id-iterate_count+ntids) % ntids;
-  }
-  cur_coord = coordinate_from_linear(range_id);
-  // print(".. to {} @{}+{}\n",cur_coord.as_string(),start_id,iterate_count);
-
+  cur_coord = coordinate_from_linear( ++iterate_count );
   return;
 };
 

@@ -1049,4 +1049,3 @@ TEST_CASE( "pencil distribution","[multi][distribution][pencil][102]" ) {
 
 #endif
 #endif
-#endif

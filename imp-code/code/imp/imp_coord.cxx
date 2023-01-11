@@ -266,13 +266,13 @@ template<typename I,int d>
 I coordinate<I,d>::linear_location_in( const coordinate<I,d>& layout ) const {
   int id=0;
   if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
-    throw( "coordinate not contained" );
+    throw( format("coordinate {} not contained in: {}",as_string(),layout.as_string()) );
   int s = coordinates.at(id);
 
   for (int id=1; id<d; id++) {
     auto layout_dim = layout.coordinates[id];
     if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
-      throw( "coordinate not contained" );
+      throw( format("coordinate {} not contained in: {}",as_string(),layout.as_string()) );
     s = s*layout_dim + coordinates[id];
   }
   return s;

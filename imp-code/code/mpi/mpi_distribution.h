@@ -13,9 +13,10 @@
 #pragma once
 
 #include "imp_decomp.h"
+#include "imp_distribution.h"
 
 template<int d>
-class mpi_distribution : virtual public distribution {
+class mpi_distribution : virtual public distribution<d> {
 public:
   mpi_distribution( const mpi_decomposition<d>&,const coordinate<index_int,d>& );
 };
