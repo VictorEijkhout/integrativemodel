@@ -41,7 +41,7 @@ class task;
   For MPI that will be a single domain, for OpenMP all, because shared memory.
  */
 template<int d>
-class decomposition : protected std::vector<coordinate<int,d>> {
+class decomposition : public std::vector<coordinate<int,d>> {
 public:
   decomposition() {}; //!< default constructor
   //! Constructor from explicit endpoint coordinate
@@ -72,8 +72,6 @@ public:
    * Domain handling
    */
 public:
-  void add_domain( const coordinate<int,d>&,bool=true);
-  void add_domains( const indexstruct<int,d>& );
   int local_volume() const;
   int global_volume() const;
   // //! Return the domains object, for 1d only
@@ -104,19 +102,20 @@ protected:
 public:
   const decomposition &get_embedded_decomposition() const;
 
-  /*
-   * Ranging
-   */
-protected:
-  int iterate_count{0};
-  coordinate<int,d> cur_coord;
-public:
-  decomposition &begin();
-  decomposition &end();
-  void operator++();
-  bool operator!=( const decomposition& ) const;
-  bool operator==( const decomposition& ) const;
-  coordinate<int,d> &operator*();
+//   /*
+//    * Ranging
+//    */
+// protected:
+//   int iterate_count{0};
+//   coordinate<int,d> cur_coord;
+// public:
+//   decomposition &begin();
+//   decomposition &end();
+//   void operator++();
+//   bool operator!=( const decomposition& ) const;
+//   bool operator==( const decomposition& ) const;
+//   coordinate<int,d> &operator*();
+
 };
 
 

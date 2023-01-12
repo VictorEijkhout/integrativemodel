@@ -93,28 +93,28 @@ const decomposition<d> &decomposition<d>::get_embedded_decomposition() const {
   return *(embedded_decomposition.get());
 };
 
-/*! Add a bunch of 1d local domains
-  \todo test for 1d-ness
-  \todo use std_ptr to indexstruct*
-*/
-//! Add a multi-d local domain.
-template<int d>
-void decomposition<d>::add_domain( const coordinate<int,d>& dom,bool recompute ) {
-  throw("can not add domain");
-  // int dim = dom.same_dimensionality( domain_layout.dimensionality() );
-  // mdomains.push_back(dom);
-  // if (recompute) set_corners();
-};
+// /*! Add a bunch of 1d local domains
+//   \todo test for 1d-ness
+//   \todo use std_ptr to indexstruct*
+// */
+// //! Add a multi-d local domain.
+// template<int d>
+// void decomposition<d>::add_domain( const coordinate<int,d>& dom,bool recompute ) {
+//   throw("can not add domain");
+//   // int dim = dom.same_dimensionality( domain_layout.dimensionality() );
+//   // mdomains.push_back(dom);
+//   // if (recompute) set_corners();
+// };
 
-template<int d>
-void decomposition<d>::add_domains( const indexstruct<int,d>& doms ) {
-  throw( "need to rewrite add_domains for multi-d" );
-  // for ( auto i=doms.first_index(); i<=doms.last_index(); i++ ) {
-  //   int ii = (int)i; // std::static_cast<int>(i);
-  //   add_domain( coordinate<int,d>( array<int,d>(ii) ),false );
-  // }
-  // set_corners();
-};
+// template<int d>
+// void decomposition<d>::add_domains( const indexstruct<int,d>& doms ) {
+//   throw( "need to rewrite add_domains for multi-d" );
+//   // for ( auto i=doms.first_index(); i<=doms.last_index(); i++ ) {
+//   //   int ii = (int)i; // std::static_cast<int>(i);
+//   //   add_domain( coordinate<int,d>( array<int,d>(ii) ),false );
+//   // }
+//   // set_corners();
+// };
 
 /*
  * Coordinate conversion stuff
@@ -170,54 +170,55 @@ string decomposition<d>::as_string() const {
   return "decomp";
 };
 
-/*!
-  We begin iteration by giving the first coordinate.
-  We store the current iterate as a private coordinate: `cur_coord'.
-  Iteration is done C-style: the last coordinate varies quickest.
+// /*!
+//   We begin iteration by giving the first coordinate.
+//   We store the current iterate as a private coordinate: `cur_coord'.
+//   Iteration is done C-style: the last coordinate varies quickest.
 
-  Note: iterating is only defined for bricks.
-*/
-template<int d>
-decomposition<d> &decomposition<d>::begin() {
-  iterate_count = 0;
-  cur_coord = coordinate_from_linear(iterate_count);
-  return *this;
-};
+//   Note: iterating is only defined for bricks.
+// */
+// template<int d>
+// decomposition<d> &decomposition<d>::begin() {
+//   iterate_count = 0;
+//   cur_coord = coordinate_from_linear(iterate_count);
+//   return *this;
+// };
 
-template<int d>
-decomposition<d> &decomposition<d>::end() {
-  // we end when we've counted all the tids
-  iterate_count = domain_layout.span();
-  return *this;
-};
+// template<int d>
+// decomposition<d> &decomposition<d>::end() {
+//   // we end when we've counted all the tids
+//   iterate_count = domain_layout.span();
+//   return *this;
+// };
 
-/*!
-  Here's how to iterate: 
-  - from last to first dimensions, find the dimension where you are not at the far edge
-  - increase the coordinate in that dimension
-  - all higher dimensions are reset to the first coordinate.
-*/
-template<int d>
-void decomposition<d>::operator++() {
-  cur_coord = coordinate_from_linear( ++iterate_count );
-  return;
-};
+// /*!
+//   Here's how to iterate: 
+//   - from last to first dimensions, find the dimension where you are not at the far edge
+//   - increase the coordinate in that dimension
+//   - all higher dimensions are reset to the first coordinate.
+// */
+// template<int d>
+// void decomposition<d>::operator++() {
+//   cur_coord = coordinate_from_linear( ++iterate_count );
+//   return;
+// };
 
-template<int d>
-bool decomposition<d>::operator!=( const decomposition<d> &other ) const {
-  return iterate_count!=other.iterate_count;
-};
+// template<int d>
+// bool decomposition<d>::operator!=( const decomposition<d> &other ) const {
+//   return iterate_count!=other.iterate_count;
+// };
 
-template<int d>
-bool decomposition<d>::operator==( const decomposition<d> &other ) const {
-  return iterate_count==other.iterate_count;
-};
+// template<int d>
+// bool decomposition<d>::operator==( const decomposition<d> &other ) const {
+//   return iterate_count==other.iterate_count;
+// };
 
-template<int d>
-coordinate<int,d> &decomposition<d>::operator*() {
-  //print("decomp::deref: {}\n",cur_coord.as_string());
-  return cur_coord;
-};
+// template<int d>
+// coordinate<int,d> &decomposition<d>::operator*() {
+//   //print("decomp::deref: {}\n",cur_coord.as_string());
+//   return cur_coord;
+// };
+
 
 #if 0
 /*
