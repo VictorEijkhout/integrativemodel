@@ -50,14 +50,15 @@ TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
     INFO( "1D" );
     mpi_decomposition<d> decomp(the_env);
     int count = 0;
-    // for ( auto dom : domains ) {
-    //   int lindom;
-    //   INFO( format("domain {} = {}",count,dom.as_string()) );
-    //   REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
-    //   INFO( "is linearly: " << lindom );
-    //   CHECK( lindom==mytid+count );
-    //   count++;
-    // }
+    for ( auto dom : domains ) {
+      int lindom;
+      INFO( format("domain {} = {}",count,dom.as_string()) );
+      REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
+      INFO( "is linearly: " << lindom );
+      CHECK( lindom==mytid+count );
+      count++;
+    }
+    REQUIRE( count==1 );
   }
   SECTION( "2D" ) {
     const int d=2;
