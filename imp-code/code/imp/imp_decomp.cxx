@@ -34,12 +34,7 @@ decomposition<d>::decomposition( const environment& env )
 
 template<int d>
 decomposition<d>::decomposition( const coordinate<int,d>& grid )
-  : domain_layout(grid),
-    vector< coordinate<int,d> >(grid.span()) {
-  for ( int i=0; i<domain_layout.span(); i++ ) {
-    // the `coordinate_from_linear' function only uses the `domain_layout' vector
-    this->at(i) = this->coordinate_from_linear(i);
-  }
+  : domain_layout(grid) {
 };
 
 // //! Get dimensionality.
