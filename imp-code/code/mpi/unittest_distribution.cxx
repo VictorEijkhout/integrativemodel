@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -27,7 +27,31 @@ using std::make_shared, std::shared_ptr;
 using std::string;
 using std::vector;
 
+#if 0
+class fclass {
+public: fclass(int i) {}; void foo() {};
+};
+TEST_CASE( "fclass" ) {
+  REQUIRE_NOTHROW( fclass myf(5) );
+  REQUIRE_NOTHROW( myf.foo() );
+};
+#endif
+
 auto &the_env = mpi_environment::instance();
+
+TEST_CASE( "creation","[mpi][distribution][01]" ) {
+  {
+    coordinate<index_int,1> omega( 10*the_env.nprocs() );
+    mpi_decomposition<1> procs( the_env );
+    mpi_distribution<1> omega_p( procs,omega );
+    //    REQUIRE_NOTHROW( mpi_distribution<1> omega_p( procs,omega ) );
+  }
+  // {
+  //   domain<index_int,2> omega( 10*the_env.nprocs() );
+  //   mpi_decomposition<2> procs( the_env );
+  //   REQUIRE_NOTHROW( mpi_decomposition<2> omega_p( omega,procs ) );
+  // }
+}
 
 #if 0
 TEST_CASE( "coordinate operations","[mpi][decomposition][03]" ) {

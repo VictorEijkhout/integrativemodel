@@ -4,7 +4,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2020
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** mpi_base.h: Header file for the MPI derived class
  ****
@@ -16,7 +16,7 @@
 #include "imp_distribution.h"
 
 template<int d>
-class mpi_distribution : virtual public distribution<d> {
+class mpi_distribution : public distribution<d> {
 public:
   mpi_distribution( const mpi_decomposition<d>&,const coordinate<index_int,d>& );
 };
