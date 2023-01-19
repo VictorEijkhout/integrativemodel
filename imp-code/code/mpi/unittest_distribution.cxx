@@ -43,14 +43,18 @@ TEST_CASE( "creation","[mpi][distribution][01]" ) {
   {
     coordinate<index_int,1> omega( 10*the_env.nprocs() );
     mpi_decomposition<1> procs( the_env );
+    REQUIRE_NOTHROW( mpi_distribution<1>( procs,omega ) );
     mpi_distribution<1> omega_p( procs,omega );
-    //    REQUIRE_NOTHROW( mpi_distribution<1> omega_p( procs,omega ) );
+    REQUIRE_NOTHROW( omega_p.local_domain() );
+    indexstructure<index_int,1> local_domain = omega_p.local_domain();
   }
-  // {
-  //   domain<index_int,2> omega( 10*the_env.nprocs() );
-  //   mpi_decomposition<2> procs( the_env );
-  //   REQUIRE_NOTHROW( mpi_decomposition<2> omega_p( omega,procs ) );
-  // }
+  {
+    coordinate<index_int,2> omega( 10*the_env.nprocs() );
+    mpi_decomposition<2> procs( the_env );
+    REQUIRE_NOTHROW( mpi_distribution<2>( procs,omega ) );
+    mpi_distribution<2> omega_p( procs,omega );
+    indexstructure<index_int,2> local_domain = omega_p.local_domain();
+  }
 }
 
 #if 0

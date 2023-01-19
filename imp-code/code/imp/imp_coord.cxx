@@ -1,3 +1,15 @@
+// -*- c++ -*-
+/****************************************************************
+ ****
+ **** This file is part of the prototype implementation of
+ **** the Integrative Model for Parallelism
+ ****
+ **** copyright Victor Eijkhout 2014-2023
+ ****
+ **** imp_coord.cxx: Implementation file for coordinate stuff
+ ****
+ ****************************************************************/
+
 #include "imp_coord.h"
 
 #include <array>
@@ -15,6 +27,18 @@ using std::shared_ptr, std::make_shared;
 #include <cassert>
 #include <fmt/format.h>
 using fmt::print,fmt::format;
+
+/*
+ * Couple of free functions
+ */
+
+template<typename I>
+vector<I> split_points(I total,int length) {
+  vector<I> points(length+1);
+  for (int ip=0; ip<=length; ip++)
+    points.at(ip) = (ip*total)/length;
+  return points;  
+};
 
 /*! Construct non-inclusive upper bound on
   a brick of size `s', the input.

@@ -17,6 +17,7 @@ distribution<d>::distribution
     ( const decomposition<d>& procs, const coordinate<index_int,d>& c ) {
   for (int id=0; id<d; id++) {
     int length = procs.size_of_dimension(id);
+    vector<index_int> starts = split_points(length);
     vector< indexstructure<index_int,1> > segments(length);
     patches.at(id) = segments;
   }

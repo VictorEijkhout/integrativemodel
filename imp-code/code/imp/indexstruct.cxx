@@ -193,17 +193,23 @@ std::string contiguous_indexstruct<I,d>::as_string() const {
 /*
  * Constructors
  */
+//! 1D constructor from scalars \todo does this make sense? lose?
 template<typename I,int d>
 strided_indexstruct<I,d>::strided_indexstruct(const I f,const I l,const I s)
   : strided_indexstruct<I,d>( coordinate<I,d>(f), coordinate<I,d>(l), s ) {
 };
 
+//! Constructor from arrays, delegates by making coordinates from them.
 template<typename I,int d>
 strided_indexstruct<I,d>::strided_indexstruct
         (const std::array<I,d> f,const std::array<I,d>  l,const I s)
   : strided_indexstruct<I,d>( coordinate<I,d>(f), coordinate<I,d>(l), s ) {
 };
 
+/*!
+  Base constructor, first copies first and last,
+  then shrinks last to make sure it is precisely included in the stride
+*/
 template<typename I,int d>
 strided_indexstruct<I,d>::strided_indexstruct
         (const coordinate<I,d> f,const coordinate<I,d>  l,const I s)

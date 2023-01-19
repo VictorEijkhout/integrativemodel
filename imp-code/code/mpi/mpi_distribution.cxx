@@ -19,5 +19,8 @@ mpi_distribution<d>::mpi_distribution
       : distribution<d>(procs,domain) {
 };
 
+template<int d>
+indexstructure<index_int,d> mpi_distribution<d>::local_domain() const;
+
 template class mpi_distribution<1>;
 template class mpi_distribution<2>;

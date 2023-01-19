@@ -1,3 +1,15 @@
+// -*- c++ -*-
+/****************************************************************
+ ****
+ **** This file is part of the prototype implementation of
+ **** the Integrative Model for Parallelism
+ ****
+ **** copyright Victor Eijkhout 2014-2023
+ ****
+ **** imp_coord.h: Header file for coordinate stuff
+ ****
+ ****************************************************************/
+
 #pragma once
 
 #include <array>
@@ -5,11 +17,17 @@
 #include "imp_env.h"
 #include "fmt/format.h"
 
+// forward definition
 template<class I,int d>
 class ioperator;
 
+/*
+ * Some free functions
+ */
 template<typename I,int d>
 std::array<I,d> endpoint(I s);
+template<typename I>
+std::vector<I> split_points(I,int);
 
 //! Processor coordinates on a pretend grid. We order them by rows.
 //! \todo write method to range over this
