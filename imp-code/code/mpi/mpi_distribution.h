@@ -6,7 +6,7 @@
  ****
  **** copyright Victor Eijkhout 2014-2023
  ****
- **** mpi_base.h: Header file for the MPI derived class
+ **** mpi_distribution.h: Header file for the MPI derived class
  ****
  ****************************************************************/
 
@@ -19,6 +19,8 @@ template<int d>
 class mpi_distribution : public distribution<d> {
 public:
   mpi_distribution( const mpi_decomposition<d>&,const coordinate<index_int,d>& );
+protected:
+  //! MPI distributions own a local domain on each process
   indexstructure<index_int,d> local_domain() const;
 };
 

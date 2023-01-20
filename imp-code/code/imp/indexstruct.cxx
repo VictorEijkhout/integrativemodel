@@ -177,11 +177,6 @@ shared_ptr<indexstruct<I,d>> empty_indexstruct<I,d>::struct_union
 };
 
 template<typename I,int d>
-contiguous_indexstruct<I,d>::contiguous_indexstruct
-        ( const std::array<I,d> s,const std::array<I,d> l )
-  : strided_indexstruct<I,d>(s,l,1) {};
-
-template<typename I,int d>
 std::string contiguous_indexstruct<I,d>::as_string() const {
   return fmt::format("contiguous: [{}--{}]",this->first[0],this->last[0]);
 };

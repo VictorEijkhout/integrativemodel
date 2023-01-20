@@ -337,11 +337,17 @@ public:
 template<typename I,int d>
 class contiguous_indexstruct : public strided_indexstruct<I,d> {
 public:
+  //! Constructor from first/last delegates to strided with stride 1
   contiguous_indexstruct(const coordinate<I,d> s,const coordinate<I,d> l)
     : strided_indexstruct<I,d>(s,l,1) {};
+  //! Constructing from a single coordinate means using it as first and last.
   contiguous_indexstruct(const coordinate<I,d> f)
     : contiguous_indexstruct<I,d>(f,f) {};
-  contiguous_indexstruct( const std::array<I,d> s,const std::array<I,d> l );
+  //! Constructor from first/last arrays delegates to strided. \todo delegate to coordinate version?
+  contiguous_indexstruct( const std::array<I,d> s,const std::array<I,d> l )
+  //  : strided_indexstruct<I,d>(s,l,1) {};
+    : contiguous_indexstruct( coordinate<I,d>(s), coordinate<I,d>(l) ) {};
+
   virtual bool is_contiguous() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("contiguous"); };
   std::shared_ptr<indexstruct<I,d>> make_clone() const override {

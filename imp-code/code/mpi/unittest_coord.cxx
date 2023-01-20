@@ -20,8 +20,8 @@
 #include "mpi_env.h"
 #include "imp_coord.h"
 
-using fmt::format;
-using fmt::print;
+using fmt::format, fmt::print;
+using std::vector;
 
 TEST_CASE( "end points","[arch][01]" ) {
 
@@ -38,14 +38,23 @@ TEST_CASE( "end points","[arch][01]" ) {
     REQUIRE( p4d2.at(0)==2 );
     REQUIRE( p4d2.at(1)==2 );
   }
-  // {
-  //   INFO( "p30 d3" );
-  //   auto p30d3 = endpoint<int,3>(30);
-  //   REQUIRE( p30d3.size()==3 );
-  //   REQUIRE( p30d3.at(0)==5 );
-  //   REQUIRE( p30d3.at(1)==3 );
-  //   REQUIRE( p30d3.at(2)==2 );
-  // }
+  {
+    INFO( "p30 d3" );
+    auto p30d3 = endpoint<int,3>(30);
+    REQUIRE( p30d3.size()==3 );
+    REQUIRE( p30d3.at(0)==5 );
+    REQUIRE( p30d3.at(1)==3 );
+    REQUIRE( p30d3.at(2)==2 );
+  }
+}
+
+TEST_CASE( "split points" ) {
+  vector<int> points;
+  REQUIRE_NOTHROW( points = split_points( 100,2 ) );
+  REQUIRE( points.size()==3 );
+  REQUIRE( points[0]==0 );
+  REQUIRE( points[1]==50 );
+  REQUIRE( points[2]==100 );
 }
 
 TEST_CASE( "coordinates" ) {
