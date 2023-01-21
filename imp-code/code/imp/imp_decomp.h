@@ -25,9 +25,6 @@
 template<class I,int d>
 std::array<I,d> endpoint(I s);
 
-// template<class I,int d>
-// std::array<I,d> farpoint(I s);
-
 class message;
 template<int d>
 class distribution;

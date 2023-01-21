@@ -31,7 +31,7 @@ CXXFLAGS = ${CXX_OPTFLAGS} -I${IMPCODEDIR} -I${CPPFORMAT_INC}
 	@tgt=$@ && tgtdir=$(dir $$tgt ) \
 	echo "Generic MPI compilation of $<" \
 	 && ${MPICXX} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} \
-	    -I${CATCH_INC} -I${EIGEN_INC} -I${GSL_INC} \
+	    -I${LMOD_CATCH2_INC} -I${EIGEN_INC} -I${GSL_INC} \
 	    -c $<
 
 LIBCXX = -lstdc++
@@ -66,7 +66,7 @@ ${UNITTESTS} ::  \
 	  ${UNITTEST_OBJS} \
 	  ${SPECIFIC_OBJECTS_${@}} \
 	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
-	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
+	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
 ${UNITTEST_OBJS} : mpi_base.h
 
@@ -93,7 +93,7 @@ unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
 	  unittest_main.o $@.o \
 	  ${ENV_OBJS} \
 	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
-	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
+	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
 mpi_env.o : mpi_env.h ${IMPCODEDIR}/imp_env.h
 ${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
@@ -109,7 +109,7 @@ unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
 	  unittest_main.o $@.o \
 	  ${COORD_OBJS} \
 	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
-	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
+	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
 ${IMPCODEDIR}/imp_coord.o : ${IMPCODEDIR}/imp_coord.cxx ${IMPCODEDIR}/imp_coord.h
 	cd ${IMPCODEDIR} && make imp_coord.o
@@ -126,7 +126,7 @@ unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	  unittest_main.o $@.o \
 	  ${DECOMP_OBJS} \
 	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
-	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
+	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
 mpi_decomp.o : mpi_decomp.h ${IMPCODEDIR}/imp_decomp.h
 ${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
@@ -144,7 +144,7 @@ unittest_distribution : unittest_main.o unittest_distribution.o ${DISTR_OBJS}
 	  unittest_main.o $@.o \
 	  ${DISTR_OBJS} \
 	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
-	  -L${CATCH_LIB} -lCatch2Main -lCatch2 \
+	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
 mpi_distribution.o : mpi_distribution.h ${IMPCODEDIR}/imp_distribution.h
 ${IMPCODEDIR}/imp_distribution.o : ${IMPCODEDIR}/imp_distribution.cxx ${IMPCODEDIR}/imp_distribution.h

@@ -441,12 +441,12 @@ template array<int,1> endpoint<int,1>(int);
 template array<int,2> endpoint<int,2>(int);
 template array<int,3> endpoint<int,3>(int);
 
-template vector<int> split_points(int total,int length);
-template vector<index_int> split_points(index_int total,int length);
-
 template array<index_int,1> endpoint<index_int,1>(index_int);
 template array<index_int,2> endpoint<index_int,2>(index_int);
 template array<index_int,3> endpoint<index_int,3>(index_int);
+
+template vector<int> split_points(int total,int length);
+template vector<index_int> split_points(index_int total,int length);
 
 template void require_sorted( vector<coordinate<int,1>> idxs );
 template void require_sorted( vector<coordinate<int,2>> idxs );

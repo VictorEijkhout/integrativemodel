@@ -14,24 +14,27 @@
 
 using std::array;
 
+//! The constructor builds the single local domain
 template<int d>
 mpi_distribution<d>::mpi_distribution
     ( const mpi_decomposition<d>& procs,const coordinate<index_int,d>& domain )
       : distribution<d>(procs,domain) {
+  auto p = procs.procno();
   using I = index_int;
   coordinate<I,d> first,last;
-  auto p = procs.procno();
   for ( int id=0; id<d; id++) {
-    first.at(id) = patches.at(id).at(p);
-    last.at(id) = patches.at(id).at(p+1);
+    first.at(id) = this->patches.at(id).at(p).first_index().at(0);
+     last.at(id) = this->patches.at(id).at(p). last_index().at(0);
   }
-  local_domain = indexstructure<I,d>( contiguous_indexstruct<I,d>(first,last) );
+  _local_domain = indexstructure<I,d>
+    ( contiguous_indexstruct<I,d>( first,last ) );
 };
 
+//! MPI distributions own a local domain on each process
 template<int d>
-indexstructure<index_int,d> mpi_distribution<d>::local_domain() const {
-  
-}
+const indexstructure<index_int,d>& mpi_distribution<d>::local_domain() const {
+  return _local_domain;
+};
 
 template class mpi_distribution<1>;
 template class mpi_distribution<2>;

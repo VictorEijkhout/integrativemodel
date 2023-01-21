@@ -23,7 +23,6 @@ using std::move;
 using std::make_shared, std::shared_ptr;
 
 using std::string;
-
 using std::vector;
 
 /****************
@@ -2250,9 +2249,15 @@ template struct fmt::formatter<shared_ptr<indexstruct<int,1>>>;
 template struct fmt::formatter<shared_ptr<indexstruct<index_int,1>>>;
 template struct fmt::formatter<shared_ptr<indexstruct<int,2>>>;
 template struct fmt::formatter<shared_ptr<indexstruct<index_int,2>>>;
+template struct fmt::formatter<shared_ptr<indexstruct<int,3>>>;
+template struct fmt::formatter<shared_ptr<indexstruct<index_int,3>>>;
 
 template class indexstructure<int,1>;
 template class indexstructure<index_int,1>;
+template class indexstructure<int,2>;
+template class indexstructure<index_int,2>;
+template class indexstructure<int,3>;
+template class indexstructure<index_int,3>;
 
 template class contiguous_indexstruct<int,1>;
 template class contiguous_indexstruct<index_int,1>;
@@ -2268,12 +2273,24 @@ template class strided_indexstruct<index_int,2>;
 template class indexed_indexstruct<int,2>;
 template class indexed_indexstruct<index_int,2>;
 
-template class ioperator<int,1>;
-template class ioperator<int,2>;
-template class ioperator<index_int,1>;
-template class ioperator<index_int,2>;
+template class contiguous_indexstruct<int,3>;
+template class contiguous_indexstruct<index_int,3>;
+template class strided_indexstruct<int,3>;
+template class strided_indexstruct<index_int,3>;
+template class indexed_indexstruct<int,3>;
+template class indexed_indexstruct<index_int,3>;
 
+template class ioperator<int,1>;
+template class ioperator<index_int,1>;
 template class sigma_operator<int,1>;
-template class sigma_operator<int,2>;
 template class sigma_operator<index_int,1>;
+
+template class ioperator<int,2>;
+template class ioperator<index_int,2>;
+template class sigma_operator<int,2>;
 template class sigma_operator<index_int,2>;
+
+template class ioperator<int,3>;
+template class ioperator<index_int,3>;
+template class sigma_operator<int,3>;
+template class sigma_operator<index_int,3>;

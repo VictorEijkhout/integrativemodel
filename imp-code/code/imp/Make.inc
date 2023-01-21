@@ -22,8 +22,8 @@ TACC_FAMILY_COMPILER = clang
 ####
 #### catch
 ####
-CATCH_INC = ${TACC_CATCH2_INC}
-CATCH_LIB = ${TACC_CATCH2_LIB}
+CATCH_INC = ${LMOD_CATCH2_INC}
+CATCH_LIB = ${LMOD_CATCH2_LIB}
 
 ####
 #### Eigen
@@ -38,8 +38,8 @@ EFENCE_LIB = /opt/local/lib/libefence.a
 ####
 #### fmtlib
 ####
-CPPFORMAT_INC = ${TACC_FMTLIB_INC}
-CPPFORMAT_LIB = ${TACC_FMTLIB_LIB}
+CPPFORMAT_INC = ${LMOD_FMTLIB_INC}
+CPPFORMAT_LIB = ${LMOD_FMTLIB_LIB}
 LIBFORMAT = libfmt.a
 
 ####
@@ -53,12 +53,12 @@ MPLDIR = ${HOME}/Installation/mpl/mpl
 
 LIBCXX_intel = 
 LIBCXX_gcc   = -lc++
-LIBCXX = ${LIBCXX_${TACC_FAMILY_COMPILER}}
+LIBCXX = ${LIBCXX_${LMOD_FAMILY_COMPILER}}
 
 ####
 #### OpenMP
 ####
 INCOMP_clang = -I/opt/local/include/libomp
 LIBOMP_clang =  -L/opt/local/lib/libomp -lomp
-INCOMP = ${INCOMP_${TACC_FAMILY_COMPILER}}
-LIBOMP = ${LIBOMP_${TACC_FAMILY_COMPILER}}
+INCOMP = ${INCOMP_${LMOD_FAMILY_COMPILER}}
+LIBOMP = ${LIBOMP_${LMOD_FAMILY_COMPILER}}

@@ -13,36 +13,36 @@
 .PRECIOUS: %.o. %.dSYM
 
 # set this in Make.inc: OPTLEVEL = 0/1/2
-ifdef TACC_ITAC_DIR
-  ITACFLAGS = -trace -DVT -I${TACC_ITAC_DIR}/intel64/include
+ifdef LMOD_ITAC_DIR
+  ITACFLAGS = -trace -DVT -I${LMOD_ITAC_DIR}/intel64/include
 else
   ITACFLAGS =
 endif
 
 C_COMPILER_gcc   = gcc
 C_COMPILER_intel = icc
-C_COMPILER = ${C_COMPILER_${TACC_FAMILY_COMPILER}}
+C_COMPILER = ${C_COMPILER_${LMOD_FAMILY_COMPILER}}
 
 CXX_COMPILER_gcc   = g++
 CXX_COMPILER_intel = icpc
 CXX_COMPILER_clang = clang++
-CXX_COMPILER = ${CXX_COMPILER_${TACC_FAMILY_COMPILER}}
+CXX_COMPILER = ${CXX_COMPILER_${LMOD_FAMILY_COMPILER}}
 CXX_LINKER = ${CXX_COMPILER}
 
 LANGUAGE_LEVEL = 20
 CXX_OPTFLAGS_gcc   = -O${OPTLEVEL} -ggdb -std=c++${LANGUAGE_LEVEL} -Wno-sign-compare -fpermissive
 CXX_OPTFLAGS_intel = -O${OPTLEVEL} -g    -std=c++${LANGUAGE_LEVEL} ${ITACFLAGS} -fno-omit-frame-pointer
 CXX_OPTFLAGS_clang = -O${OPTLEVEL} -g    -std=c++${LANGUAGE_LEVEL} ${ITACFLAGS} -fpermissive
-CXX_OPTFLAGS = ${CXX_OPTFLAGS_${TACC_FAMILY_COMPILER}}
+CXX_OPTFLAGS = ${CXX_OPTFLAGS_${LMOD_FAMILY_COMPILER}}
 
 OMPFLAGS_intel    = -qopenmp
 OMPFLAGS_gcc      = -fopenmp
 OMPFLAGS_clang    = ${INCOMP}
-OMPFLAGS = ${OMPFLAGS_${TACC_FAMILY_COMPILER}}
+OMPFLAGS = ${OMPFLAGS_${LMOD_FAMILY_COMPILER}}
 
 MPIFLAGS_intel    = 
 MPIFLAGS_gnu      = 
-MPIFLAGS = ${MPIFLAGS_${TACC_FAMILY_COMPILER}}
+MPIFLAGS = ${MPIFLAGS_${LMOD_FAMILY_COMPILER}}
 
 CXXUNITFLAGS = # -fpermissive
 #-Wnounused-but-set-variable -Werror=no-unused-variable
@@ -58,7 +58,7 @@ clean ::
 	@for d in *.dot ; do /bin/rm -f $$d $${d%%.dot}.pdf ; done
 
 diagnosis :
-	@echo "TACC_FAMILY_COMPILER=${TACC_FAMILY_COMPILER}"
+	@echo "LMOD_FAMILY_COMPILER=${LMOD_FAMILY_COMPILER}"
 	@echo "CXX_OPTFLAGS=${CXX_OPTFLAGS}"
 	@echo "CXXFLAGS=${CXXFLAGS}"
 	@echo "CXX=${CXX}"

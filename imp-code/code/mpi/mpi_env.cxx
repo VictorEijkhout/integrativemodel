@@ -1,3 +1,14 @@
+/****************************************************************
+ ****
+ **** This file is part of the prototype implementation of
+ **** the Integrative Model for Parallelism
+ ****
+ **** copyright Victor Eijkhout 2014-2023
+ ****
+ **** mpi_env.cxx : mpi environment management
+ ****
+ ****************************************************************/
+
 #include <stdarg.h>
 #include <unistd.h> // just for sync
 #include <iostream>
@@ -28,12 +39,12 @@ mpi_environment::mpi_environment()
 void mpi_environment::init( int &argc,char **&argv ) {
   MPI_Init(&argc,&argv);
   comm = MPI_COMM_WORLD;
-  nprocs = [=] () -> int {
+  nprocs = [this] () -> int {
     int np;
     MPI_Comm_size(comm,&np);
     return np;
   };
-  procid = [=] () -> int {
+  procid = [this] () -> int {
     int np;
     MPI_Comm_rank(comm,&np);
     return np;

@@ -4,7 +4,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** mpi_decomp.h: Header file for MPI decompositions
  ****
@@ -30,5 +30,8 @@ public:
   mpi_decomposition( const coordinate<int,d>&,int );
   void set_decomp_factory();
   virtual std::string as_string() const override;
+protected:
+  int _procno=-1;
+public:
+  int procno() const;
 };
-

@@ -373,4 +373,4 @@ std::string architecture::as_string() const {
 
 template class decomposition<1>;
 template class decomposition<2>;
-
+template class decomposition<3>;

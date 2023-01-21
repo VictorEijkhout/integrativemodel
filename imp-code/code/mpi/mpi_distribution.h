@@ -19,8 +19,9 @@ template<int d>
 class mpi_distribution : public distribution<d> {
 public:
   mpi_distribution( const mpi_decomposition<d>&,const coordinate<index_int,d>& );
+public:
+  const indexstructure<index_int,d>& local_domain() const;
 protected:
-  //! MPI distributions own a local domain on each process
-  indexstructure<index_int,d> local_domain() const;
+  indexstructure<index_int,d> _local_domain;
 };
 

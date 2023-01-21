@@ -1,3 +1,14 @@
+/****************************************************************
+ ****
+ **** This file is part of the prototype implementation of
+ **** the Integrative Model for Parallelism
+ ****
+ **** copyright Victor Eijkhout 2014-2023
+ ****
+ **** imp_env.cxx : environment management
+ ****
+ ****************************************************************/
+
 #include "imp_env.h"
 
 using std::string;

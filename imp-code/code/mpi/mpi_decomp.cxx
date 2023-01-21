@@ -24,9 +24,21 @@ template<int d>
 mpi_decomposition<d>::mpi_decomposition
     ( const coordinate<int,d> &grid,int procid )
       : decomposition<d>(grid) {
-    this->push_back
-      ( decomposition<d>::get_domain_layout().location_of_linear(procid) );
+  // record our process number
+  _procno = procid;
+  // record our process coordinate
+  this->push_back
+    ( decomposition<d>::get_domain_layout().location_of_linear(procid) );
 };
+
+//! Our process rank. \todo derive this from the coordinate?
+template<int d>
+int mpi_decomposition<d>::procno() const {
+  if (_procno<0)
+    throw( "procno has not been set" );
+  return _procno;
+};
+
 
 /*!
   A factory for making new distributions from this decomposition
@@ -45,3 +57,4 @@ std::string mpi_decomposition<d>::as_string() const {
 
 template class mpi_decomposition<1>;
 template class mpi_decomposition<2>;
+template class mpi_decomposition<3>;
