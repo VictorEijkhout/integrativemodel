@@ -1124,7 +1124,7 @@ int coordinate::linearize( const coordinate &layout ) const {
   Get a process linear number wrt a surrounding cube.
 */
 int coordinate::linearize( const decomposition &procstruct ) const {
-  return linearize( procstruct.get_domain_layout() );
+  return linearize( procstruct.domain_layout() );
 };
 
 /*! Construct processor coordinate that is identical to self,
@@ -1431,7 +1431,7 @@ shared_ptr<multi_indexstruct> parallel_structure::get_processor_structure
 
   try {
     auto d = get_decomposition();
-    auto layout = d.get_domain_layout();
+    auto layout = d.domain_layout();
     int plinear = p.linearize(layout);
     if (plinear>=multi_structures.size())
       throw(format("Coordinate {} linear {} out of bound {} for <<{}>>",
@@ -1461,7 +1461,7 @@ void parallel_structure::set_processor_structure
   if (!get_is_converted())
     convert_to_multi_structures();
   decomposition *d = dynamic_cast<decomposition*>(this);
-  auto layout = d->get_domain_layout();
+  auto layout = d->domain_layout();
   int plinear = p.linearize(layout);
   multi_structures.at(plinear) = pstruct;
   set_is_converted(); set_is_orthogonal(false); 
@@ -3028,7 +3028,7 @@ void object_data::inherit_data
   data_status = object_data_status::INHERITED;
 };
 
-//! Get the data size by local number, computed by \ref get_domain_local_number.
+//! Get the data size by local number, computed by \ref domain_local_number.
 index_int object_data::get_data_size( int n ) {
   return data_sizes.at(n);
 };
@@ -3111,7 +3111,7 @@ void object::register_data_on_domain
     ( coordinate &dom,data_pointer dat,
       index_int s, index_int offset ) {
   register_data_on_domain_number
-    (get_distribution()->get_domain_local_number(dom),dat,s,offset);
+    (get_distribution()->domain_local_number(dom),dat,s,offset);
 };
 
 //! Store a data pointer by local index; see \ref register_data_on_domain for global
@@ -3130,7 +3130,7 @@ data_pointer object::get_data( const coordinate &&p ) const {
   //  if (!lives_on(p)) throw(format("object does not live on {}",p->as_string()));
   if (has_data_status_unallocated())
     throw(format("Trying to get data from unallocated object <<{}>>",get_name()));
-  int locdom = get_distribution()->get_domain_local_number(p);
+  int locdom = get_distribution()->domain_local_number(p);
   auto pointer = get_nth_data_pointer(locdom);
   return pointer;
 };
@@ -4027,7 +4027,7 @@ int task::get_nsends() {
   auto outdistro = out->get_distribution();
   int ntids = outdistro->domains_volume(), nrecvs=0,nsends;
   vector<int> my_senders; my_senders.reserve(ntids);
-  auto layout = outdistro->get_domain_layout();
+  auto layout = outdistro->domain_layout();
   for (int i=0; i<ntids; ++i) my_senders.push_back(0);
   for ( auto msg : get_receive_messages() ) {
     int s = msg->get_sender().linearize(layout);

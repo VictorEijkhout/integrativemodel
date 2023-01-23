@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** imp_decomp.cxx: Implementations of the decomposition base classes
  ****
@@ -34,28 +34,31 @@ decomposition<d>::decomposition( const environment& env )
 
 template<int d>
 decomposition<d>::decomposition( const coordinate<int,d>& grid )
-  : domain_layout(grid) {
+  : _domain_layout(grid) {
 };
 
-// //! Get dimensionality.
-// template<int d>
-// int decomposition<d>::dimensionality() const {
-//   return d;
-// };
-
+//! How many processes in dimension `d'?
 template<int d>
 int decomposition<d>::size_of_dimension(int nd) const {
-  return domain_layout.at(nd);
+  return _domain_layout.at(nd);
 };
 
+//! Start points in dimension `d' of a domain, represented by a coordinate<d>
+template<int d>
+vector<index_int> decomposition<d>::split_points_d
+    ( const coordinate<index_int,d>& c,int id ) const {
+  index_int domain_d = c.at(id);
+  int procs_d = size_of_dimension(id);
+  return split_points(domain_d,procs_d);
+};
 
-//! number of local domains
+//! Number of local domains: 1 for MPI, all for OpenMP
 template<int d>
 int decomposition<d>::local_volume() const { return this->size(); };
 
-//! number of global domains
+//! Number of global domains
 template<int d>
-int decomposition<d>::global_volume() const { return domain_layout.span(); };
+int decomposition<d>::global_volume() const { return _domain_layout.span(); };
 
 #if 0
 template<int d>
@@ -74,7 +77,7 @@ const coordinate<int,d> &decomposition<d>::last_local_domain() const {
 
 //! Get the local number where this domain is stored. Domains are multi-dimensionally numbered.
 template<int d>
-int decomposition<d>::get_domain_local_number( const coordinate<int,d> &dcoord ) const {
+int decomposition<d>::domain_local_number( const coordinate<int,d> &dcoord ) const {
   // for ( int i=0; i<mdomains.size(); i++) {
   //   if (mdomains.at(i)==d) return i;
   // }
@@ -93,35 +96,12 @@ const decomposition<d> &decomposition<d>::get_embedded_decomposition() const {
   return *(embedded_decomposition.get());
 };
 
-// /*! Add a bunch of 1d local domains
-//   \todo test for 1d-ness
-//   \todo use std_ptr to indexstruct*
-// */
-// //! Add a multi-d local domain.
-// template<int d>
-// void decomposition<d>::add_domain( const coordinate<int,d>& dom,bool recompute ) {
-//   throw("can not add domain");
-//   // int dim = dom.same_dimensionality( domain_layout.dimensionality() );
-//   // mdomains.push_back(dom);
-//   // if (recompute) set_corners();
-// };
-
-// template<int d>
-// void decomposition<d>::add_domains( const indexstruct<int,d>& doms ) {
-//   throw( "need to rewrite add_domains for multi-d" );
-//   // for ( auto i=doms.first_index(); i<=doms.last_index(); i++ ) {
-//   //   int ii = (int)i; // std::static_cast<int>(i);
-//   //   add_domain( coordinate<int,d>( array<int,d>(ii) ),false );
-//   // }
-//   // set_corners();
-// };
-
 /*
  * Coordinate conversion stuff
  */
 template<int d>
 int decomposition<d>::linearize( const coordinate<int,d> &p ) const {
-  return domain_layout.linear_location_of(p);
+  return _domain_layout.linear_location_of(p);
 };
 
 /*!
@@ -132,9 +112,9 @@ template<int d>
 coordinate<int,d> decomposition<d>::coordinate_from_linear(int p) const {
   coordinate<int,d> pp;
   for (int id=d-1; id>=0; id--) {
-    int dsize = domain_layout.at(id);
+    int dsize = _domain_layout.at(id);
     if (dsize==0)
-      throw(format("weird layout <<{}>>",domain_layout.as_string()));
+      throw(format("weird layout <<{}>>",_domain_layout.as_string()));
     pp.at(id) = p%dsize; p = p/dsize;
   };
   return pp;
@@ -162,7 +142,7 @@ const coordinate<int,d> &decomposition<d>::get_farpoint_processor() const {
 
 template<int d>
 int decomposition<d>::linear_location_of( const coordinate<int,d>& c ) const {
-  return domain_layout.linear_location_of(c);
+  return _domain_layout.linear_location_of(c);
 };
 
 template<int d>

@@ -18,7 +18,7 @@
 template<int d>
 class mpi_distribution : public distribution<d> {
 public:
-  mpi_distribution( const mpi_decomposition<d>&,const coordinate<index_int,d>& );
+  mpi_distribution( const coordinate<index_int,d>&, const mpi_decomposition<d>& );
 public:
   const indexstructure<index_int,d>& local_domain() const;
 protected:

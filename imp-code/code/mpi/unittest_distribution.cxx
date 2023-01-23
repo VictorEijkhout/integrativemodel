@@ -40,19 +40,37 @@ TEST_CASE( "fclass" ) {
 auto &the_env = mpi_environment::instance();
 
 TEST_CASE( "creation","[mpi][distribution][01]" ) {
+  INFO( "proc: " << the_env.procid() );
   {
+    INFO( "1D" );
     coordinate<index_int,1> omega( 10*the_env.nprocs() );
     mpi_decomposition<1> procs( the_env );
-    REQUIRE_NOTHROW( mpi_distribution<1>( procs,omega ) );
-    mpi_distribution<1> omega_p( procs,omega );
+    REQUIRE_NOTHROW( mpi_distribution<1>( omega,procs ) );
+  }
+  {
+    INFO( "2D" );
+    coordinate<index_int,2> omega( 10*the_env.nprocs() );
+    mpi_decomposition<2> procs( the_env );
+    REQUIRE_NOTHROW( mpi_distribution<2>( omega,procs ) );
+  }
+}
+
+TEST_CASE( "local domains","[mpi][distribution][02]" ) {
+  INFO( "proc: " << the_env.procid() );
+  {
+    INFO( "1D" );
+    coordinate<index_int,1> omega( 10*the_env.nprocs() );
+    mpi_decomposition<1> procs( the_env );
+    mpi_distribution<1> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,1> local_domain = omega_p.local_domain();
   }
   {
+    INFO( "2D" );
     coordinate<index_int,2> omega( 10*the_env.nprocs() );
     mpi_decomposition<2> procs( the_env );
-    REQUIRE_NOTHROW( mpi_distribution<2>( procs,omega ) );
-    mpi_distribution<2> omega_p( procs,omega );
+    mpi_distribution<2> omega_p( omega,procs );
+    REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,2> local_domain = omega_p.local_domain();
   }
 }

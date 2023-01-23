@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "mpi.h"
 #include "mpi_env.h"
 #include "imp_decomp.h"
@@ -32,6 +34,8 @@ public:
   virtual std::string as_string() const override;
 protected:
   int _procno=-1;
+  mutable std::optional<coordinate<int,d>> proc_coord = {};
 public:
   int procno() const;
+  virtual const coordinate<int,d>& this_proc() const override;
 };

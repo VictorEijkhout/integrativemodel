@@ -22,7 +22,7 @@ protected:
     std::vector< indexstructure<index_int,1> >,
     d> patches;
 public:
-  distribution( const decomposition<d>&, const coordinate<index_int,d>& );
+  distribution( const coordinate<index_int,d>&, const decomposition<d>& );
 
 #if 0
   /*

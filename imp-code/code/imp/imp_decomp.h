@@ -4,7 +4,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** imp_decomp.h: Header file for the decomposition base classes
  ****
@@ -36,6 +36,8 @@ class task;
   in a d-dimensional grid.
   It contains (through inheritance) a vector of the local domains.
   For MPI that will be a single domain, for OpenMP all, because shared memory.
+
+  This class is virtual because of the `this_proc' method.
  */
 template<int d>
 class decomposition : public std::vector<coordinate<int,d>> {
@@ -47,15 +49,16 @@ public:
   decomposition( const environment& env );
 private:
   //! A vector of the sizes in all the dimensions
-  coordinate<int,d> domain_layout;
+  coordinate<int,d> _domain_layout;
   coordinate<int,d> closecorner,farcorner;
 public:
-  //  int dimensionality() const; int same_dimensionality(int dd) const;
-  void set_corners();
-  const coordinate<int,d> &get_domain_layout() const { return domain_layout; };
+  std::vector<index_int> split_points_d( const coordinate<index_int,d>& c,int id ) const;
+  //  void set_corners();
+  const coordinate<int,d> &domain_layout() const { return _domain_layout; };
   const coordinate<int,d> &get_origin_processor() const;
   const coordinate<int,d> &get_farpoint_processor() const;
   int linear_location_of( const coordinate<int,d>& ) const;
+  virtual const coordinate<int,d>& this_proc() const = 0;
   //! How many processors do we have in dimension `nd'?
   int size_of_dimension(int nd) const;
   //! \todo do we really need this?
@@ -80,7 +83,7 @@ public:
   const coordinate<int,d> &last_local_domain() const;
   //! The local number of domains.
   int local_ndomains() const { return this->size(); };
-  int get_domain_local_number( const coordinate<int,d>& ) const;
+  int domain_local_number( const coordinate<int,d>& ) const;
 
   virtual std::string as_string() const;
 

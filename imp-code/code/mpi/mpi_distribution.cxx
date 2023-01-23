@@ -17,14 +17,15 @@ using std::array;
 //! The constructor builds the single local domain
 template<int d>
 mpi_distribution<d>::mpi_distribution
-    ( const mpi_decomposition<d>& procs,const coordinate<index_int,d>& domain )
-      : distribution<d>(procs,domain) {
-  auto p = procs.procno();
+    ( const coordinate<index_int,d>& domain, const mpi_decomposition<d>& procs )
+      : distribution<d>(domain,procs) {
+  const coordinate<int,d> this_proc = procs.this_proc();
   using I = index_int;
   coordinate<I,d> first,last;
   for ( int id=0; id<d; id++) {
-    first.at(id) = this->patches.at(id).at(p).first_index().at(0);
-     last.at(id) = this->patches.at(id).at(p). last_index().at(0);
+    auto pd = this_proc.at(id);
+    first.at(id) = this->patches.at(id).at(pd).first_index().at(0);
+    last .at(id) = this->patches.at(id).at(pd). last_index().at(0);
   }
   _local_domain = indexstructure<I,d>
     ( contiguous_indexstruct<I,d>( first,last ) );

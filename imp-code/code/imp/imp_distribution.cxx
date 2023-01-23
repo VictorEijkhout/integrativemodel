@@ -10,23 +10,31 @@
  ****************************************************************/
 
 #include "imp_distribution.h"
+#include <cassert>
 using std::vector;
 
+/*!
+ * d-dimensional distribution as orthogonal product of 1-d block distributions
+ */
 template<int d>
 distribution<d>::distribution
-    ( const decomposition<d>& procs, const coordinate<index_int,d>& c ) {
+    ( const coordinate<index_int,d>& c,const decomposition<d>& procs ) {
   using I = index_int;
+  I domain_size_reconstruct{1}; int procs_reconstruct{1};
   for (int id=0; id<d; id++) {
-    I domain_d = c.at(id);
-    int procs_d = procs.size_of_dimension(id);
-    vector<I> starts = split_points(domain_d,procs_d);
-    vector< indexstructure<I,1> > segments(procs_d);
+    vector<I> starts = procs.split_points_d(c,id);
+    domain_size_reconstruct *= starts.back();
+    // allocate vector for domain sides;
+    vector< indexstructure<I,1> > segments;
+    int procs_d = procs.size_of_dimension(id); procs_reconstruct *= procs_d;
     for (int ip=0; ip<procs_d; ip++) {
       coordinate<I,1> first( starts.at(ip) ), last( starts.at(ip+1) );
-      segments.at(ip) = indexstructure<I,1>( contiguous_indexstruct<I,1>(first,last) );
+      segments.push_back( indexstructure<I,1>( contiguous_indexstruct<I,1>(first,last) ) );
     }
     patches.at(id) = segments;
   }
+  assert( domain_size_reconstruct==c.span() );
+  assert( procs_reconstruct==procs.global_volume() );
 };
 
 template class distribution<1>;

@@ -48,6 +48,7 @@ TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
   SECTION( "1D" ) {
     const int d=1;
     INFO( "1D" );
+    REQUIRE_NOTHROW( mpi_decomposition<d>(the_env) );
     mpi_decomposition<d> decomp(the_env);
     int count = 0;
     for ( auto dom : decomp ) {
@@ -63,6 +64,21 @@ TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
   SECTION( "2D" ) {
     const int d=2;
     INFO( "2D" );
+    REQUIRE_NOTHROW( mpi_decomposition<d>(the_env) );
+    mpi_decomposition<d> decomp(the_env);
+    int count = 0;
+    for ( auto dom : decomp ) {
+      int lindom = decomp.linear_location_of(dom); // dom.at(0);
+      INFO( "domain=" << lindom );
+      CHECK( lindom==mytid+count );
+      count++;
+    }
+    REQUIRE( count==1 );
+  };
+  SECTION( "3D" ) {
+    const int d=3;
+    INFO( "3D" );
+    REQUIRE_NOTHROW( mpi_decomposition<d>(the_env) );
     mpi_decomposition<d> decomp(the_env);
     int count = 0;
     for ( auto dom : decomp ) {
@@ -75,3 +91,40 @@ TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
   };
 }
 
+TEST_CASE( "coordinate subdivision" ) {
+  SECTION( "2D" ) {
+    const int d=2;
+    INFO( "2D on " << the_env.nprocs() << " procs" );
+    using I = index_int;
+    mpi_decomposition<d> decomp(the_env);
+    /*
+     * Create a coordinate with component in dimension `d'
+     * being of size 10 * p_d
+     */
+    // step 1 : std::array
+    const int size_d{10}; array<I,d> coord;
+    /* check */ int proc_total{1};
+    for ( int id=0; id<d; id++ ) {
+      int proc_d;
+      REQUIRE_NOTHROW( proc_d = decomp.size_of_dimension(id) );
+      coord.at(id) = proc_d * size_d;
+      proc_total *= proc_d;
+    }
+    /* check */ REQUIRE( proc_total==the_env.nprocs() );
+    // step 2 : turn std::array into a coordinate
+    REQUIRE_NOTHROW( coordinate<I,d>( coord ) );
+    coordinate<I,d> domain(coord);
+    // step 3 : test coordinate & split points
+    for ( int id=0; id<d; id++ ) {
+      I domain_d; REQUIRE_NOTHROW( domain_d = domain.at(id) );
+      int proc_d; REQUIRE_NOTHROW( proc_d = decomp.size_of_dimension(id) );
+      REQUIRE( domain_d==proc_d*size_d );
+
+      vector<I> splits_d;
+      REQUIRE_NOTHROW( splits_d = decomp.split_points_d( coord,id ) );
+      REQUIRE( splits_d.size()==proc_d+1 );
+      REQUIRE( splits_d.at(0)==0 );
+      REQUIRE( splits_d.back()==domain_d );
+    }
+  };
+}

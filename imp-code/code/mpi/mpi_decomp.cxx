@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** mpi_decomp.cxx: Implementations of the MPI decompositions classes
  ****
@@ -11,7 +11,11 @@
 
 #include "mpi_env.h"
 #include "mpi_decomp.h"
+// from fmt
 using fmt::print;
+// from optional
+#include <optional>
+// using std::has_value;
 
 //! Multi-d decomposition from default grid from environment
 template<int d>
@@ -28,17 +32,26 @@ mpi_decomposition<d>::mpi_decomposition
   _procno = procid;
   // record our process coordinate
   this->push_back
-    ( decomposition<d>::get_domain_layout().location_of_linear(procid) );
+    ( decomposition<d>::domain_layout().location_of_linear(procid) );
 };
+
+/*
+ * Stuff related to this MPI process
+ */
 
 //! Our process rank. \todo derive this from the coordinate?
 template<int d>
 int mpi_decomposition<d>::procno() const {
-  if (_procno<0)
-    throw( "procno has not been set" );
   return _procno;
 };
 
+//! This process as d-dimensional coordinate
+template<int d>
+const coordinate<int,d>& mpi_decomposition<d>::this_proc() const {
+  if ( not proc_coord.has_value() )
+    proc_coord = this->coordinate_from_linear(_procno);
+  return proc_coord.value();
+};
 
 /*!
   A factory for making new distributions from this decomposition
