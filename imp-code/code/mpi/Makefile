@@ -23,10 +23,6 @@ MPICODEDIR = ../mpi
 ## include ../imp/Make.imp
 
 CXXFLAGS = ${CXX_OPTFLAGS} -I${IMPCODEDIR} -I${CPPFORMAT_INC}
-# ${IMPCODEDIR}/%.o : ${IMPCODEDIR}/%.cxx
-# 	echo "MPI requires IMP compilation of $<" \
-# 	 && cd ${IMPCODEDIR} \
-# 	 && file=$< && make --no-print-directory $(nodir $$file)
 %.o : %.cxx
 	@tgt=$@ && tgtdir=$(dir $$tgt ) \
 	echo "Generic MPI compilation of $<" \
@@ -41,34 +37,6 @@ LIBCXX = -lstdc++
 ####
 info ::
 	@echo "make unittest_TYPE (choices: ${UNITTESTS})"
-
-.PHONY: unittests
-unittests : ${UNITTESTS}
-UNITTESTS = \
-  unittest_startup unittest_index unittest_proc unittest_sparse \
-  unittest_operator unittest_struct unittest_tree unittest_collective \
-  unittest_over \
-  unittest_kmeans unittest_lapack unittest_ops unittest_cg unittest_nbody \
-  unittest_lulesh
-UNITTEST_OFILES = ${patsubst %,%.o,${UNITTESTS}}
-## include ../imp/Make.apps
-include ../imp/Make.unit
-# UNITTEST_OBJS := \
-#     mpi_base.o mpi_functions.o unittest_functions.o ${UNITTEST_OBJS}
-SPECIFIC_OBJECTS_unittest_ops = ${IMPCODEDIR}/laplace_functions.o
-.SECONDEXPANSION:
-${UNITTESTS} ::  \
-            ${UNITTEST_OBJS} ${SPECIFIC_OBJECTS_${@@}} ${ALL_SPECIFIC_OBJECTS} \
-            unittest_main.o $${@}.o
-	@echo "unittests depend on ${ALL_SPECIFIC_OBJECTS}"
-	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
-	  unittest_main.o $@.o \
-	  ${UNITTEST_OBJS} \
-	  ${SPECIFIC_OBJECTS_${@}} \
-	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
-	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
-	  ${LIBCXX}
-${UNITTEST_OBJS} : mpi_base.h
 
 ##
 ## Gradually building up tests

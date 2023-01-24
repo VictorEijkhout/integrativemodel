@@ -23,5 +23,5 @@ TEST_CASE( "basic environment stuff","[env][01]" ) {
   auto &the_env = omp_environment::instance();
   print("Confirm that we are running with {} procs\n",
 	the_env.nprocs());
+  REQUIRE_THROWS( the_env.procid() );
 }
-
