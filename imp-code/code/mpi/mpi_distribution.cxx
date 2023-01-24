@@ -25,7 +25,8 @@ mpi_distribution<d>::mpi_distribution
   for ( int id=0; id<d; id++) {
     auto pd = this_proc.at(id);
     first.at(id) = this->patches.at(id).at(pd).first_index().at(0);
-    last .at(id) = this->patches.at(id).at(pd). last_index().at(0);
+    // in indexstructures the last is inclusive!
+    last .at(id) = this->patches.at(id).at(pd). last_index().at(0)-1;
   }
   _local_domain = indexstructure<I,d>
     ( contiguous_indexstruct<I,d>( first,last ) );

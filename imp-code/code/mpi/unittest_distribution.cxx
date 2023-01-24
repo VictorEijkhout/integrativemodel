@@ -59,72 +59,27 @@ TEST_CASE( "local domains","[mpi][distribution][02]" ) {
   INFO( "proc: " << the_env.procid() );
   {
     INFO( "1D" );
-    coordinate<index_int,1> omega( 10*the_env.nprocs() );
+    const int over = pow(10,1);
+    coordinate<index_int,1> omega( over*the_env.nprocs() );
     mpi_decomposition<1> procs( the_env );
     mpi_distribution<1> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,1> local_domain = omega_p.local_domain();
+    REQUIRE( local_domain.volume()==over );
   }
   {
     INFO( "2D" );
-    coordinate<index_int,2> omega( 10*the_env.nprocs() );
+    const int over = pow(10,2);
+    coordinate<index_int,2> omega( over*the_env.nprocs() );
     mpi_decomposition<2> procs( the_env );
     mpi_distribution<2> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,2> local_domain = omega_p.local_domain();
+    REQUIRE( local_domain.volume()==over );
   }
 }
 
 #if 0
-TEST_CASE( "coordinate operations","[mpi][decomposition][03]" ) {
-  index_int nlocal = 100, s = nlocal*ntids;
-  shared_ptr<distribution> d1;
-  CHECK( decomp.get_dimensionality()==1 );
-  CHECK( decomp.domains_volume()==ntids );
-  fmt::print("decomposition: {}\n",decomp.as_string());
-  const char *path;
-
-  // this doesn't work because it doesn't set the mpi routines.
-  // SECTION( "base distribution from structure" ) { path = "from structure";
-  //   parallel_structure pstr;
-  //   REQUIRE_NOTHROW( pstr = parallel_structure(decomp) );
-  //   REQUIRE_NOTHROW( pstr.create_from_global_size(s) );
-  //   fmt::print("Structure: {}\n",pstr.as_string());
-  //   REQUIRE_NOTHROW( new distribution(pstr) );
-  //   REQUIRE_NOTHROW( d1 = shared_ptr<distribution>( new distribution(pstr) ) );
-  //   REQUIRE_NOTHROW( d1->set_structure_type( d1->infer_distribution_type() ) );
-  //   REQUIRE_NOTHROW( d1->memoize_structure() );
-  //   fmt::print("Distribution: {}\n",d1->as_string());
-  // }
-
-  // SECTION( "by create call" ) { path = "create call";
-  //   //REQUIRE_NOTHROW( new mpi_distribution(decomp) );
-  //   REQUIRE_NOTHROW( d1 = shared_ptr<distribution>( new mpi_distribution(decomp) ) );
-  //   REQUIRE_NOTHROW( d1->create_from_global_size(s) );
-  //   REQUIRE_NOTHROW( d1->memoize_structure() );
-  // }
-
-  SECTION( "in one step" ) { path = "block call";
-    REQUIRE_NOTHROW
-      ( d1 = shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,s) ) );
-    REQUIRE( d1->has_type_locally_contiguous() );
-  }
-
-  INFO( fmt::format("distribution created by {}",path) );
-  auto dom = decomp.get_domains()[0];
-  coordinate<index_int,d> f1(1),f2(1),domop;
-  REQUIRE_NOTHROW( f1 = d1->first_index_r(dom) );
-  REQUIRE_NOTHROW( domop = dom.operate( mult_operator(nlocal) ) );
-  INFO( format("First coord {} ?==? domain operate {}",f1.as_string(),domop.as_string()) );
-  CHECK( f1==domop );
-
-  vector<index_int> partition;
-  REQUIRE_NOTHROW( partition = d1->partitioning_points() );
-  CHECK( partition.size()==ntids+1 );
-  for (int id=0; id<=ntids; id++)
-    CHECK( partition.at(id)==id*nlocal );
-}
-
 TEST_CASE( "test presence of numa structure","[mpi][numa][04]" ) {
   int nlocal = 100, s = nlocal*ntids;
   auto d1 = 
