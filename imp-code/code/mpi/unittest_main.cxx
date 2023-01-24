@@ -29,41 +29,6 @@ void unittest_mpi_setup(int argc,char **argv) {
 
   mpi_environment::instance().init(argc,argv);
 
-#if 0
-  try {
-    env = mpi_environment(argc,argv);
-  }
-  catch (int x) {
-    printf("Could not even get started\n"); throw(1); 
-  }
-
-  comm = MPI_COMM_WORLD;
-  MPI_Comm_size(comm,&ntids);
-  MPI_Comm_rank(comm,&mytid);
-
-  // arch = dynamic_cast<mpi_architecture*>(env->get_architecture());
-  arch = env.get_architecture();
-  mpi_architecture(arch,ntids,mytid);
-  mycoord = processor_coordinate(1);
-  mycoord.set(0,mytid); // 1-d by default
-  mycoord_coord = domain_coordinate( mycoord.data() );
-  //fmt::print("MPI proc {} at coord {}\n",mytid,mycoord->as_string());
-
-  try {
-    decomp = mpi_decomposition(arch);
-  } catch (std::string c) {
-    fmt::print("Error <<{}>> while making top mpi decomposition\n",c);
-  } catch (...) {
-    fmt::print("Unknown error while making top mpi decomposition\n");
-  }
-  try {
-    int gd = decomp.domains_volume();
-  } catch (std::string c) {
-    fmt::print("Error <<{}>> in mpi setup\n",c);
-    throw(1);
-  }
-#endif
-
   return;
 }
 

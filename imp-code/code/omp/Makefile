@@ -4,7 +4,7 @@
 #### This makefile is part of the prototype implementation of
 #### the Integrative Model for Parallelism
 ####
-#### copyright Victor Eijkhout 2014-2020
+#### copyright Victor Eijkhout 2014-2023
 ####
 #### Unit tests for the OpenMP backend of IMP
 ####
@@ -23,11 +23,11 @@ MPICODEDIR = ../mpi
 include ../imp/Make.imp
 
 CXX = ${CXX_COMPILER}
-CXXFLAGS = ${CXX_OPTFLAGS} -I../imp -I../omp -DIMPisOMP \
-    -I${TACC_FMTLIB_INC} -I${GSL_INC}
+CXXFLAGS = ${CXX_OPTFLAGS} -I${IMPCODEDIR} -I${CPPFORMAT_INC} \
+    -I${LMOD_FMTLIB_INC} -I${GSL_INC}
 %.o : %.cxx
 	${CXX_COMPILER} ${CXXFLAGS} ${OMPFLAGS} ${CXXUNITFLAGS} \
-	    -I${CATCHDIR} \
+	    -I${LMOD_CATCH2_INC} -I${EIGEN_INC} -I${GSL_INC} \
 	    -c $<
 
 ####
@@ -59,6 +59,38 @@ ${UNITTESTS} :: \
 #	${SYMUTIL:-/bin/true} $@
 ${UNITTEST_OBJS} : omp_base.h
 
+##
+## Gradually building up tests
+##
+unittest_main.o : \
+    omp_env.h ${IMPCODEDIR}/imp_env.h \
+    omp_static_vars.h ${IMPCODEDIR}/imp_static_vars.h
+NEW_TESTS = 
+
+info ::
+	@echo "Test from the group up:"
+	@echo "    unittest_env"
+	@echo "    unittest_decomp"
+#
+# environment
+#
+NEW_TESTS := unittest_env
+ENV_OBJS := omp_env.o ${IMPCODEDIR}/imp_env.o
+unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
+	@echo "Linking $@"
+	${CXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${OMPFLAGS} \
+	  unittest_main.o $@.o \
+	  ${ENV_OBJS} \
+	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
+	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
+	  ${LIBCXX}
+omp_env.o : omp_env.h ${IMPCODEDIR}/imp_env.h
+${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
+	cd ${IMPCODEDIR} && make imp_env.o
+
+##
+## functions
+##
 omp_unittest_functions.o : ../imp/unittest_functions.h
 ${patsubst %,%.o,${UNITTESTS}} : \
   ../imp/imp_base.h ../imp/imp_ops.h \

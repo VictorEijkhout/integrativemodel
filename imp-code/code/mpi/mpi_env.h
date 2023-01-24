@@ -1,3 +1,15 @@
+// -*- c++ -*-
+/****************************************************************
+ ****
+ **** This file is part of the prototype implementation of
+ **** the Integrative Model for Parallelism
+ ****
+ **** copyright Victor Eijkhout 2014-2023
+ ****
+ **** mpi_env.h: Header file for MPI environment handling
+ ****
+ ****************************************************************/
+
 #pragma once
 #include "imp_env.h"
 #include <mpi.h>

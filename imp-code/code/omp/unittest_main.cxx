@@ -15,54 +15,22 @@
 #include <stdlib.h>
 
 #define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
+#include "fmt/format.h"
 
 #define STATIC_VARS_HERE
 #include "imp_static_vars.h"
 #define omp_VARS_HERE
 #include "omp_static_vars.h"
 
+#include "omp_env.h"
+
 void unittest_omp_setup(int argc,char **argv) {
 
-  try {
-    env = omp_environment(argc,argv);
-  }
-  catch (int x) {
-    printf("Could not even get started\n"); throw(1);
-  }
-
-#pragma omp parallel
-#pragma omp single
-  {
-    ntids = omp_get_num_threads();
-    std::cout << "detecting " << ntids << " omp threads\n";
-  }
-
-  arch = env.get_architecture();
-  decomp = omp_decomposition(arch);
+  omp_environment::instance().init(argc,argv);
 
   return;
 }
-
-#include "omp_base.h"
-#include "omp_ops.h"
-
-// initialization of some class static variables
-bool algorithm::do_optimize = false;
-int entity_name::entity_number = 0;
-trace_level entity::tracing = trace_level::NONE;
-std::vector<entity*> environment::list_of_all_entities;
-std::function< void(void) > environment::print_application_options{ [] (void) -> void { return; } };
-environment *entity::env = nullptr;
-std::function< std::shared_ptr<kernel>(std::shared_ptr<object>,std::shared_ptr<object>) > kernel::make_reduction_kernel{
-  [] ( std::shared_ptr<object> vec,std::shared_ptr<object> scal) -> std::shared_ptr<kernel> {
-    return std::shared_ptr<kernel>( new omp_reduction_kernel(vec,scal) ); } };
-int object::count = 0;
-double object_data::create_data_count = 0.;
-bool object_data::trace_create_data = false;
-int algorithm::queue_trace_summary = 0;
-int sparse_matrix::sparse_matrix_trace = 0;
-int task::count = 0;
 
 int main(int argc,char **argv) {
 
