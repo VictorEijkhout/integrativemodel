@@ -29,22 +29,19 @@ TEST_CASE( "decomposition constructors" ) {
   {
     REQUIRE_NOTHROW( omp_decomposition<1>( the_env ) );
     omp_decomposition<1> d( the_env );
-    REQUIRE( d.local_volume()==1 );
+    REQUIRE( d.local_volume()==the_env.nprocs() );
     REQUIRE( d.global_volume()==the_env.nprocs() );
   }
   {
     REQUIRE_NOTHROW( omp_decomposition<2>( the_env ) );
     omp_decomposition<1> d( the_env );
-    REQUIRE( d.local_volume()==1 );
+    REQUIRE( d.local_volume()==the_env.nprocs() );
     REQUIRE( d.global_volume()==the_env.nprocs() );
   }
 }
 
 TEST_CASE( "decompositions","[omp][decomposition][01]" ) {
-  //  auto &the_env = omp_environment::instance();
-  auto mytid = the_env.procid();
   auto ntids = the_env.nprocs();
-  INFO( "mytid=" << mytid );
   SECTION( "1D" ) {
     const int d=1;
     INFO( "1D" );
@@ -52,14 +49,12 @@ TEST_CASE( "decompositions","[omp][decomposition][01]" ) {
     omp_decomposition<d> decomp(the_env);
     int count = 0;
     for ( auto dom : decomp ) {
-      int lindom;
-      INFO( format("domain {} = {}",count,dom.as_string()) );
-      REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
-      INFO( "is linearly: " << lindom );
-      CHECK( lindom==mytid+count );
+      int lindom; REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
+      INFO( format("domain {} = {}",count,dom.as_string()) );      
+      INFO( "is linearly: " << lindom ); CHECK( lindom==count );
       count++;
     }
-    REQUIRE( count==1 );
+    REQUIRE( count==ntids );
   }
   SECTION( "2D" ) {
     const int d=2;
@@ -68,12 +63,12 @@ TEST_CASE( "decompositions","[omp][decomposition][01]" ) {
     omp_decomposition<d> decomp(the_env);
     int count = 0;
     for ( auto dom : decomp ) {
-      int lindom = decomp.linear_location_of(dom); // dom.at(0);
-      INFO( "domain=" << lindom );
-      CHECK( lindom==mytid+count );
+      int lindom; REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
+      INFO( format("domain {} = {}",count,dom.as_string()) );      
+      INFO( "is linearly: " << lindom ); CHECK( lindom==count );
       count++;
     }
-    REQUIRE( count==1 );
+    REQUIRE( count==ntids );
   };
   SECTION( "3D" ) {
     const int d=3;
@@ -82,12 +77,12 @@ TEST_CASE( "decompositions","[omp][decomposition][01]" ) {
     omp_decomposition<d> decomp(the_env);
     int count = 0;
     for ( auto dom : decomp ) {
-      int lindom = decomp.linear_location_of(dom); // dom.at(0);
-      INFO( "domain=" << lindom );
-      CHECK( lindom==mytid+count );
+      int lindom; REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
+      INFO( format("domain {} = {}",count,dom.as_string()) );      
+      INFO( "is linearly: " << lindom ); CHECK( lindom==count );
       count++;
     }
-    REQUIRE( count==1 );
+    REQUIRE( count==ntids );
   };
 }
 

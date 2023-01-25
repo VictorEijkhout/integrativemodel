@@ -5,69 +5,63 @@
  ****
  **** copyright Victor Eijkhout 2014-2023
  ****
- **** mpi_decomp.cxx: Implementations of the MPI decompositions classes
+ **** omp_decomp.cxx: Implementations of the OMP decompositions classes
  ****
  ****************************************************************/
 
-#include "mpi_env.h"
-#include "mpi_decomp.h"
-// from fmt
+#include "omp_env.h"
+#include "omp_decomp.h"
+
 using fmt::print;
-// from optional
-#include <optional>
-// using std::has_value;
 
 //! Multi-d decomposition from default grid from environment
 template<int d>
-mpi_decomposition<d>::mpi_decomposition( const mpi_environment& env )
-  : mpi_decomposition<d>( endpoint<int,d>(env.nprocs()),env.procid() ) {
+omp_decomposition<d>::omp_decomposition( const omp_environment& env )
+  : omp_decomposition<d>( endpoint<int,d>(env.nprocs()) ) {
 };
 
 //! Multi-d decomposition from explicit processor grid layout
 template<int d>
-mpi_decomposition<d>::mpi_decomposition
-    ( const coordinate<int,d> &grid,int procid )
+omp_decomposition<d>::omp_decomposition
+    ( const coordinate<int,d> &grid )
       : decomposition<d>(grid) {
-  // record our process number
-  _procno = procid;
-  // record our process coordinate
-  this->push_back
-    ( decomposition<d>::domain_layout().location_of_linear(procid) );
+  for ( int procid=0; procid<grid.span(); procid++ ) {
+    this->push_back
+      ( decomposition<d>::domain_layout().location_of_linear(procid) );
+  }
 };
 
 /*
- * Stuff related to this MPI process
+ * Stuff related to this OMP process
  */
 
 //! Our process rank. \todo derive this from the coordinate?
 template<int d>
-int mpi_decomposition<d>::procno() const {
-  return _procno;
+int omp_decomposition<d>::procno() const {
+  throw( "no procno for omp" );
 };
 
 //! This process as d-dimensional coordinate
 template<int d>
-const coordinate<int,d>& mpi_decomposition<d>::this_proc() const {
-  if ( not proc_coord.has_value() )
-    proc_coord = this->coordinate_from_linear(_procno);
-  return proc_coord.value();
+const coordinate<int,d>& omp_decomposition<d>::this_proc() const {
+  throw( "no proc coord for omp" );
 };
 
 /*!
   A factory for making new distributions from this decomposition
 */
 template<int d>
-void mpi_decomposition<d>::set_decomp_factory() {
+void omp_decomposition<d>::set_decomp_factory() {
   // new_block_distribution = [this] (index_int g) -> shared_ptr<distribution> {
-  //   return shared_ptr<distribution>( make_shared<mpi_block_distribution>(*this,g) );
+  //   return shared_ptr<distribution>( make_shared<omp_block_distribution>(*this,g) );
   // };
 };
 
 template<int d>
-std::string mpi_decomposition<d>::as_string() const {
-  return "mpidecomp"; // fmt::format("MPI decomposition <<{}>>",decomposition::as_string());
+std::string omp_decomposition<d>::as_string() const {
+  return "ompdecomp"; // fmt::format("OMP decomposition <<{}>>",decomposition::as_string());
 };
 
-template class mpi_decomposition<1>;
-template class mpi_decomposition<2>;
-template class mpi_decomposition<3>;
+template class omp_decomposition<1>;
+template class omp_decomposition<2>;
+template class omp_decomposition<3>;

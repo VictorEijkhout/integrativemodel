@@ -20,7 +20,6 @@ include ../imp/Make.common
 IMPCODEDIR = ../imp
 OMPCODEDIR = ../omp
 MPICODEDIR = ../mpi
-include ../imp/Make.imp
 
 CXXFLAGS = ${CXX_OPTFLAGS} -I${IMPCODEDIR} -I${CPPFORMAT_INC} \
     -I${LMOD_FMTLIB_INC} -I${GSL_INC}
@@ -80,42 +79,12 @@ DECOMP_OBJS = omp_decomp.o ${IMPCODEDIR}/imp_decomp.o ${IMPCODEDIR}/indexstruct.
 	${COORD_OBJS}
 unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	@echo "Linking $@"
-	${OMPCXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${OMPFLAGS} \
+	${CXX_LINKER} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${OMPFLAGS} \
 	  unittest_main.o $@.o ${DECOMP_OBJS} \
 	  ${CXXLIBS}
 omp_decomp.o : omp_decomp.h ${IMPCODEDIR}/imp_decomp.h
 ${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
 	@cd ${IMPCODEDIR} && make --no-print-directory imp_decomp.o
-
-##
-## functions
-##
-omp_unittest_functions.o : ../imp/unittest_functions.h
-${patsubst %,%.o,${UNITTESTS}} : \
-  ../imp/imp_base.h ../imp/imp_ops.h \
-  ../imp/unittest_functions.h \
-  omp_base.h omp_ops.h omp_static_vars.h
-
-${patsubst %,%.o,${UNITTESTS}} : omp_base.h ../imp/imp_base.h \
-    ../imp/unittest_functions.h omp_static_vars.h
-
-EXECUTABLES = threepoint 
-
-.SECONDEXPANSION:
-# threepoint executable
-${EXECUTABLES} : \
-    ../imp/imp_base.o ../imp/utils.o \
-    threepoint_kernel.o threepoint_local.o \
-    $$@.o omp_base.o 
-	${CXX_LINKER} -o $@ ${OMPFLAGS} $^
-	@${SYMUTIL} $@
-
-# non-trivial dependencies
-threepoint.cxx : ../imp/template_threepoint.cxx
-	cat $< | sed s/IMP_/omp_/g > $@
-threepoint.o omp_base.o : omp_base.h ../imp/imp_base.h ../imp/utils.h
-clean ::
-	@/bin/rm -f ${EXECUTABLES} ${EXECUTABLE_SOURCES}
 
 include ../imp/Make.regress
 info ::

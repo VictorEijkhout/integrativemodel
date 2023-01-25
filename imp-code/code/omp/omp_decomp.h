@@ -6,7 +6,7 @@
  ****
  **** copyright Victor Eijkhout 2014-2023
  ****
- **** mpi_decomp.h: Header file for MPI decompositions
+ **** omp_decomp.h: Header file for OMP decompositions
  ****
  ****************************************************************/
 
@@ -14,26 +14,25 @@
 
 #include <optional>
 
-#include "mpi.h"
-#include "mpi_env.h"
+#include "omp.h"
+#include "omp_env.h"
 #include "imp_decomp.h"
 
 /*!
-  An mpi decomposition has one domain per processor by default,
+  An omp decomposition has one domain per processor by default,
   unless there is a global over-decomposition parameters.
 
   No one ever inherits from this, but mode-specific distributions are built from this
   because it contains a distribution factory.
 */
 template<int d>
-class mpi_decomposition : public decomposition<d> {
+class omp_decomposition : public decomposition<d> {
 public:
-  mpi_decomposition( const mpi_environment& env );
-  mpi_decomposition( const coordinate<int,d>&,int );
+  omp_decomposition( const omp_environment& env );
+  omp_decomposition( const coordinate<int,d>& );
   void set_decomp_factory();
   virtual std::string as_string() const override;
 protected:
-  int _procno=-1;
   mutable std::optional<coordinate<int,d>> proc_coord = {};
 public:
   int procno() const;
