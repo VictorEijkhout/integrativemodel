@@ -85,7 +85,30 @@ unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 omp_decomp.o : omp_decomp.h ${IMPCODEDIR}/imp_decomp.h
 ${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
 	@cd ${IMPCODEDIR} && make --no-print-directory imp_decomp.o
+${IMPCODEDIR}/indexstruct.o : ${IMPCODEDIR}/indexstruct.cxx ${IMPCODEDIR}/indexstruct.hpp
+	@cd ${IMPCODEDIR} && make --no-print-directory indexstruct.o
 
+#
+# distribution
+#
+NEW_TESTS += unittest_distribution
+DISTR_OBJS = omp_distribution.o ${IMPCODEDIR}/imp_distribution.o \
+    ${DECOMP_OBJS}
+unittest_distribution : unittest_main.o unittest_distribution.o ${DISTR_OBJS}
+	@echo "Linking $@"
+	${CXX_LINKER} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${OMPFLAGS} \
+	  unittest_main.o $@.o \
+	  ${DISTR_OBJS} \
+	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
+	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
+	  ${LIBCXX}
+omp_distribution.o : omp_distribution.h ${IMPCODEDIR}/imp_distribution.h
+${IMPCODEDIR}/imp_distribution.o : ${IMPCODEDIR}/imp_distribution.cxx ${IMPCODEDIR}/imp_distribution.h
+	@cd ${IMPCODEDIR} && make --no-print-directory imp_distribution.o
+
+##
+## stuff
+##
 include ../imp/Make.regress
 info ::
 	@echo "    [NP=nnnn default=${NP}]"

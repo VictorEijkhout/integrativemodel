@@ -19,23 +19,12 @@ template<int d>
 omp_distribution<d>::omp_distribution
     ( const coordinate<index_int,d>& domain, const omp_decomposition<d>& procs )
       : distribution<d>(domain,procs) {
-  const coordinate<int,d> this_proc = procs.this_proc();
   using I = index_int;
-  coordinate<I,d> first,last;
-  for ( int id=0; id<d; id++) {
-    auto pd = this_proc.at(id);
-    first.at(id) = this->patches.at(id).at(pd).first_index().at(0);
-    // in indexstructures the last is inclusive!
-    last .at(id) = this->patches.at(id).at(pd). last_index().at(0)-1;
-  }
-  _local_domain = indexstructure<I,d>
+  coordinate<I,d> first,last = domain-1;
+  for ( int id=0; id<d; id++)
+    first.at(id) = 0;
+  this->_local_domain = indexstructure<I,d>
     ( contiguous_indexstruct<I,d>( first,last ) );
-};
-
-//! OMP distributions own a local domain on each process
-template<int d>
-const indexstructure<index_int,d>& omp_distribution<d>::local_domain() const {
-  return _local_domain;
 };
 
 template class omp_distribution<1>;

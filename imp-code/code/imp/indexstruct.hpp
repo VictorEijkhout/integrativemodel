@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** indexstruct and ioperator package headers
  ****
@@ -12,10 +12,6 @@
 #ifndef INDEXSTRUCT_H
 #define INDEXSTRUCT_H
 
-// C stuff
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 // C++ stuff
 #include <functional>
 #include <memory>
@@ -666,18 +662,19 @@ public:
   //! \todo get rid of this, and onl accept references
   indexstructure( std::shared_ptr<indexstruct<I,d>> idx ) {
     strct = idx->make_clone();
-    //fmt::print("from shared ptr: idx={}\n",strct->as_string());
   };
   indexstructure( contiguous_indexstruct<I,d> c )
-    : indexstructure<I,d>( std::shared_ptr<indexstruct<I,d>>( new contiguous_indexstruct<I,d>(c) ) ) {};
-  // indexstructure( contiguous_indexstruct<I,d> &&c )
-  //   : indexstructure<I,d>( std::shared_ptr<indexstruct<I,d>>( new contiguous_indexstruct<I,d>(c) ) ) {};
+    : indexstructure<I,d>
+        ( std::shared_ptr<indexstruct<I,d>>( new contiguous_indexstruct<I,d>(c) ) ) {};
   indexstructure( strided_indexstruct<I,d> c )
-    : indexstructure<I,d>( std::shared_ptr<indexstruct<I,d>>( new strided_indexstruct<I,d>(c) ) )    {};
+    : indexstructure<I,d>
+        ( std::shared_ptr<indexstruct<I,d>>( new strided_indexstruct<I,d>(c) ) )    {};
   indexstructure( indexed_indexstruct<I,d> c )
-    : indexstructure<I,d>( std::shared_ptr<indexstruct<I,d>>( new indexed_indexstruct<I,d>(c) ) )    {};
+    : indexstructure<I,d>
+        ( std::shared_ptr<indexstruct<I,d>>( new indexed_indexstruct<I,d>(c) ) )    {};
   indexstructure( composite_indexstruct<I,d> c )
-    : indexstructure<I,d>( std::shared_ptr<indexstruct<I,d>>( new composite_indexstruct<I,d>(c) ) )  {
+    : indexstructure<I,d>
+        ( std::shared_ptr<indexstruct<I,d>>( new composite_indexstruct<I,d>(c) ) )  {
     fmt::print("composite type=<{}> strct composite: <{}> this composite: <{}>\n",
 	       strct->type_as_string(),strct->is_composite(),is_composite());
   };
@@ -714,8 +711,7 @@ public:
     return strct->first_index(); };
   virtual coordinate<I,d> last_index()  const{
     return strct->last_index(); };
-  I volume() const {
-    return strct->volume(); };
+  I volume() const;
   I outer_volume() const {
     return strct->outer_volume(); };
   virtual int stride() const {

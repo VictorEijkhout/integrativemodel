@@ -19,9 +19,5 @@ template<int d>
 class omp_distribution : public distribution<d> {
 public:
   omp_distribution( const coordinate<index_int,d>&, const omp_decomposition<d>& );
-public:
-  const indexstructure<index_int,d>& local_domain() const;
-protected:
-  indexstructure<index_int,d> _local_domain;
 };
 

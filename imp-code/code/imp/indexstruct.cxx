@@ -13,7 +13,7 @@
 #include "indexstruct.hpp"
 
 #include <sstream>
-using std::stringstream;
+using std::cout, std::stringstream;
 
 #include "fmt/format.h"
 using fmt::format, fmt::print,fmt::memory_buffer, fmt::format_to, fmt::to_string;
@@ -50,11 +50,9 @@ int indexstruct<I,d>::type_as_int() const {
 
 template<typename I,int d>
 void indexstruct<I,d>::report_unimplemented( string s ) const {
-  //  string s{c};
-  //  if (!is_known())
-    throw(fmt::format("Trying to use query <<{}>> on undefined indexstruct",s));
-  // else
-  //   throw(fmt::format("Routine {} not implemented for type {}",c,type_as_string()));
+  string e = fmt::format("Trying to use query <<{}>> on undefined indexstruct",s);
+  cout << e+"\n";
+  throw(e);
 };
 
 template<typename I,int d>
@@ -1899,6 +1897,13 @@ void indexstructure<I,d>::push_back( contiguous_indexstruct<I,d> &&idx ) {
     print("Not composite; cannot push back\n");
     throw(fmt::format("Can not push into non-multi structure"));
   }
+};
+
+template<typename I,int d>
+I indexstructure<I,d>::volume() const {
+  if (strct==nullptr) {
+    print("No strct in indexstructure\n"); throw("No strct in indexstructure"); }
+  return strct->volume();
 };
 
 template<typename I,int d>

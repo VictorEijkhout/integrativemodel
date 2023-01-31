@@ -27,16 +27,6 @@ using std::make_shared, std::shared_ptr;
 using std::string;
 using std::vector;
 
-#if 0
-class fclass {
-public: fclass(int i) {}; void foo() {};
-};
-TEST_CASE( "fclass" ) {
-  REQUIRE_NOTHROW( fclass myf(5) );
-  REQUIRE_NOTHROW( myf.foo() );
-};
-#endif
-
 auto &the_env = mpi_environment::instance();
 
 TEST_CASE( "creation","[mpi][distribution][01]" ) {

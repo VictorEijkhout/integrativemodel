@@ -37,6 +37,14 @@ distribution<d>::distribution
   assert( procs_reconstruct==procs.global_volume() );
 };
 
+/*! Distributions own a local domain on each process
+  For MPI that is strictly local, for OpenMP the whole domain
+*/
+template<int d>
+const indexstructure<index_int,d>& distribution<d>::local_domain() const {
+  return _local_domain;
+};
+
 template class distribution<1>;
 template class distribution<2>;
 template class distribution<3>;
