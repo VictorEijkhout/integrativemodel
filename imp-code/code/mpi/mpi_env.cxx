@@ -49,6 +49,16 @@ void mpi_environment::init( int &argc,char **&argv ) {
     MPI_Comm_rank(comm,&np);
     return np;
   };
+  allreduce_ii = [this] (index_int i) -> index_int {
+    index_int s;
+    MPI_Allreduce( &i,&s,1,MPI_INDEX_INT,MPI_SUM,comm);
+    return s;
+  };
+  allreduce_d = [this] (double i) -> index_int {
+    double s;
+    MPI_Allreduce( &i,&s,1,MPI_DOUBLE,MPI_SUM,comm);
+    return s;
+  };
   int procid=-1;
   MPI_Comm_rank(comm,&procid);
   if (procid==0)

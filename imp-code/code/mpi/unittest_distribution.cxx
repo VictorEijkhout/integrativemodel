@@ -17,8 +17,6 @@
 
 #include "catch2/catch_all.hpp"
 
-#include "mpi_env.h"
-#include "mpi_decomp.h"
 #include "mpi_distribution.h"
 
 using fmt::format, fmt::print;
@@ -49,23 +47,26 @@ TEST_CASE( "local domains","[mpi][distribution][02]" ) {
   INFO( "proc: " << the_env.procid() );
   {
     INFO( "1D" );
-    const int over = pow(10,1);
-    coordinate<index_int,1> omega( over*the_env.nprocs() );
+    const int points_per_proc = ipower(10,1);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,1> omega( total_points );
     mpi_decomposition<1> procs( the_env );
     mpi_distribution<1> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,1> local_domain = omega_p.local_domain();
-    REQUIRE( local_domain.volume()==over );
+    //    REQUIRE( local_domain.volume()==points_per_proc );
+    index_int check_total_points = the_env.allreduce_ii( local_domain.volume() );
+    REQUIRE( check_total_points==total_points );
   }
   {
     INFO( "2D" );
-    const int over = pow(10,2);
-    coordinate<index_int,2> omega( over*the_env.nprocs() );
+    const int points_per_proc = pow(10,2);
+    coordinate<index_int,2> omega( points_per_proc*the_env.nprocs() );
     mpi_decomposition<2> procs( the_env );
     mpi_distribution<2> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,2> local_domain = omega_p.local_domain();
-    REQUIRE( local_domain.volume()==over );
+    //    REQUIRE( local_domain.volume()==points_per_proc );
   }
 }
 

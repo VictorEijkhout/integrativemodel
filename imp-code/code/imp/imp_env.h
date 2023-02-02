@@ -1,9 +1,15 @@
-#pragma once
+/****************************************************************
+ ****
+ **** This file is part of the prototype implementation of
+ **** the Integrative Model for Parallelism
+ ****
+ **** copyright Victor Eijkhout 2014-2023
+ ****
+ **** imp_env.h: environment
+ ****
+ ****************************************************************/
 
-#include <stdlib.h>
-#include <cstdio>
-// #include <stdio.h>
-#include <string.h>
+#pragma once
 
 #include "fmt/format.h"
 #include "gsl/gsl-lite.hpp"
@@ -73,6 +79,10 @@ public:
     [] () -> int { throw("Function undefined: nprocs"); return -1; } };
   std::function< int() > procid{
     [] () -> int { throw("Function undefined: procid"); return -1; } };
+  std::function< index_int(index_int) > allreduce_ii{
+    [] (index_int i) -> index_int { throw("Function undefined: allreduce_ii"); return -1; } };
+  std::function< double(double) > allreduce_d{
+    [] (double i) -> double { throw("Function undefined: allreduce_d"); return -1.; } };
   std::function< int() > get_over_factor{
     [] () -> int { return 1; } };
 
@@ -112,8 +122,6 @@ public:
   /*
    * Collectives in the environment
    */
-  std::function< index_int(index_int) > allreduce { [] (index_int i) -> index_int { return i; } };
-  std::function< index_int(index_int) > allreduce_d { [] (double i) -> double { return i; } };
   std::function< int(int) > allreduce_and { [] (double i) -> double { return i; } };
     
   std::function< void(int contrib,std::vector<int>&) > gather32 {

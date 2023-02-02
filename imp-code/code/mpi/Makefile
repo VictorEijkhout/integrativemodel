@@ -54,7 +54,7 @@ info ::
 # environment
 #
 NEW_TESTS := unittest_env
-ENV_OBJS := mpi_env.o ${IMPCODEDIR}/imp_env.o
+ENV_OBJS := mpi_env.o ${IMPCODEDIR}/imp_env.o ${IMPCODEDIR}/utils.o
 unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
 	@echo "Linking $@"
 	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
@@ -66,6 +66,9 @@ unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
 mpi_env.o : mpi_env.h ${IMPCODEDIR}/imp_env.h
 ${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
 	cd ${IMPCODEDIR} && make imp_env.o
+${IMPCODEDIR}/utils.o : ${IMPCODEDIR}/utils.h
+	cd ${IMPCODEDIR} && make utils.o
+
 #
 # coordinate
 #

@@ -3,7 +3,7 @@
 #### This makefile is part of the prototype implementation of
 #### the Integrative Model for Parallelism
 ####
-#### copyright Victor Eijkhout 2014-2022
+#### copyright Victor Eijkhout 2014-2023
 ####
 #### Mode-independent unit tests
 ####
@@ -15,7 +15,7 @@ info ::
 
 include Make.inc
 include Make.common
-CXXFLAGS = ${CXX_OPTFLAGS}
+CXXFLAGS = ${CXX_OPTFLAGS} -I.
 CPPSTANDARD = 20
 
 ##

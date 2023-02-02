@@ -13,6 +13,8 @@
 #include "mpi_distribution.h"
 
 using std::array;
+using std::string;
+using fmt::print,fmt::format;
 
 //! The constructor builds the single local domain
 template<int d>
@@ -25,17 +27,11 @@ mpi_distribution<d>::mpi_distribution
   for ( int id=0; id<d; id++) {
     auto pd = this_proc.at(id);
     first.at(id) = this->patches.at(id).at(pd).first_index().at(0);
-    // in indexstructures the last is inclusive!
-    last .at(id) = this->patches.at(id).at(pd). last_index().at(0)-1;
+    last .at(id) = this->patches.at(id).at(pd). last_index().at(0);
   }
-  _local_domain = indexstructure<I,d>
+  this->_local_domain = indexstructure<I,d>
     ( contiguous_indexstruct<I,d>( first,last ) );
-};
-
-//! MPI distributions own a local domain on each process
-template<int d>
-const indexstructure<index_int,d>& mpi_distribution<d>::local_domain() const {
-  return _local_domain;
+  print( "proc {} local_domain {}\n",this_proc.as_string(),this->_local_domain.as_string() );
 };
 
 template class mpi_distribution<1>;

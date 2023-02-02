@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-7
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** utils.h : some very basic definitions
  ****
@@ -12,6 +12,9 @@
 
 #ifndef UTILS_H
 #define UTILS_H
+
+#include <functional>
+extern std::function< int(int,int) > ipower;
 
 #define MOD(x,y) ( ( x+y ) % (y) )
 #ifndef MAX

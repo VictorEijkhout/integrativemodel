@@ -175,7 +175,16 @@ shared_ptr<indexstruct<I,d>> empty_indexstruct<I,d>::struct_union
 
 template<typename I,int d>
 std::string contiguous_indexstruct<I,d>::as_string() const {
-  return fmt::format("contiguous: [{}--{}]",this->first[0],this->last[0]);
+  if (d==1)
+    return fmt::format("contiguous: [{}--{}]",this->first[0],this->last[0]);
+  else if (d==2)
+    return fmt::format("contiguous: [{}--{}] x [{}--{}]",
+		       this->first[0],this->last[0],
+		       this->first[1],this->last[1]
+		       );
+  else
+    return fmt::format("contiguous {}D: [{}--{}]",
+		       d,this->first[0],this->last[0]);
 };
 
 /****
