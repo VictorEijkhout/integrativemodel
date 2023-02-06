@@ -31,7 +31,7 @@ mpi_distribution<d>::mpi_distribution
   }
   this->_local_domain = indexstructure<I,d>
     ( contiguous_indexstruct<I,d>( first,last ) );
-  print( "proc {} local_domain {}\n",this_proc.as_string(),this->_local_domain.as_string() );
+  //print( "proc {} local_domain {}\n",this_proc.as_string(),this->_local_domain.as_string() );
 };
 
 template class mpi_distribution<1>;

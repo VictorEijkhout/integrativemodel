@@ -15,6 +15,18 @@
 #include "imp_decomp.h"
 
 template<int d>
+class domain : indexstructure<index_int,d> {
+public:
+  domain( contiguous_indexstruct<index_int,d> ci )
+    : indexstructure<index_int,d>::indexstructure<index_int,d>( ci ) {};
+  domain( coordinate<index_int,d> c )
+    : domain( contiguous_indexstruct<index_int,d>( coordinate<index_int,d>(0),c ) ) {};
+};
+
+//! Different types of distributions
+enum class distribution_type : int { orthogonal,replicated };
+
+template<int d>
 class distribution {
 protected:
   coordinate<index_int,d> omega;
@@ -22,7 +34,8 @@ protected:
     std::vector< indexstructure<index_int,1> >,
     d> patches;
 public:
-  distribution( const coordinate<index_int,d>&, const decomposition<d>& );
+  distribution( const coordinate<index_int,d>&, const decomposition<d>&,
+		distribution_type=distribution_type::orthogonal );
 public:
   const indexstructure<index_int,d>& local_domain() const;
 protected:

@@ -3,12 +3,12 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
  ****
- **** unit tests for MPI architecture
+ **** unit tests for MPI architecture: coordinate tests
  ****
  ****************************************************************/
 
@@ -59,8 +59,8 @@ TEST_CASE( "split points" ) {
 
 TEST_CASE( "coordinates" ) {
   {
-    auto ci1 = coordinate<int,1>();
-    REQUIRE( ci1.dimensionality()==1 );
+    auto ci1 = coordinate<int,1>(0);
+    REQUIRE( ci1.at(0)==0 );
   }
   {
     int top=5;
@@ -74,6 +74,12 @@ TEST_CASE( "coordinates" ) {
     REQUIRE( again.span()==top-1 );
     for ( int i=0; i<top; i++)
       REQUIRE_NOTHROW( ci1_5.location_of_linear(i) );
+  }
+  {
+    REQUIRE_NOTHROW( coordinate<int,2>(0) );
+    auto ci2_0 = coordinate<int,2>(0);
+    REQUIRE( ci2_0.at(0)==0 );
+    REQUIRE( ci2_0.at(1)==0 );
   }
   {
     auto ci2_14 = coordinate<int,2>(14);

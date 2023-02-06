@@ -18,31 +18,37 @@ using std::vector, std::array;
  */
 template<int d>
 distribution<d>::distribution
-    ( const coordinate<index_int,d>& c,const decomposition<d>& procs ) {
+    ( const coordinate<index_int,d>& dom,const decomposition<d>& procs,
+      distribution_type type ) {
   using I = index_int;                              I domain_size_reconstruct{1};
   /* */                                             int procs_reconstruct{1};
-  array< vector<I>,d > starts; // domain start points in each dimension
-  array< int,d > procs_d;      // number of processes in each dimension
+  array< vector<I>,d > starts,ends; // domain start points in each dimension
+  array< int,d > procs_d;           // number of processes in each dimension
   for (int id=0; id<d; id++) {
-    starts.at(id)  = procs.split_points_d(c,id);    domain_size_reconstruct *= starts.at(id).back();
-    procs_d.at(id) = procs.size_of_dimension(id);   procs_reconstruct *= procs_d.at(id);
+    auto pd = procs.size_of_dimension(id);
+    if (type==distribution_type::orthogonal) {
+      starts.at(id)  = split_points(dom.at(id),pd);   
+      ends  .at(id)  = vector<I>( starts.at(id).begin()+1,starts.at(id).end() );
+    } else if (type==distribution_type::replicated) {
+    }                                               domain_size_reconstruct *= ends.at(id).back();
+    procs_d.at(id) = pd;   procs_reconstruct *= procs_d.at(id);
   }
-  assert                                          ( domain_size_reconstruct==c.span() );
+  assert                                          ( domain_size_reconstruct==dom.span() );
   assert                                          ( procs_reconstruct==procs.global_volume() );
 
   for (int id=0; id<d; id++) {
     // allocate vector for domain side segments;
     patches.at(id) = 
-      [] (int pd,vector<I> starts) {
+      [] (int pd,const vector<I>& starts,const vector<I>& ends) {
 	vector< indexstructure<I,1> > segments;
 	for (int ip=0; ip<pd; ip++) {
 	  coordinate<I,1>
 	    first( starts.at(ip) ),
-	    last ( starts.at(ip+1) );
+	    last ( ends  .at(ip) );
 	  segments.push_back( indexstructure<I,1>( contiguous_indexstruct<I,1>(first,last-1) ) );
 	}
 	return segments;
-      } ( procs_d.at(id),starts.at(id) );
+      } ( procs_d.at(id),starts.at(id),ends.at(id) );
   }
 };
 
