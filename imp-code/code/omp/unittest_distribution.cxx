@@ -46,26 +46,28 @@ TEST_CASE( "creation","[omp][distribution][01]" ) {
 
 TEST_CASE( "local domains","[omp][distribution][02]" ) {
   SECTION( "1D" ) {
-    const int over = pow(10,1);
-    coordinate<index_int,1> omega( over*the_env.nprocs() );
+    const index_int elts_per_proc = pow(10,1);
+    const index_int elts_global = elts_per_proc*the_env.nprocs();
+    coordinate<index_int,1> omega( elts_global );
     omp_decomposition<1> procs( the_env );
     omp_distribution<1> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,1> local_domain = omega_p.local_domain();
     REQUIRE( local_domain.is_known() );
     REQUIRE_NOTHROW( local_domain.volume() );
-    REQUIRE( local_domain.volume()==over );
+    REQUIRE( local_domain.volume()==elts_global );
   }
   SECTION( "2D" ) {
-    const int over = pow(10,2);
-    coordinate<index_int,2> omega( over*the_env.nprocs() );
+    const index_int elts_per_proc = pow(10,2);
+    const index_int elts_global = elts_per_proc*the_env.nprocs();
+    coordinate<index_int,2> omega( elts_global );
     omp_decomposition<2> procs( the_env );
     omp_distribution<2> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,2> local_domain = omega_p.local_domain();
-    REQUIRE( local_domain.volume()==over );
     REQUIRE( local_domain.is_known() );
     REQUIRE_NOTHROW( local_domain.volume() );
+    REQUIRE( local_domain.volume()==elts_global );
   }
 }
 
