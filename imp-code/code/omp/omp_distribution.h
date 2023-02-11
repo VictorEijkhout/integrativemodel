@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "imp_decomp.h"
+#include "omp_decomp.h"
 #include "imp_distribution.h"
 
 template<int d>
