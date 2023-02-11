@@ -4,7 +4,7 @@
 #### This makefile is part of the prototype implementation of
 #### the Integrative Model for Parallelism
 ####
-#### copyright Victor Eijkhout 2014-2022
+#### copyright Victor Eijkhout 2014-2023
 ####
 #### Unit tests for the MPI backend of IMP
 ####
@@ -20,7 +20,7 @@ include ../imp/Make.common
 IMPCODEDIR = ../imp
 OMPCODEDIR = ../omp
 MPICODEDIR = ../mpi
-## include ../imp/Make.imp
+include ../imp/Make.imp
 
 CXXFLAGS = ${CXX_OPTFLAGS} -I${IMPCODEDIR} -I${CPPFORMAT_INC}
 %.o : %.cxx
@@ -64,10 +64,6 @@ unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
 	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
 mpi_env.o : mpi_env.h ${IMPCODEDIR}/imp_env.h
-${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
-	cd ${IMPCODEDIR} && make imp_env.o
-${IMPCODEDIR}/utils.o : ${IMPCODEDIR}/utils.h
-	cd ${IMPCODEDIR} && make utils.o
 
 #
 # coordinate
@@ -82,8 +78,6 @@ unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
 	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
 	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
-${IMPCODEDIR}/imp_coord.o : ${IMPCODEDIR}/imp_coord.cxx ${IMPCODEDIR}/imp_coord.h
-	cd ${IMPCODEDIR} && make imp_coord.o
 
 #
 # architecture and decomposition
@@ -100,8 +94,6 @@ unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
 mpi_decomp.o : mpi_decomp.h ${IMPCODEDIR}/imp_decomp.h
-${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
-	@cd ${IMPCODEDIR} && make --no-print-directory imp_decomp.o
 
 #
 # distribution
@@ -118,21 +110,33 @@ unittest_distribution : unittest_main.o unittest_distribution.o ${DISTR_OBJS}
 	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
 mpi_distribution.o : mpi_distribution.h ${IMPCODEDIR}/imp_distribution.h
-${IMPCODEDIR}/imp_distribution.o : ${IMPCODEDIR}/imp_distribution.cxx ${IMPCODEDIR}/imp_distribution.h
-	@cd ${IMPCODEDIR} && make --no-print-directory imp_distribution.o
 
-
-${IMPCODEDIR}/indexstruct.o : ${IMPCODEDIR}/indexstruct.cxx ${IMPCODEDIR}/indexstruct.hpp
-	@cd ${IMPCODEDIR} && make --no-print-directory indexstruct.o
+#
+# object
+#
+NEW_TESTS += unittest_object
+OBJ_OBJS = mpi_object.o ${IMPCODEDIR}/imp_object.o \
+    ${DISTR_OBJS}
+unittest_object : unittest_main.o unittest_object.o ${OBJ_OBJS}
+	@echo "Linking $@"
+	${MPICXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${MPIFLAGS} \
+	  unittest_main.o $@.o \
+	  ${OBJ_OBJS} \
+	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
+	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
+	  ${LIBCXX}
+mpi_object.o : mpi_object.h ${IMPCODEDIR}/imp_object.h
 
 info ::
 	@echo "make newtests : do new unit tests"
+	@echo "    [ NP=... (default: ${NP}) ]"
 .PHONY: newtests
+NP = 4
 newtests :
 	for t in ${NEW_TESTS} ; do \
 	    make $$t \
 	     && echo && echo "Unittesting: $$t" && echo \
-	     && mpiexec -n 4 $$t \
+	     && mpiexec -n ${NP} $$t \
 	; done
 
 #

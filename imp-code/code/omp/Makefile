@@ -20,6 +20,7 @@ include ../imp/Make.common
 IMPCODEDIR = ../imp
 OMPCODEDIR = ../omp
 MPICODEDIR = ../mpi
+include ../imp/Make.imp
 
 CXXFLAGS = ${CXX_OPTFLAGS} -I${IMPCODEDIR} -I${CPPFORMAT_INC} \
     -I${LMOD_FMTLIB_INC} -I${GSL_INC}
@@ -55,8 +56,6 @@ unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
 	  unittest_main.o $@.o ${ENV_OBJS} \
 	${CXXLIBS}
 omp_env.o : omp_env.h ${IMPCODEDIR}/imp_env.h
-${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
-	cd ${IMPCODEDIR} && make imp_env.o
 
 #
 # coordinate
@@ -68,8 +67,6 @@ unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
 	${CXX_LINKER} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${OMPFLAGS} \
 	  unittest_main.o $@.o ${COORD_OBJS} \
 	  ${CXXLIBS}
-${IMPCODEDIR}/imp_coord.o : ${IMPCODEDIR}/imp_coord.cxx ${IMPCODEDIR}/imp_coord.h
-	cd ${IMPCODEDIR} && make imp_coord.o
 
 #
 # decomposition
@@ -83,10 +80,6 @@ unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	  unittest_main.o $@.o ${DECOMP_OBJS} \
 	  ${CXXLIBS}
 omp_decomp.o : omp_decomp.h ${IMPCODEDIR}/imp_decomp.h
-${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
-	@cd ${IMPCODEDIR} && make --no-print-directory imp_decomp.o
-${IMPCODEDIR}/indexstruct.o : ${IMPCODEDIR}/indexstruct.cxx ${IMPCODEDIR}/indexstruct.hpp
-	@cd ${IMPCODEDIR} && make --no-print-directory indexstruct.o
 
 #
 # distribution
@@ -103,8 +96,34 @@ unittest_distribution : unittest_main.o unittest_distribution.o ${DISTR_OBJS}
 	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
 	  ${LIBCXX}
 omp_distribution.o : omp_distribution.h ${IMPCODEDIR}/imp_distribution.h
-${IMPCODEDIR}/imp_distribution.o : ${IMPCODEDIR}/imp_distribution.cxx ${IMPCODEDIR}/imp_distribution.h
-	@cd ${IMPCODEDIR} && make --no-print-directory imp_distribution.o
+
+#
+# object
+#
+NEW_TESTS += unittest_object
+OBJ_OBJS = omp_object.o ${IMPCODEDIR}/imp_object.o \
+    ${DISTR_OBJS}
+unittest_object : unittest_main.o unittest_object.o ${OBJ_OBJS}
+	@echo "Linking $@"
+	${OMPCXX} ${CXXFLAGS} ${CXXUNITFLAGS} -o $@ ${OMPFLAGS} \
+	  unittest_main.o $@.o \
+	  ${OBJ_OBJS} \
+	  ${CPPFORMAT_LIB}/${LIBFORMAT} \
+	  -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
+	  ${LIBCXX}
+omp_object.o : omp_object.h ${IMPCODEDIR}/imp_object.h
+
+info ::
+	@echo "make newtests : do new unit tests"
+	@echo "    [ NP=... (default: ${NP}) ]"
+.PHONY: newtests
+NP = 4
+newtests :
+	for t in ${NEW_TESTS} ; do \
+	    make $$t \
+	     && echo && echo "Unittesting: $$t" && echo \
+	     && OMP_NUM_THREADS=${NP} $$t \
+	; done
 
 ##
 ## stuff
