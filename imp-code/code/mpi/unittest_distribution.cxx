@@ -34,6 +34,11 @@ TEST_CASE( "creation","[mpi][distribution][01]" ) {
     coordinate<index_int,1> omega( 10*the_env.nprocs() );
     mpi_decomposition<1> procs( the_env );
     REQUIRE_NOTHROW( mpi_distribution<1>( omega,procs ) );
+    mpi_distribution<1> d1( omega,procs );
+    mpi_distribution<1> d2( omega,procs );
+    REQUIRE( d1.compatible_with(d1) );
+    REQUIRE( not d1.compatible_with(d2) );
+    REQUIRE( not d2.compatible_with(d1) );
   }
   {
     INFO( "2D" );

@@ -20,6 +20,10 @@ template<int d>
 distribution<d>::distribution
     ( const coordinate<index_int,d>& dom,const decomposition<d>& procs,
       distribution_type type ) {
+  // give me a unique distribution number
+  my_distribution_number = distribution_number++;
+
+  // distribution construction
   using I = index_int;                              I domain_size_reconstruct{1};
   /* */                                             int procs_reconstruct{1};
   array< vector<I>,d > starts,ends; // domain start points in each dimension
@@ -50,6 +54,11 @@ distribution<d>::distribution
 	return segments;
       } ( procs_d.at(id),starts.at(id),ends.at(id) );
   }
+};
+
+template<int d>
+bool distribution<d>::compatible_with( const distribution<d>& other ) const {
+  return my_distribution_number==other.my_distribution_number;
 };
 
 /*! Distributions own a local domain on each process
