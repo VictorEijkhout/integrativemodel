@@ -1909,13 +1909,6 @@ void indexstructure<I,d>::push_back( contiguous_indexstruct<I,d> &&idx ) {
 };
 
 template<typename I,int d>
-I indexstructure<I,d>::volume() const {
-  if (strct==nullptr) {
-    print("No strct in indexstructure\n"); throw("No strct in indexstructure"); }
-  return strct->volume();
-};
-
-template<typename I,int d>
 string indexstructure<I,d>::as_string() const {
   if (strct==nullptr) {
     return string("indexstructure<zip>");

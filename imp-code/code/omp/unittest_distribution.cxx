@@ -17,8 +17,6 @@
 
 #include "catch2/catch_all.hpp"
 
-#include "omp_env.h"
-#include "omp_decomp.h"
 #include "omp_distribution.h"
 
 using fmt::format, fmt::print;

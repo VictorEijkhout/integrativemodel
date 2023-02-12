@@ -28,7 +28,6 @@ std::array<I,d> endpoint(I s);
 class message;
 template<int d>
 class distribution;
-class object;
 class task;
 
 /*!

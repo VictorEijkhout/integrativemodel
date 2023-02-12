@@ -679,19 +679,12 @@ public:
 	       strct->type_as_string(),strct->is_composite(),is_composite());
   };
   
-  bool is_known()             const {
-    return strct->is_known(); };
-  virtual bool is_empty( )     const {
-    return strct->is_empty(); };
-  virtual bool is_contiguous() const {
-    //fmt::print("test contiguous {}\n",strct->as_string());
-    return strct->is_contiguous(); };
-  virtual bool is_strided()    const {
-    return strct->is_strided(); };
-  virtual bool is_indexed()    const {
-    return strct->is_indexed(); };
-  virtual bool is_composite()  const {
-    return strct->is_composite(); };
+  bool is_known()              const {    return strct->is_known(); };
+  virtual bool is_empty( )     const {    return strct->is_empty(); };
+  virtual bool is_contiguous() const {    return strct->is_contiguous(); };
+  virtual bool is_strided()    const {    return strct->is_strided(); };
+  virtual bool is_indexed()    const {    return strct->is_indexed(); };
+  virtual bool is_composite()  const {    return strct->is_composite(); };
   virtual std::string type_as_string()       const {
     return strct->type_as_string(); };
   virtual void reserve( I s )              {
@@ -707,15 +700,11 @@ public:
   /*
    * Statistics
    */
-  virtual coordinate<I,d> first_index() const {
-    return strct->first_index(); };
-  virtual coordinate<I,d> last_index()  const{
-    return strct->last_index(); };
-  I volume() const;
-  I outer_volume() const {
-    return strct->outer_volume(); };
-  virtual int stride() const {
-    return strct->stride(); };
+  virtual coordinate<I,d> first_index() const {    return strct->first_index(); };
+  virtual coordinate<I,d> last_index()  const {    return strct->last_index(); };
+  I volume()                            const {    return strct->volume(); };
+  I outer_volume()                      const {    return strct->outer_volume(); };
+  virtual int stride()                  const {    return strct->stride(); };
   virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const {
     return strct->equals(idx); };
   virtual bool operator==( std::shared_ptr<indexstruct<I,d>> idx ) const {
@@ -723,12 +712,10 @@ public:
   virtual bool equals( indexstructure &idx ) const {
     return strct->equals(idx.strct); };
   
-  virtual I find( coordinate<I,d> idx ) {
-    return strct->find(idx); };
-  I location_of( std::shared_ptr<indexstruct<I,d>> inner ) {
+  virtual I find( coordinate<I,d> idx )  const {    return strct->find(idx); };
+  I location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
     return strct->location_of(inner); };
-  I location_of( indexstructure &inner ) {
-    return strct->location_of(inner.strct); };
+  I location_of( indexstructure &inner ) const {    return strct->location_of(inner.strct); };
   I location_of( indexstructure &&inner ) {
     return strct->location_of(inner.strct); };
   virtual bool contains_element( coordinate<I,d> idx ) const {
