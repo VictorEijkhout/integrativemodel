@@ -19,8 +19,9 @@ using fmt::print,fmt::format;
 //! The constructor builds the single local domain
 template<int d>
 mpi_distribution<d>::mpi_distribution
-    ( const coordinate<index_int,d>& domain, const mpi_decomposition<d>& procs )
-      : distribution<d>(domain,procs) {
+    ( const coordinate<index_int,d>& domain, const mpi_decomposition<d>& procs,
+      distribution_type type )
+      : distribution<d>(domain,procs,type) {
   const coordinate<int,d> this_proc = procs.this_proc();
   using I = index_int;
   coordinate<I,d> first,last;
@@ -34,6 +35,19 @@ mpi_distribution<d>::mpi_distribution
   //print( "proc {} local_domain {}\n",this_proc.as_string(),this->_local_domain.as_string() );
 };
 
+template<int d>
+mpi_distribution<d> replicated_scalar_distribution( const mpi_decomposition<d>& dist) {
+  return mpi_distribution( coordinate<index_int,d>(1),dist,distribution_type::replicated );
+};
+
+/*
+ * Instantiations
+ */
 template class mpi_distribution<1>;
 template class mpi_distribution<2>;
 template class mpi_distribution<3>;
+
+template mpi_distribution<1> replicated_scalar_distribution<1>(const mpi_decomposition<1>&);
+template mpi_distribution<2> replicated_scalar_distribution<2>(const mpi_decomposition<2>&);
+template mpi_distribution<3> replicated_scalar_distribution<3>(const mpi_decomposition<3>&);
+

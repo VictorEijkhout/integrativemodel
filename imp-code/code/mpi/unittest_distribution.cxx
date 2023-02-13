@@ -59,21 +59,71 @@ TEST_CASE( "local domains","[mpi][distribution][02]" ) {
     mpi_distribution<1> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,1> local_domain = omega_p.local_domain();
-    //    REQUIRE( local_domain.volume()==points_per_proc );
     index_int check_total_points = the_env.allreduce_ii( local_domain.volume() );
     REQUIRE( check_total_points==total_points );
   }
   {
     INFO( "2D" );
     const int points_per_proc = pow(10,2);
+    index_int total_points = points_per_proc*the_env.nprocs();
     coordinate<index_int,2> omega( points_per_proc*the_env.nprocs() );
     mpi_decomposition<2> procs( the_env );
     mpi_distribution<2> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,2> local_domain = omega_p.local_domain();
-    //    REQUIRE( local_domain.volume()==points_per_proc );
+    index_int check_total_points = the_env.allreduce_ii( local_domain.volume() );
+    REQUIRE( check_total_points==total_points );
   }
 }
+
+TEST_CASE( "replicated distributions","[mpi][distribution][replication][03]" ) {
+  {
+    INFO( "1D" );
+    const int points_per_proc = ipower(10,1);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,1> omega( total_points );
+    mpi_decomposition<1> procs( the_env );
+    REQUIRE_NOTHROW( mpi_distribution<1>( omega,procs,distribution_type::replicated ) );
+    mpi_distribution<1> repl1( omega,procs,distribution_type::replicated );
+    REQUIRE_NOTHROW( repl1.local_domain() );
+    indexstructure<index_int,1> local_domain = repl1.local_domain();
+    REQUIRE( local_domain.volume()==total_points );
+  }
+  {
+    INFO( "2D" );
+    const int points_per_proc = ipower(10,2);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,2> omega( total_points );
+    mpi_decomposition<2> procs( the_env );
+    REQUIRE_NOTHROW( mpi_distribution<2>( omega,procs,distribution_type::replicated ) );
+    mpi_distribution<2> repl2( omega,procs,distribution_type::replicated );
+    REQUIRE_NOTHROW( repl2.local_domain() );
+    indexstructure<index_int,2> local_domain = repl2.local_domain();
+    REQUIRE( local_domain.volume()==total_points );
+  }
+}
+
+TEST_CASE( "replicated scalars","[mpi][distribution][replication][04]" ) {
+  {
+    INFO( "1D" );
+    mpi_decomposition<1> procs( the_env );
+    REQUIRE_NOTHROW( replicated_scalar_distribution<1>( procs ) );
+    auto repl1     = replicated_scalar_distribution<1>( procs );
+    REQUIRE_NOTHROW( repl1.local_domain() );
+    indexstructure<index_int,1> local_domain = repl1.local_domain();
+    REQUIRE( local_domain.volume()==1 );
+  }
+  {
+    INFO( "2D" );
+    mpi_decomposition<2> procs( the_env );
+    REQUIRE_NOTHROW( replicated_scalar_distribution<2>( procs ) );
+    auto repl2     = replicated_scalar_distribution<2>( procs );
+    REQUIRE_NOTHROW( repl2.local_domain() );
+    indexstructure<index_int,2> local_domain = repl2.local_domain();
+    REQUIRE( local_domain.volume()==1 );
+  }
+}
+
 
 #if 0
 TEST_CASE( "test presence of numa structure","[mpi][numa][04]" ) {

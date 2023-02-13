@@ -18,6 +18,10 @@
 template<int d>
 class mpi_distribution : public distribution<d> {
 public:
-  mpi_distribution( const coordinate<index_int,d>&, const mpi_decomposition<d>& );
+  mpi_distribution( const coordinate<index_int,d>&, const mpi_decomposition<d>&,
+		    distribution_type=distribution_type::orthogonal );
 };
 
+
+template<int d>
+mpi_distribution<d> replicated_scalar_distribution( const mpi_decomposition<d>& );

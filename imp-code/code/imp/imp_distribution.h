@@ -31,9 +31,11 @@ class distribution {
 protected:
   static inline int distribution_number{0};
   int my_distribution_number;
+  //! extent of the domain
   coordinate<index_int,d> omega;
+  //! orthogonal product of extents in all dimensions
   std::array<
-    std::vector< indexstructure<index_int,1> >,
+    std::vector< indexstructure<index_int,1> >, // vector of length #proc-in-dimension
     d> patches;
 public:
   distribution( const coordinate<index_int,d>&, const decomposition<d>&,
@@ -43,5 +45,4 @@ public:
   bool compatible_with( const distribution& other ) const;
 protected:
   indexstructure<index_int,d> _local_domain;
-
 };
