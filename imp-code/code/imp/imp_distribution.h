@@ -42,7 +42,8 @@ public:
 		distribution_type=distribution_type::orthogonal );
 public:
   const indexstructure<index_int,d>& local_domain() const;
-  bool compatible_with( const distribution& other ) const;
+  bool compatible_with( const distribution<d>& other ) const;
+  void throw_incompatible_with( const distribution<d>& other ) const;
 protected:
   indexstructure<index_int,d> _local_domain;
 };

@@ -16,9 +16,13 @@
 #include <vector>
 
 template<int d>
-class object {
+class object : public distribution<d> {
 private:
-  std::vector<double> data;
+  std::vector<double> _data;
 public:
   object( const distribution<d>& );
+  double* data();
+  double const * data() const;
+  void set_constant( double x );
+  object<d>& operator+=( const object<d>& );
 };

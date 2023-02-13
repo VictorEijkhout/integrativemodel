@@ -35,6 +35,7 @@ mpi_distribution<d>::mpi_distribution
   //print( "proc {} local_domain {}\n",this_proc.as_string(),this->_local_domain.as_string() );
 };
 
+//! Function to produce a single scalar, replicated over all processes
 template<int d>
 mpi_distribution<d> replicated_scalar_distribution( const mpi_decomposition<d>& dist) {
   return mpi_distribution( coordinate<index_int,d>(1),dist,distribution_type::replicated );

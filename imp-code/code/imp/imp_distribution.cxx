@@ -12,6 +12,7 @@
 #include "imp_distribution.h"
 #include <cassert>
 using std::vector, std::array;
+using fmt::format;
 
 /*!
  * d-dimensional distribution as orthogonal product of 1-d block distributions
@@ -68,6 +69,13 @@ distribution<d>::distribution
 template<int d>
 bool distribution<d>::compatible_with( const distribution<d>& other ) const {
   return my_distribution_number==other.my_distribution_number;
+};
+
+template<int d>
+void distribution<d>::throw_incompatible_with( const distribution<d>& other ) const {
+  if ( not compatible_with(other) )
+    throw( format("Can not combine objects on different distributions: {} / {}",
+		  my_distribution_number,other.my_distribution_number ) );
 };
 
 /*! Distributions own a local domain on each process
