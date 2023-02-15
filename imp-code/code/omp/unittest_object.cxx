@@ -74,7 +74,7 @@ TEST_CASE( "local domain","[omp][object][02]" ) {
     // sanity test on local domain
     REQUIRE_NOTHROW( xp.local_domain() );
     auto xp_local = xp.local_domain();
-    REQUIRE( xp_local.volume()==points_per_proc );
+    REQUIRE( xp_local.volume()==total_points );
   }
   {
     INFO( "2D" );
@@ -83,7 +83,7 @@ TEST_CASE( "local domain","[omp][object][02]" ) {
     index_int total_points = points_per_proc*the_env.nprocs();
     coordinate<index_int,2> omega( total_points );
     omp_decomposition<2> procs( the_env );
-    omp_distribution<2> omega_p( omega,procs );
+    omp_distribution omega_p( omega,procs );
 
     // create the object
     omp_object xp( omega_p ), yp( omega_p );
@@ -91,8 +91,9 @@ TEST_CASE( "local domain","[omp][object][02]" ) {
     // sanity test on local domain, in 2D the distribution need not be equal
     REQUIRE_NOTHROW( xp.local_domain() );
     auto xp_local = xp.local_domain();
-    index_int check_total_points = the_env.allreduce_ii( xp_local.volume() );
-    REQUIRE( check_total_points==total_points );
+    index_int check_total_points;
+    REQUIRE_NOTHROW( check_total_points = the_env.allreduce_ii( xp_local.volume() ) );
+    REQUIRE( xp_local.volume()==total_points );
   }
 }
 
@@ -134,4 +135,3 @@ TEST_CASE( "addition","[omp][object][03]" ) {
     REQUIRE( xdata[0]==5. );
   }
 }
-

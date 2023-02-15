@@ -32,6 +32,7 @@ omp_environment::omp_environment()
 /*!
   - Initialize OMP
   - set the comm_size/rank functions
+  - set the reduction to return the input
   - initialize the singleton instance
 */
 void omp_environment::init( int &argc,char **&argv ) {
@@ -41,6 +42,12 @@ void omp_environment::init( int &argc,char **&argv ) {
 #pragma omp master
     np = omp_get_num_threads();
     return np;
+  };
+  allreduce_ii = [this] (index_int i) -> index_int {
+    return i;
+  };
+  allreduce_d = [this] (double i) -> index_int {
+    return i;
   };
   environment::instance().init(argc,argv);
 };

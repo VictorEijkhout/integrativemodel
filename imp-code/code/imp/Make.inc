@@ -62,3 +62,11 @@ INCOMP_clang = -I/opt/local/include/libomp
 LIBOMP_clang =  -L/opt/local/lib/libomp -lomp
 INCOMP = ${INCOMP_${LMOD_FAMILY_COMPILER}}
 LIBOMP = ${LIBOMP_${LMOD_FAMILY_COMPILER}}
+
+TEST_INCLUDES = \
+    -I${IMPCODEDIR} \
+    -I${LMOD_CATCH2_INC} -I${EIGEN_INC} -I${GSL_INC} -I${CPPFORMAT_INC}
+TEST_LIBS = \
+    ${CPPFORMAT_LIB}/${LIBFORMAT} \
+    -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2 \
+    ${LIBCXX}

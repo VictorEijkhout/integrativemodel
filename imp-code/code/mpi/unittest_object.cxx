@@ -96,7 +96,7 @@ TEST_CASE( "local domain","[mpi][object][02]" ) {
   }
 }
 
-TEST_CASE( "operations","[mpi][object][03]" ) {
+TEST_CASE( "addition","[mpi][object][03]" ) {
   {
     INFO( "1D" );
     // setup as in distribution test

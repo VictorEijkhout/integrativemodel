@@ -34,6 +34,7 @@ mpi_environment::mpi_environment()
 /*!
   - Initialize MPI
   - set the comm_size/rank functions
+  - set the reductions to MPI reductions
   - initialize the singleton instance
 */
 void mpi_environment::init( int &argc,char **&argv ) {
