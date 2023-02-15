@@ -11,6 +11,8 @@
 
 #include "imp_object.h"
 #include <cassert>
+#include <cmath>
+
 using std::vector, std::array;
 using fmt::format;
 
@@ -55,6 +57,22 @@ object<d>& object<d>::operator+=( const object<d>& other ) {
   return *this;
 };
 
+template<int d>
+double object<d>::local_norm() const {
+  double norm_value;
+  double const * xdata = data();
+  for ( size_t i=0; i<this->local_domain().volume(); i++ )
+    norm_value += pow( xdata[i],2 );
+  return sqrt( norm_value );
+};
+
+template<int d>
+void compute_norm( object<d> scalar,object<d> thing ) {
+  double norm_value;
+  norm_value = thing.local_norm();
+  norm_value = scalar.allreduce_d(norm_value);
+  scalar.set_constant( norm_value );
+};
 
 template class object<1>;
 template class object<2>;

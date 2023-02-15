@@ -135,3 +135,25 @@ TEST_CASE( "addition","[mpi][object][03]" ) {
   }
 }
 
+TEST_CASE( "norm","[mpi][object][04]" ) {
+  {
+    INFO("1D");
+    // big object
+    const int points_per_proc = ipower(5,1);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,1> omega( total_points );
+    mpi_decomposition<1> procs( the_env );
+    mpi_distribution omega_p( omega,procs );
+    mpi_object xp( omega_p ), yp( omega_p );
+
+    //scalar
+    REQUIRE_NOTHROW( mpi_object( replicated_scalar_distribution<1>( procs ) ) );
+    auto norm_value = mpi_object( replicated_scalar_distribution<1>( procs ) );
+
+    REQUIRE_THROWS( compute_norm(xp,xp) );
+    REQUIRE_NOTHROW( compute_norm(norm_value,xp) );
+    double *norm_data;
+    REQUIRE_NOTHROW( norm_data = norm_value.data() );
+    REQUIRE( norm_data[0]==0. );
+  }
+}

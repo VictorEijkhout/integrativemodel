@@ -25,4 +25,8 @@ public:
   double const * data() const;
   void set_constant( double x );
   object<d>& operator+=( const object<d>& );
+  virtual double local_norm() const;
 };
+
+template<int d>
+void compute_norm( object<d> scalar,object<d> thing );
