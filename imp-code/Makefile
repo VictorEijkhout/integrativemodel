@@ -4,7 +4,7 @@
 #### This makefile is part of the prototype implementation of
 #### the Integrative Model for Parallelism
 ####
-#### copyright Victor Eijkhout 2014-8
+#### copyright Victor Eijkhout 2014-2023
 ####
 #### Root level makefile for IMP
 ####
@@ -50,13 +50,13 @@ info ::
 	  echo "make upload" ; fi
 .PHONY: upload
 upload :
-	-cd docs ; \
-	  ln -f latex/refman.pdf .. ; \
-	  if [ `whoami` = "eijkhout" ] ; then \
-	    mkdir -p ${HOME}/DropBox/Scicomp/IMP \
-	     && cp latex/refman.pdf ${HOME}/DropBox/Scicomp/IMP \
-	  ; \
-	  fi
+	-@cd docs \
+	 && ln -f latex/refman.pdf .. \
+	 && if [ `whoami` = "eijkhout" ] ; then \
+	      echo "Uploading refman.pdf to Dropbox" \
+	       && mkdir -p ${HOME}/DropBox/Scicomp/IMP \
+	       && cp latex/refman.pdf ${HOME}/DropBox/Scicomp/IMP \
+	    ; fi
 notarget :
 	  for f in *.tex ; do \
 	    sed -e 's/\[H\]/[htp]/' -ibak $$f ; done ; \
