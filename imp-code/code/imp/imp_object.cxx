@@ -66,14 +66,24 @@ double object<d>::local_norm() const {
   return sqrt( norm_value );
 };
 
+/*! Compute norm.
+ * This depends on the local norm which is overridden for OpenMP
+ * Also: the reduction is a no-op in OpenMP.
+ * \todo Test if the inputs are on the same process set.
+ */
 template<int d>
-void compute_norm( object<d> scalar,object<d> thing ) {
+void compute_norm( object<d>& scalar,const object<d>& thing,const environment& env ) {
+  scalar.assert_replicated();
   double norm_value;
   norm_value = thing.local_norm();
-  norm_value = scalar.allreduce_d(norm_value);
+  norm_value = env.allreduce_d( pow(norm_value,2.) );
   scalar.set_constant( norm_value );
 };
 
 template class object<1>;
 template class object<2>;
 template class object<3>;
+
+template void compute_norm<1>( object<1>&,const object<1>&,const environment& env );
+template void compute_norm<2>( object<2>&,const object<2>&,const environment& env );
+template void compute_norm<3>( object<3>&,const object<3>&,const environment& env );

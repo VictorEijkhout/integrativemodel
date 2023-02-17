@@ -145,15 +145,17 @@ TEST_CASE( "norm","[mpi][object][04]" ) {
     mpi_decomposition<1> procs( the_env );
     mpi_distribution omega_p( omega,procs );
     mpi_object xp( omega_p ), yp( omega_p );
+    xp.set_constant(1.);
 
     //scalar
     REQUIRE_NOTHROW( mpi_object( replicated_scalar_distribution<1>( procs ) ) );
     auto norm_value = mpi_object( replicated_scalar_distribution<1>( procs ) );
 
-    REQUIRE_THROWS( compute_norm(xp,xp) );
-    REQUIRE_NOTHROW( compute_norm(norm_value,xp) );
+    
+    REQUIRE_THROWS( compute_norm(xp,xp,the_env) );
+    REQUIRE_NOTHROW( compute_norm(norm_value,xp,the_env) );
     double *norm_data;
     REQUIRE_NOTHROW( norm_data = norm_value.data() );
-    REQUIRE( norm_data[0]==0. );
+    REQUIRE( norm_data[0]==static_cast<double>(total_points) );
   }
 }

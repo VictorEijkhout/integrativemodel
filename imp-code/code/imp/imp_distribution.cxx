@@ -23,6 +23,7 @@ distribution<d>::distribution
       distribution_type type ) {
   // give me a unique distribution number
   my_distribution_number = distribution_number++;
+  my_distribution_type   = type;
 
   // distribution construction
   using I = index_int;                            I domain_size_reconstruct{1};
@@ -69,6 +70,12 @@ distribution<d>::distribution
 template<int d>
 bool distribution<d>::compatible_with( const distribution<d>& other ) const {
   return my_distribution_number==other.my_distribution_number;
+};
+
+template<int d>
+void distribution<d>::assert_replicated() const {
+  if ( my_distribution_type!=distribution_type::replicated )
+    throw("distribution needs to be replicated");
 };
 
 template<int d>

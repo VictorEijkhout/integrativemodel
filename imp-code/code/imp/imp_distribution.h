@@ -31,6 +31,7 @@ class distribution {
 protected:
   static inline int distribution_number{0};
   int my_distribution_number;
+  distribution_type my_distribution_type;
   //! extent of the domain
   coordinate<index_int,d> omega;
   //! orthogonal product of extents in all dimensions
@@ -43,6 +44,7 @@ public:
 public:
   const indexstructure<index_int,d>& local_domain() const;
   bool compatible_with( const distribution<d>& other ) const;
+  void assert_replicated() const;
   void throw_incompatible_with( const distribution<d>& other ) const;
 protected:
   indexstructure<index_int,d> _local_domain;

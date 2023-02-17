@@ -29,4 +29,4 @@ public:
 };
 
 template<int d>
-void compute_norm( object<d> scalar,object<d> thing );
+void compute_norm( object<d>& scalar,const object<d>& thing,const environment& env );
