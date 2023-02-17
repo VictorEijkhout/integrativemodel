@@ -18,6 +18,9 @@
 template<int d>
 class omp_distribution : public distribution<d> {
 public:
-  omp_distribution( const coordinate<index_int,d>&, const omp_decomposition<d>& );
+  omp_distribution( const coordinate<index_int,d>&, const omp_decomposition<d>&,
+		    distribution_type=distribution_type::orthogonal );
 };
 
+template<int d>
+omp_distribution<d> replicated_scalar_distribution( const omp_decomposition<d>& );

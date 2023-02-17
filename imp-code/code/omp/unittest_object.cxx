@@ -135,3 +135,28 @@ TEST_CASE( "addition","[omp][object][03]" ) {
     REQUIRE( xdata[0]==5. );
   }
 }
+
+TEST_CASE( "norm","[omp][object][04]" ) {
+  {
+    INFO("1D");
+    // big object
+    const int points_per_proc = ipower(5,1);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,1> omega( total_points );
+    omp_decomposition<1> procs( the_env );
+    omp_distribution omega_p( omega,procs );
+    omp_object xp( omega_p ), yp( omega_p );
+    xp.set_constant(1.);
+
+    //scalar
+    REQUIRE_NOTHROW( omp_object( replicated_scalar_distribution<1>( procs ) ) );
+    auto norm_value = omp_object( replicated_scalar_distribution<1>( procs ) );
+
+    
+    REQUIRE_THROWS( compute_norm(xp,xp,the_env) );
+    REQUIRE_NOTHROW( compute_norm(norm_value,xp,the_env) );
+    double *norm_data;
+    REQUIRE_NOTHROW( norm_data = norm_value.data() );
+    REQUIRE( norm_data[0]==static_cast<double>(total_points) );
+  }
+}

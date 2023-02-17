@@ -22,6 +22,5 @@ public:
 		    distribution_type=distribution_type::orthogonal );
 };
 
-
 template<int d>
 mpi_distribution<d> replicated_scalar_distribution( const mpi_decomposition<d>& );
