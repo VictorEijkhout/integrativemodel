@@ -48,6 +48,10 @@ void object<d>::set_constant( double x ) {
     e = x;  
 };
 
+/*!
+ * Add another object into this one.
+ * The compatibility test is a little meagre.
+ */
 template<int d>
 object<d>& object<d>::operator+=( const object<d>& other ) {
   this->throw_incompatible_with(other);
@@ -57,6 +61,11 @@ object<d>& object<d>::operator+=( const object<d>& other ) {
   return *this;
 };
 
+/*!
+ * Compute the norm on the local domain.
+ * The `compute_norm' function does an allreduce over this,
+ * which does different things in MPI vs OpenMP.
+ */
 template<int d>
 double object<d>::local_norm() const {
   double norm_value;

@@ -34,6 +34,12 @@ using fmt::print,fmt::format;
  * Couple of free functions
  */
 
+/*! Reasonably even distribution of blocks
+ * Strictly one-dimensional.
+ * - total : length of the segment
+ * - length : number of desired subsegments
+ * Result is of size: length+1
+ */
 template<typename I>
 vector<I> split_points(I total,int length) {
   vector<I> points(length+1);
@@ -142,19 +148,23 @@ I coordinate<I,d>::span() const {
   //     ,multiplies<I>(),static_cast<I>(1) );
 };
 
+//! i-th component of a coordinate, bound-checked, reference version
 template<typename I,int d>
 I& coordinate<I,d>::at(int i) {
   return coordinates.at(i);
 };
+//! i-th component of a coordinate, bound-checked, const version
 template<typename I,int d>
 const I& coordinate<I,d>::at(int i) const {
   return coordinates.at(i);
 };
 
+//! i-th component of a coordinate, non-checked, reference version
 template<typename I,int d>
 I& coordinate<I,d>::operator[](int i) {
   return coordinates[i];
 };
+//! i-th component of a coordinate, non-checked, const version
 template<typename I,int d>
 const I& coordinate<I,d>::operator[](int i) const {
   return coordinates[i];
@@ -163,7 +173,7 @@ const I& coordinate<I,d>::operator[](int i) const {
 /*
  * Operators
  */
-// plus
+//! Coordinate plus coordinate
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator+( const coordinate<I,d>& other ) const {
   auto r(*this);
@@ -171,6 +181,7 @@ coordinate<I,d> coordinate<I,d>::operator+( const coordinate<I,d>& other ) const
     r.coordinates[id] += other.coordinates[id];
   return r;
 };
+//! Coordinate shifted by scalar in each conponent
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator+( I other ) const {
   auto r(*this);
@@ -179,7 +190,7 @@ coordinate<I,d> coordinate<I,d>::operator+( I other ) const {
   return r;
 };
 
-// minus
+//! Coordinate minus coordinate
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator-( const coordinate<I,d>& other ) const {
   auto r(*this);
@@ -187,6 +198,7 @@ coordinate<I,d> coordinate<I,d>::operator-( const coordinate<I,d>& other ) const
     r.coordinates[id] -= other.coordinates[id];
   return r;
 };
+//! Coordinate minus scalar in each conmponent
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator-( I other ) const {
   auto r(*this);
@@ -194,6 +206,7 @@ coordinate<I,d> coordinate<I,d>::operator-( I other ) const {
     r.coordinates[id] -= other;
   return r;
 };
+//! Unary minus for coordinates
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator-() const {
   auto r(*this);
@@ -201,6 +214,7 @@ coordinate<I,d> coordinate<I,d>::operator-() const {
     r.coordinates[id] = -r.coordinates[id];
   return r;
 };
+//! Minus-and-becomes with other coordinate
 template<typename I,int d>
 void coordinate<I,d>::operator-=( const coordinate<I,d>& other ) {
   for ( int id=0; id<d; id++ )

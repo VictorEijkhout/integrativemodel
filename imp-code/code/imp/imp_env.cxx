@@ -25,18 +25,7 @@ void environment::init(int argc,char **argv,bool dothis) {
   set_name("imp");
 
   debug_level = iargument("d",0);
-  //  message_tag_admin_threshold = 1000;
   strategy = iargument("collective",0);
-  // if (has_argument("optimize"))
-  //   algorithm::do_optimize = true;
-  // if (has_argument("queue_summary"))
-  //   algorithm::queue_trace_summary = 1;
-  // if (has_argument("matrix_view"))
-  //   sparse_matrix::sparse_matrix_trace = 1;
-  // if (has_argument("progress"))
-  //   entity::add_trace_level(trace_level::PROGRESS);
-  // if (has_argument("reduct"))
-  //   entity::add_trace_level(trace_level::REDUCT);
 };
 
 //! Reporting and cleanup

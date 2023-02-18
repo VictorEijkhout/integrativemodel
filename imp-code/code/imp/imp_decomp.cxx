@@ -27,11 +27,20 @@ using fmt::format,fmt::print;
  **** Construction
  ****/
 
+/*!
+ * Make a d-dimensional process grid based on the environment
+ * This delegates to the constructor from a coordinate
+ * by computing the far-point of the environment.
+ */
 template<int d>
 decomposition<d>::decomposition( const environment& env )
   : decomposition<d>( endpoint<int,d>(env.nprocs()) ) {
 };
 
+/*!
+ * Make a d-dimensional process grid from the far-point coordinate.
+ * This only copies to internal data.
+ */
 template<int d>
 decomposition<d>::decomposition( const coordinate<int,d>& grid )
   : _domain_layout(grid) {

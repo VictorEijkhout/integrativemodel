@@ -16,6 +16,8 @@ using fmt::format;
 
 /*!
  * d-dimensional distribution as orthogonal product of 1-d block distributions
+ * Type = orthogonal: split points in all dimensions, then make patches
+ * Type = replicated : each process gets the same zero/end point, then make patches
  */
 template<int d>
 distribution<d>::distribution
@@ -67,22 +69,28 @@ distribution<d>::distribution
   }
 };
 
+/*!
+ * Test identity of two distributions
+ * by looking at their unique ID number
+ */
 template<int d>
 bool distribution<d>::compatible_with( const distribution<d>& other ) const {
   return my_distribution_number==other.my_distribution_number;
 };
 
-template<int d>
-void distribution<d>::assert_replicated() const {
-  if ( my_distribution_type!=distribution_type::replicated )
-    throw("distribution needs to be replicated");
-};
-
+//! Force compatibility by throwing an exception if not
 template<int d>
 void distribution<d>::throw_incompatible_with( const distribution<d>& other ) const {
   if ( not compatible_with(other) )
     throw( format("Can not combine objects on different distributions: {} / {}",
 		  my_distribution_number,other.my_distribution_number ) );
+};
+
+//! Test a distribution being replicated
+template<int d>
+void distribution<d>::assert_replicated() const {
+  if ( my_distribution_type!=distribution_type::replicated )
+    throw("distribution needs to be replicated");
 };
 
 /*! Distributions own a local domain on each process
