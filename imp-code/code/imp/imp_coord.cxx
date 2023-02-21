@@ -425,18 +425,15 @@ void coordinate_set<I,d>::add( const coordinate<I,d>& p ) {
 template<typename I,int d>
 struct fmt::formatter<coordinate<I,d>> {
  constexpr
- auto parse(format_parse_context& ctx)
-       -> decltype(ctx.begin()) {
-   auto it = ctx.begin(),
-     end = ctx.end();
+ auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+   auto it = ctx.begin(), end = ctx.end();
    if (it != end && *it != '}')
      throw format_error("invalid format");
    return it;
   }
   template <typename FormatContext>
-  auto format
-    (const coordinate<I,d>& p, FormatContext& ctx)
-        -> decltype(ctx.out()) {
+  auto format(const coordinate<I,d>& p,
+	      FormatContext& ctx) -> decltype(ctx.out()) {
     return format_to(ctx.out(),"{}", p.as_string());
   }
 };

@@ -735,6 +735,8 @@ public:
     return strct->can_incorporate(v); };
   virtual coordinate<I,d> get_ith_element( const I i ) const {
     return strct->get_ith_element(i); };
+  virtual bool is_strided_between_indices(I f,I l,I& s,bool trace=false) const {
+    return strct->is_strided_between_indices(f,l,s,trace); };
 
   /*
    * Operations that yield a new indexstruct
@@ -747,24 +749,19 @@ public:
   void translate_by( coordinate<I,d> shift ) { strct = strct->translate_by(shift); };
   bool has_intersect( std::shared_ptr<indexstruct<I,d>> idx ) {
     return strct->has_intersect(idx); };
+  //! make strided, or throw if not possible
+  void make_strided() { strct = strct->make_strided(); };
 
   // union and intersection
-  auto struct_union( indexstructure &idx ,bool=false ) {
-    return indexstructure(strct->struct_union(idx.strct)); };
-  auto struct_union( indexstructure &&idx ,bool=false ) {
-    return indexstructure(strct->struct_union(idx.strct)); };
-  void split( std::shared_ptr<indexstruct<I,d>> idx ) { strct = strct->split(idx); };
-  indexstructure split( indexstructure &idx ) {
-    return indexstructure(strct->split(idx.strct)); };
-  indexstructure intersect( std::shared_ptr<indexstruct<I,d>> idx ) {
-    return indexstructure( strct->intersect(idx) ); };
-  indexstructure intersect( indexstructure &idx ) {
-    return indexstructure( strct->intersect(idx.strct) ); };
+  void struct_union( indexstructure &idx ,bool=false ) {   strct = strct->struct_union(idx.strct); };
+  void struct_union( indexstructure &&idx ,bool=false ) {  strct = strct->struct_union(idx.strct); };
+  void split( std::shared_ptr<indexstruct<I,d>> idx ) {    strct = strct->split(idx); };
+  void split( indexstructure &idx ) {                      strct = strct->split(idx.strct); };
+  void intersect( std::shared_ptr<indexstruct<I,d>> idx ) {strct = strct->intersect(idx); };
+  void intersect( indexstructure &idx ) {                  strct = strct->intersect(idx.strct); };
 
-  indexstructure minus( std::shared_ptr<indexstruct<I,d>> idx ) {
-    return indexstructure(strct->minus(idx)); };
-  indexstructure minus( indexstructure &idx ) {
-    return indexstructure(strct->minus(idx.strct)); };
+  void minus( std::shared_ptr<indexstruct<I,d>> idx ) {    strct = strct->minus(idx); };
+  void minus( indexstructure &idx ) {                      strct = strct->minus(idx.strct); };
   void truncate_left( coordinate<I,d> i ) { strct = strct->truncate_left(i); };
   void truncate_right( coordinate<I,d> i ) { strct = strct->truncate_right(i); };
   void relativize_to( std::shared_ptr<indexstruct<I,d>> idx ) { strct = strct->relativize_to(idx); };
