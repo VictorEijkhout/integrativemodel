@@ -26,6 +26,10 @@ public:
 //! Different types of distributions
 enum class distribution_type : int { orthogonal,replicated };
 
+/*! Distribution class.
+ * For now only implementation:
+ * d-dimensional distribution as orthogonal product of 1-d block distributions
+ */
 template<int d>
 class distribution {
 protected:

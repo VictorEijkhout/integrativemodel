@@ -15,9 +15,16 @@ using std::vector, std::array;
 using fmt::format;
 
 /*!
- * d-dimensional distribution as orthogonal product of 1-d block distributions
- * Type = orthogonal: split points in all dimensions, then make patches
- * Type = replicated : each process gets the same zero/end point, then make patches
+ * Distribution constructor from
+ * d-dimensional distribution as orthogonal product of 1-d block distributions.
+ *
+ * Arguments:
+ * - dom : the global domain
+ * - procs : processor decomposition
+ * - type : distribution type
+ *     orthogonal: split points in all dimensions, then make patches
+ *     replicated : each process gets the same zero/end point, then make patches
+ *
  */
 template<int d>
 distribution<d>::distribution
