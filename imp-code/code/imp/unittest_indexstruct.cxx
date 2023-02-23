@@ -457,13 +457,12 @@ TEST_CASE( "find in indexed" ) {
   CHECK( loc==3 );
 }
 
-#if 0
-
 TEST_CASE( "contiguous 2d" ) {
-  shared_ptr< indexstruct<int,2> > i1;
-  REQUIRE_NOTHROW( i1 = shared_ptr< indexstruct<int,2> >
-		   ( make_shared<contiguous_indexstruct<int,2>>( array<int,2>{0,0},array<int,2>{4,5} ) ) );
+  REQUIRE_NOTHROW( contiguous_indexstruct<int,2>( array<int,2>{0,0},array<int,2>{4,5} ) );
+  REQUIRE_NOTHROW( indexstructure{ contiguous_indexstruct<int,2>( array<int,2>{0,0},array<int,2>{4,5} ) } );
 }
+
+#if 0
 
 TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
   indexstruct<index_int,1> i1,i2,ifinal;
@@ -1332,23 +1331,20 @@ TEST_CASE( "struct split","[split][25]" ) {
     }
   }
 }
+#endif
 
 index_int itimes2(index_int i) { return 2*i; }
 indexstruct<index_int,1> *itimes2i(index_int i) { return new contiguous_indexstruct<index_int,1>(2*i,2*i); }
 
 TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) {
-  indexstruct<index_int,1> i1;
-  indexstruct<index_int,1> i2;
-  indexstructure<index_int,1> I1,I2;
   ioperator<index_int,1> op; 
 
   SECTION( "multiply by constant" ) {
-    i1 = contiguous_indexstruct<index_int,1>(5,10) );
-    I1 = indexstructure<index_int,1>(contiguous_indexstruct<index_int,1>(5,10));
+    indexstructure i1(contiguous_indexstruct<index_int,1>(5,10));
     INFO( format("start with contiguous: {}",i1.as_string()) );
     REQUIRE_NOTHROW( op = ioperator<index_int,1>("*2") );
-    REQUIRE_NOTHROW( i2 = i1.operate(op) );
-    REQUIRE_NOTHROW( I2 = I1.operate(op) );
+    REQUIRE_NOTHROW( i1.operate(op) );
+    auto i2 = i1.operate(op);
     // printf("i2 s/b strided: <<%s>>\n",i2.as_string().data());
     INFO( format("multiplied by 2: {}",i2.as_string()) );
     CHECK( i2.is_strided() );
@@ -1358,32 +1354,30 @@ TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) 
     CHECK( i2.stride()==2 );
   }
   SECTION( "multiply range by constant" ) {
-    i1 = contiguous_indexstruct<index_int,1>(5,10) );
+    indexstructure i1{ contiguous_indexstruct<index_int,1>(5,10) };
     REQUIRE_NOTHROW( op = ioperator<index_int,1>("x2") );
-    REQUIRE_NOTHROW( i2 = i1.operate(op) );
+    REQUIRE_NOTHROW( i1.operate(op) );
+    auto i2 = i1.operate(op);
     CHECK( i2.is_contiguous() );
     CHECK( ( i2.first_index()==10 ) );
     CHECK( ( i2.last_index()==21 ) );
     CHECK( i2.volume()==i1.volume()*2 );
-    // CHECK( i2.is_strided() );
-    CHECK( i2.stride()==1 );
-    REQUIRE_NOTHROW( I1 = indexstructure<index_int,1>(i1) );
-    REQUIRE_NOTHROW( I2 = I1.operate(op) );
-    CHECK( I2.is_contiguous() );
-    CHECK( ( I2.last_index()==21 ) );
+    CHECK( i2.is_strided() );
   }
   SECTION( "multiply by function" ) {
-    i1 = contiguous_indexstruct<index_int,1>(5,10) );
+    indexstructure i1{ contiguous_indexstruct<index_int,1>(5,10) };
     REQUIRE_NOTHROW( op = ioperator<index_int,1>(&itimes2) );
     index_int is2;
     REQUIRE_NOTHROW( is2 = op.operate(1) );
     CHECK( is2==2 );
     
-    REQUIRE_NOTHROW( i2 = i1.operate(op) );
-    // CHECK( i2.is_strided() ); // VLE can we get this to work?
+    REQUIRE_NOTHROW( i1.operate(op) );
+    auto i2 = i1.operate(op);
+    // CHECK( i2.is_strided() );
     CHECK( ( i2.first_index()==10 ) );
     CHECK( ( i2.last_index()==20 ) );
   }
+#if 0
   SECTION( "shift strided" ) {
     i1 = strided_indexstruct<index_int,1>(1,10,2) );
     CHECK( ( i1.first_index()==1 ) );
@@ -1417,8 +1411,10 @@ TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) 
     REQUIRE_NOTHROW( I2 = I1.operate(op,0,100) );
     CHECK( I2.volume()==5 );
   }
+#endif
 }
 
+#if 0
 TEST_CASE( "division operation","[indexstruct<index_int,1>][operate][31]" ) {
   indexstruct<index_int,1> i1,i2; ioperator<index_int,1> op;
 

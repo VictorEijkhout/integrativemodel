@@ -2259,13 +2259,6 @@ template struct fmt::formatter<shared_ptr<indexstruct<index_int,2>>>;
 template struct fmt::formatter<shared_ptr<indexstruct<int,3>>>;
 template struct fmt::formatter<shared_ptr<indexstruct<index_int,3>>>;
 
-template class indexstructure<int,1>;
-template class indexstructure<index_int,1>;
-template class indexstructure<int,2>;
-template class indexstructure<index_int,2>;
-template class indexstructure<int,3>;
-template class indexstructure<index_int,3>;
-
 template class contiguous_indexstruct<int,1>;
 template class contiguous_indexstruct<index_int,1>;
 template class strided_indexstruct<int,1>;
@@ -2286,6 +2279,13 @@ template class strided_indexstruct<int,3>;
 template class strided_indexstruct<index_int,3>;
 template class indexed_indexstruct<int,3>;
 template class indexed_indexstruct<index_int,3>;
+
+template class indexstructure<int,1>;
+template class indexstructure<index_int,1>;
+template class indexstructure<int,2>;
+template class indexstructure<index_int,2>;
+template class indexstructure<int,3>;
+template class indexstructure<index_int,3>;
 
 template class ioperator<int,1>;
 template class ioperator<index_int,1>;
