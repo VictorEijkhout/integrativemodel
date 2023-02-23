@@ -364,98 +364,97 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
     }
   }
 }
-#if 0
 
-  SECTION( "more simplify" ) {
-    auto i1 =
-      indexstruct<index_int,1>
-      ( new indexed_indexstruct<index_int,1>( vector<index_int>{2,4, 10,12, 15} ) );
-    indexstruct<index_int,1> i2,i3,i1a;
-    REQUIRE_NOTHROW( i1a = i1.make_clone() );
-    INFO( format("starting with indexed {}",i1.as_string()) );
-    REQUIRE_NOTHROW( i1.add_in_element(11) );
-    REQUIRE( i1.volume()==6 );
-    INFO( format("add element 11 gives {}",i1.as_string()) );
+TEST_CASE( "more simplify" ) {
+  indexstructure i1( indexed_indexstruct<index_int,1>( vector<index_int>{2,4, 10,12, 15} ) );
+  // indexstruct<index_int,1> i2,i3,i1a;
+  // REQUIRE_NOTHROW( i1a = i1.make_clone() );
+  INFO( format("starting with indexed {}",i1.as_string()) );
+  REQUIRE_NOTHROW( i1.add_in_element(11) );
+  REQUIRE( i1.volume()==6 );
+  INFO( format("add element 11 gives {}",i1.as_string()) );
+  CHECK( i1.is_indexed() );
+
+  indexstructure i2(i1);
+  REQUIRE_NOTHROW( i2.force_simplify() );
+  INFO( format("simplify to composite {}",i2.as_string()) );
+  CHECK( i2.is_composite() );
+  REQUIRE( i2.volume()==6 );
+
+  indexstructure i3(i2);
+  REQUIRE_NOTHROW( i3.convert_to_indexed() );
+  INFO( format("back to indexed {}",i3.as_string()) );
+  REQUIRE( i3.volume()==6 );
+  CHECK( i1.equals(i3) );
+}
+
+TEST_CASE( "striding and operations" ) {
+  int len=5; vector<index_int> idx{1,2,4,7,9};
+  indexstructure i1{ indexed_indexstruct<index_int,1>(idx) };
+  
+  SECTION( "basic stride tests" ) {
+    CHECK( !i1.is_contiguous() );
     CHECK( i1.is_indexed() );
-    REQUIRE_NOTHROW( i2 = i1.force_simplify() );
-    INFO( format("simplify to composite {}",i2.as_string()) );
-    CHECK( i2.is_composite() );
-    REQUIRE( i2.volume()==6 );
-    REQUIRE_NOTHROW( i3 = i2.convert_to_indexed() );
-    INFO( format("back to indexed {}",i3.as_string()) );
-    REQUIRE( i3.volume()==6 );
-    CHECK( not i1a.equals(i3) );
-    CHECK( i1.equals(i3) );
+    CHECK( ( i1.first_index()==1 ) );
+    CHECK( ( i1.last_index()==9 ) );
+    CHECK( i1.volume()==len );
+
+    CHECK( !i1.contains_element(0) );
+    CHECK( i1.contains_element(1) );
+    CHECK( i1.contains_element(4) );
+    CHECK( !i1.contains_element(5) );
+    CHECK( !i1.contains_element(6) );
+    CHECK( i1.contains_element(7) );
+
+    CHECK( i1.find(1)==0 );
+    CHECK( i1.find(7)==3 );
+    REQUIRE_THROWS( i1.find(0) );
+    REQUIRE_THROWS( i1.find(8) );
+    CHECK_THROWS( i1.get_ith_element(5) );
+    CHECK_NOTHROW( i1.get_ith_element(4) );
+    CHECK( i1.get_ith_element(3)==7 );
   }
 
-  SECTION( "striding and operations" ) {
-    int len=5; vector<index_int> idx{1,2,4,7,9};
-    indexstruct<index_int,1> i1;
-    REQUIRE_NOTHROW( i1 = indexstruct<index_int,1>{ new indexed_indexstruct<index_int,1>(idx) } );
-
-    SECTION( "basic stride tests" ) {
-      CHECK( !i1.is_contiguous() );
-      CHECK( i1.is_indexed() );
-      CHECK( ( i1.first_index()==1 ) );
-      CHECK( ( i1.last_index()==9 ) );
-      CHECK( i1.volume()==len );
-
-      CHECK( !i1.contains_element(0) );
-      CHECK( i1.contains_element(1) );
-      CHECK( i1.contains_element(4) );
-      CHECK( !i1.contains_element(5) );
-      CHECK( !i1.contains_element(6) );
-      CHECK( i1.contains_element(7) );
-
-      CHECK( i1.find(1)==0 );
-      CHECK( i1.find(7)==3 );
-      REQUIRE_THROWS( i1.find(0) );
-      REQUIRE_THROWS( i1.find(8) );
-      CHECK_THROWS( i1.get_ith_element(5) );
-      CHECK_NOTHROW( i1.get_ith_element(4) );
-      CHECK( i1.get_ith_element(3)==7 );
-    }
-
-    SECTION( "translation forward" ) {
-      REQUIRE_NOTHROW( i1 = i1.translate_by(1) );
-      CHECK( !i1.is_contiguous() );
-      CHECK( i1.is_indexed() );
-      CHECK( ( i1.first_index()==2 ) );
-      CHECK( ( i1.last_index()==10 ) );
-      CHECK( i1.volume()==len );
-    }
-
-    SECTION( "translation through zero" ) {
-      REQUIRE_NOTHROW( i1 = i1.translate_by(-2) );
-      CHECK( !i1.is_contiguous() );
-      CHECK( i1.is_indexed() );
-      CHECK( ( i1.first_index()==-1 ) );
-      CHECK( ( i1.last_index()==7 ) );
-      CHECK( i1.volume()==len );
-    }
+  SECTION( "translation forward" ) {
+    REQUIRE_NOTHROW( i1.translate_by(1) );
+    CHECK( !i1.is_contiguous() );
+    CHECK( i1.is_indexed() );
+    CHECK( ( i1.first_index()==2 ) );
+    CHECK( ( i1.last_index()==10 ) );
+    CHECK( i1.volume()==len );
   }
-  SECTION( "find in indexed" ) {
-    int len=5; vector<index_int> idx{1,2,4,7,9};
-    REQUIRE_NOTHROW( i1 = indexed_indexstruct<index_int,1>(idx) ) );
 
-    auto
-      i2 = strided_indexstruct<index_int,1>(2,4,2) ),
-      i3 = strided_indexstruct<index_int,1>(7,8,2) );
-    index_int loc;
-    REQUIRE_NOTHROW( loc = i1.location_of(i2) );
-    CHECK( loc==1 );
-    REQUIRE_NOTHROW( loc = i1.location_of(i3) );
-    CHECK( loc==3 );
-    indexstructure<index_int,1> ii(i1);
-    //REQUIRE_NOTHROW( ii = indexstructure(i1) );
-    REQUIRE_NOTHROW( loc = ii.location_of(i2) );
-    CHECK( loc==1 );
-    indexstructure ii2(i2);
-    REQUIRE_NOTHROW( loc = ii.location_of(ii2) );
-    CHECK( loc==1 );
-    REQUIRE_NOTHROW( loc = ii.location_of(indexstructure(i3)) );
-    CHECK( loc==3 );
+  SECTION( "translation through zero" ) {
+    REQUIRE_NOTHROW( i1.translate_by(-2) );
+    CHECK( !i1.is_contiguous() );
+    CHECK( i1.is_indexed() );
+    CHECK( ( i1.first_index()==-1 ) );
+    CHECK( ( i1.last_index()==7 ) );
+    CHECK( i1.volume()==len );
   }
+}
+
+
+TEST_CASE( "find in indexed" ) {
+  int len=5; vector<index_int> idx{1,2,4,7,9};
+  indexstructure i1{ indexed_indexstruct<index_int,1>(idx) };
+  indexstructure i2{ strided_indexstruct<index_int,1>(2,4,2) };
+  indexstructure i3{ strided_indexstruct<index_int,1>(7,8,2) };
+
+  index_int loc;
+  REQUIRE_NOTHROW( loc = i1.location_of(i2) );
+  CHECK( loc==1 );
+  REQUIRE_NOTHROW( loc = i1.location_of(i3) );
+  CHECK( loc==3 );
+  indexstructure ii(i1);
+  //REQUIRE_NOTHROW( ii = indexstructure(i1) );
+  REQUIRE_NOTHROW( loc = ii.location_of(i2) );
+  CHECK( loc==1 );
+  indexstructure ii2(i2);
+  REQUIRE_NOTHROW( loc = ii.location_of(ii2) );
+  CHECK( loc==1 );
+  REQUIRE_NOTHROW( loc = ii.location_of(indexstructure(i3)) );
+  CHECK( loc==3 );
 }
 
 #if 0
@@ -2367,6 +2366,5 @@ TEST_CASE( "multi sigma operators","[multi][sigma][140]" ) {
   // }
 }
 
-#endif
 #endif
 #endif
