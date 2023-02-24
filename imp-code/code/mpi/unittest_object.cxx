@@ -145,17 +145,66 @@ TEST_CASE( "norm","[mpi][object][04]" ) {
     mpi_decomposition<1> procs( the_env );
     mpi_distribution omega_p( omega,procs );
     mpi_object xp( omega_p ), yp( omega_p );
-    xp.set_constant(1.);
+    REQUIRE_NOTHROW( xp.set_constant(1.) );
 
     //scalar
-    REQUIRE_NOTHROW( mpi_object( replicated_scalar_distribution<1>( procs ) ) );
-    auto norm_value = mpi_object( replicated_scalar_distribution<1>( procs ) );
+    REQUIRE_NOTHROW( mpi_object( replicated_scalar_distribution( procs ) ) );
+    auto norm_value = mpi_object( replicated_scalar_distribution( procs ) );
 
     
-    REQUIRE_THROWS( compute_norm(xp,xp,the_env) );
-    REQUIRE_NOTHROW( compute_norm(norm_value,xp,the_env) );
+    REQUIRE_THROWS( norm(xp,xp,the_env) );
+    REQUIRE_NOTHROW( norm(norm_value,xp,the_env) );
     double *norm_data;
     REQUIRE_NOTHROW( norm_data = norm_value.data() );
     REQUIRE( norm_data[0]==static_cast<double>(total_points) );
+  }
+  {
+    INFO("2D");
+    // big object
+    const int points_per_proc = ipower(5,2);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,2> omega( total_points );
+    mpi_decomposition<2> procs( the_env );
+    mpi_distribution omega_p( omega,procs );
+    mpi_object xp( omega_p ), yp( omega_p );
+    xp.set_constant(1.);
+
+    //scalar
+    REQUIRE_NOTHROW( mpi_object( replicated_scalar_distribution( procs ) ) );
+    auto norm_value = mpi_object( replicated_scalar_distribution( procs ) );
+
+    
+    REQUIRE_THROWS( norm(xp,xp,the_env) );
+    REQUIRE_NOTHROW( norm(norm_value,xp,the_env) );
+    double *norm_data;
+    REQUIRE_NOTHROW( norm_data = norm_value.data() );
+    REQUIRE( norm_data[0]==static_cast<double>(total_points) );
+  }
+}
+
+TEST_CASE( "inner product","[mpi][object][05]" ) {
+  {
+    INFO("1D");
+    // big object
+    const int points_per_proc = ipower(5,1);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,1> omega( total_points );
+    mpi_decomposition<1> procs( the_env );
+    mpi_distribution omega_p( omega,procs );
+    mpi_object xp( omega_p ), yp( omega_p );
+    REQUIRE_NOTHROW( xp.set_constant(1.) );
+    REQUIRE_NOTHROW( yp.set_constant(2.) );
+
+    //scalar
+    REQUIRE_NOTHROW( mpi_object( replicated_scalar_distribution( procs ) ) );
+    auto norm_value = mpi_object( replicated_scalar_distribution( procs ) );
+
+    
+    REQUIRE_THROWS( inner_product(xp,xp,yp,the_env) );
+    REQUIRE_THROWS( inner_product(norm_value,xp,norm_value,the_env) );
+    REQUIRE_NOTHROW( inner_product(norm_value,xp,yp,the_env) );
+    double *norm_data;
+    REQUIRE_NOTHROW( norm_data = norm_value.data() );
+    REQUIRE( norm_data[0]==2.*static_cast<double>(total_points) );
   }
 }

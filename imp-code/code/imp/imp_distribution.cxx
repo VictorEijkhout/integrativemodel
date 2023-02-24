@@ -79,6 +79,7 @@ distribution<d>::distribution
 /*!
  * Test identity of two distributions
  * by looking at their unique ID number
+ * \todo this should really be by process grid & domain
  */
 template<int d>
 bool distribution<d>::compatible_with( const distribution<d>& other ) const {
@@ -87,7 +88,7 @@ bool distribution<d>::compatible_with( const distribution<d>& other ) const {
 
 //! Force compatibility by throwing an exception if not
 template<int d>
-void distribution<d>::throw_incompatible_with( const distribution<d>& other ) const {
+void distribution<d>::assert_compatible_with( const distribution<d>& other ) const {
   if ( not compatible_with(other) )
     throw( format("Can not combine objects on different distributions: {} / {}",
 		  my_distribution_number,other.my_distribution_number ) );

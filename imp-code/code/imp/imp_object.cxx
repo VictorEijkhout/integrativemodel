@@ -54,7 +54,7 @@ void object<d>::set_constant( double x ) {
  */
 template<int d>
 object<d>& object<d>::operator+=( const object<d>& other ) {
-  this->throw_incompatible_with(other);
+  this->assert_compatible_with(other);
   double *xdata = data(); double const * const ydata = other.data();
   for ( size_t i=0; i<this->local_domain().volume(); i++ )
     xdata[i] += ydata[i];
@@ -81,7 +81,7 @@ double object<d>::local_norm() const {
  * \todo Test if the inputs are on the same process set.
  */
 template<int d>
-void compute_norm( object<d>& scalar,const object<d>& thing,const environment& env ) {
+void norm( object<d>& scalar,const object<d>& thing,const environment& env ) {
   scalar.assert_replicated();
   double norm_value;
   norm_value = thing.local_norm();
@@ -89,10 +89,45 @@ void compute_norm( object<d>& scalar,const object<d>& thing,const environment& e
   scalar.set_constant( norm_value );
 };
 
+/*!
+ * Compute the inner_product on the local domain.
+ * The `compute_inner_product' function does an allreduce over this,
+ * which does different things in MPI vs OpenMP.
+ */
+template<int d>
+double object<d>::local_inner_product( const object<d>& other ) const {
+  double inner_product_value;
+  double const * xdata = data();
+  double const * ydata = other.data();
+  for ( size_t i=0; i<this->local_domain().volume(); i++ )
+    inner_product_value += xdata[i] * ydata[i];
+  return inner_product_value;
+};
+
+/*! Compute inner_product.
+ * This depends on the local inner_product which is overridden for OpenMP
+ * Also: the reduction is a no-op in OpenMP.
+ * \todo Test if the inputs are on the same process set.
+ */
+template<int d>
+void inner_product
+    ( object<d>& scalar,const object<d>& thing,const object<d>& other,const environment& env ) {
+  scalar.assert_replicated();
+  thing.assert_compatible_with(other);
+  double inner_product_value;
+  inner_product_value = thing.local_inner_product(other);
+  inner_product_value = env.allreduce_d( inner_product_value );
+  scalar.set_constant( inner_product_value );
+};
+
 template class object<1>;
 template class object<2>;
 template class object<3>;
 
-template void compute_norm<1>( object<1>&,const object<1>&,const environment& env );
-template void compute_norm<2>( object<2>&,const object<2>&,const environment& env );
-template void compute_norm<3>( object<3>&,const object<3>&,const environment& env );
+template void norm<1>( object<1>&,const object<1>&,const environment& env );
+template void norm<2>( object<2>&,const object<2>&,const environment& env );
+template void norm<3>( object<3>&,const object<3>&,const environment& env );
+
+template void inner_product<1>( object<1>&,const object<1>&,const object<1>&,const environment& env );
+template void inner_product<2>( object<2>&,const object<2>&,const object<2>&,const environment& env );
+template void inner_product<3>( object<3>&,const object<3>&,const object<3>&,const environment& env );

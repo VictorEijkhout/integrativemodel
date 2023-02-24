@@ -26,7 +26,11 @@ public:
   void set_constant( double x );
   object<d>& operator+=( const object<d>& );
   virtual double local_norm() const;
+  virtual double local_inner_product( const object<d>& ) const;
 };
 
 template<int d>
-void compute_norm( object<d>& scalar,const object<d>& thing,const environment& env );
+void norm( object<d>& scalar,const object<d>& thing,const environment& env );
+template<int d>
+void inner_product
+    ( object<d>& scalar,const object<d>& thing,const object<d>& other,const environment& env );

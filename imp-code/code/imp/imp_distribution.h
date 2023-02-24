@@ -49,7 +49,7 @@ public:
   const indexstructure<index_int,d>& local_domain() const;
   bool compatible_with( const distribution<d>& other ) const;
   void assert_replicated() const;
-  void throw_incompatible_with( const distribution<d>& other ) const;
+  void assert_compatible_with( const distribution<d>& other ) const;
 protected:
   indexstructure<index_int,d> _local_domain;
 };
