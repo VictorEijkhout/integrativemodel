@@ -41,6 +41,18 @@ mpi_distribution<d> replicated_scalar_distribution( const mpi_decomposition<d>& 
   return mpi_distribution( coordinate<index_int,d>(1),dist,distribution_type::replicated );
 };
 
+/*!
+ * New MPI distribution by operating
+ * This overrides the base method
+ * \todo In fact, does this need the base method? Should that one be virtual?
+ */
+template<int d>
+mpi_distribution<d> mpi_distribution<d>::operate( const ioperator<index_int,d>& op ) const {
+  auto new_omega = op.operate(this->omega);
+  return mpi_distribution<d>( new_omega,this->my_decomposition,this->my_distribution_type);
+};
+
+
 /*
  * Instantiations
  */

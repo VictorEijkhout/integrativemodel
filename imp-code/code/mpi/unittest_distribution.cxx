@@ -124,6 +124,19 @@ TEST_CASE( "replicated scalars","[mpi][distribution][replication][04]" ) {
   }
 }
 
+TEST_CASE( "divided distributions","[mpi][distribution][operation][05]" ) {
+  {
+    INFO( "1D" );
+    const int points_per_proc = ipower(10,1);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,1> omega( total_points );
+    mpi_decomposition<1> procs( the_env );
+    mpi_distribution<1> dist( omega,procs );
+
+    ioperator<index_int,1> div2("/2");
+    REQUIRE_NOTHROW( dist.operate( div2 ) );
+  }
+}
 
 #if 0
 TEST_CASE( "test presence of numa structure","[mpi][numa][04]" ) {
@@ -140,29 +153,6 @@ TEST_CASE( "test presence of numa structure","[mpi][numa][04]" ) {
   CHECK( !global->is_empty() );
   CHECK( global->first_index_r()==coordinate<index_int,d>_zero(1) );
   CHECK( global->volume()==ntids*nlocal );
-}
-
-TEST_CASE( "distribution types","[type][06]" ) {
-  parallel_indexstruct *pidx;
-  REQUIRE_NOTHROW( pidx = new parallel_indexstruct(ntids) );
-  SECTION( "global" ) {
-    REQUIRE_NOTHROW( pidx->create_from_global_size(10*ntids) );
-    REQUIRE( pidx->can_detect_type(distribution_type::CONTIGUOUS) );
-  }
-  SECTION( "indexstruct" ) {
-    REQUIRE_NOTHROW( pidx->create_from_indexstruct
-	     ( shared_ptr<indexstruct>( new contiguous_indexstruct(1,10*ntids) ) ) );
-    REQUIRE( pidx->can_detect_type(distribution_type::CONTIGUOUS) );
-  }
-  SECTION( "strided" ) {
-    REQUIRE_NOTHROW( pidx->create_from_indexstruct
-	     ( shared_ptr<indexstruct>( new strided_indexstruct(1,10*ntids,2) ) ) );
-    REQUIRE( !pidx->can_detect_type(distribution_type::CONTIGUOUS) );
-  }
-  SECTION( "local" ) {
-    REQUIRE_NOTHROW( pidx->create_from_uniform_local_size(10) );
-    REQUIRE( pidx->can_detect_type(distribution_type::CONTIGUOUS) );
-  }
 }
 
 TEST_CASE( "MPI distributions, sanity","[mpi][distribution][cookie][10]" ) {

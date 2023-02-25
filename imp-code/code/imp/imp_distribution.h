@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "indexstruct.hpp"
 #include "imp_decomp.h"
 
 template<int d>
@@ -38,6 +39,8 @@ protected:
   distribution_type my_distribution_type;
   //! extent of the domain
   coordinate<index_int,d> omega;
+  //! processor grid
+  decomposition<d> my_decomposition;
   //! orthogonal product of extents in all dimensions
   std::array<
     std::vector< indexstructure<index_int,1> >, // vector of length #proc-in-dimension
@@ -45,11 +48,15 @@ protected:
 public:
   distribution( const coordinate<index_int,d>&, const decomposition<d>&,
 		distribution_type=distribution_type::orthogonal );
-public:
-  const indexstructure<index_int,d>& local_domain() const;
+  void assert_compatible_with( const distribution<d>& other ) const;
   bool compatible_with( const distribution<d>& other ) const;
   void assert_replicated() const;
-  void assert_compatible_with( const distribution<d>& other ) const;
+
 protected:
   indexstructure<index_int,d> _local_domain;
+public:
+  const indexstructure<index_int,d>& local_domain() const;
+
+  // new distribution by operating
+  virtual distribution<d> operate( const ioperator<index_int,d>& ) const;
 };

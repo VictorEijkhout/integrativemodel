@@ -41,11 +41,11 @@ int omp_decomposition<d>::procno() const {
   throw( "no procno for omp" );
 };
 
-//! This process as d-dimensional coordinate
-template<int d>
-const coordinate<int,d>& omp_decomposition<d>::this_proc() const {
-  throw( "no proc coord for omp" );
-};
+// //! This process as d-dimensional coordinate
+// template<int d>
+// const coordinate<int,d>& omp_decomposition<d>::this_proc() const {
+//   throw( "no proc coord for omp" );
+// };
 
 /*!
   A factory for making new distributions from this decomposition

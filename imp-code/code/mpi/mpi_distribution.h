@@ -20,6 +20,8 @@ class mpi_distribution : public distribution<d> {
 public:
   mpi_distribution( const coordinate<index_int,d>&, const mpi_decomposition<d>&,
 		    distribution_type=distribution_type::orthogonal );
+  // new distribution by operating
+  virtual mpi_distribution<d> operate( const ioperator<index_int,d>& ) const override;
 };
 
 template<int d>

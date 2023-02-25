@@ -15,6 +15,7 @@
 #include <array>
 #include <vector>
 #include <string>
+#include <functional>
 
 #include "utils.h"
 #include "imp_entity.h"
@@ -57,7 +58,11 @@ public:
   const coordinate<int,d> &get_origin_processor() const;
   const coordinate<int,d> &get_farpoint_processor() const;
   int linear_location_of( const coordinate<int,d>& ) const;
-  virtual const coordinate<int,d>& this_proc() const = 0;
+
+  // virtual const coordinate<int,d>& this_proc() const = 0;
+  std::function< coordinate<int,d>() > this_proc{
+    [] () -> coordinate<int,d> { throw( "Function this_proc not defined" ); } };
+
   //! How many processors do we have in dimension `nd'?
   int size_of_dimension(int nd) const;
   //! \todo do we really need this?

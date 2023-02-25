@@ -36,5 +36,5 @@ protected:
   mutable std::optional<coordinate<int,d>> proc_coord = {};
 public:
   int procno() const;
-  virtual const coordinate<int,d>& this_proc() const override;
+  //  virtual const coordinate<int,d>& this_proc() const override;
 };

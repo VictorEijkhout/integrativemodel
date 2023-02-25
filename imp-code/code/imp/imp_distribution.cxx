@@ -29,10 +29,10 @@ using fmt::format;
 template<int d>
 distribution<d>::distribution
     ( const coordinate<index_int,d>& dom,const decomposition<d>& procs,
-      distribution_type type ) {
+      distribution_type type )
+      : my_decomposition(procs),my_distribution_type(type) {
   // give me a unique distribution number
   my_distribution_number = distribution_number++;
-  my_distribution_type   = type;
 
   // distribution construction
   using I = index_int;                            I domain_size_reconstruct{1};
@@ -107,6 +107,18 @@ void distribution<d>::assert_replicated() const {
 template<int d>
 const indexstructure<index_int,d>& distribution<d>::local_domain() const {
   return _local_domain;
+};
+
+/*!
+ * Make a new distribution from operating:
+ *  - use the same distribution type
+ *  - use the same process grid
+ *  - but operate on the omega domain.
+ */
+template<int d>
+distribution<d> distribution::operate( const ioperator<index_int,d>& op ) const {
+  auto new_omega = op.operate(omega);
+  return distribution<d>( new_omega,my_decomposition,my_distribution_type);
 };
 
 /*

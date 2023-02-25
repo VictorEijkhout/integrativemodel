@@ -1995,6 +1995,9 @@ I ioperator<I,d>::operate( I i ) const {
     throw(std::string("unknown operate type for operate"));
 };
 
+/*!
+ * Operate on a coordinate by operating on each component
+ */
 template<typename I,int d>
 coordinate<I,d> ioperator<I,d>::operate( const coordinate<I,d>& c ) const {
   auto r(c);
