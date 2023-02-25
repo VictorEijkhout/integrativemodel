@@ -19,9 +19,9 @@ using fmt::print,fmt::format;
 //! The constructor builds the single local domain
 template<int d>
 mpi_distribution<d>::mpi_distribution
-    ( const coordinate<index_int,d>& domain, const mpi_decomposition<d>& procs,
+    ( const coordinate<index_int,d>& dom, const decomposition<d>& procs,
       distribution_type type )
-      : distribution<d>(domain,procs,type) {
+      : distribution<d>(dom,procs,type) {
   const coordinate<int,d> this_proc = procs.this_proc();
   using I = index_int;
   coordinate<I,d> first,last;
@@ -30,9 +30,7 @@ mpi_distribution<d>::mpi_distribution
     first.at(id) = this->patches.at(id).at(pd).first_index().at(0);
     last .at(id) = this->patches.at(id).at(pd). last_index().at(0);
   }
-  this->_local_domain = indexstructure<I,d>
-    ( contiguous_indexstruct<I,d>( first,last ) );
-  //print( "proc {} local_domain {}\n",this_proc.as_string(),this->_local_domain.as_string() );
+  this->_local_domain = domain<d>( contiguous_indexstruct<I,d>( first,last ) );
 };
 
 //! Function to produce a single scalar, replicated over all processes

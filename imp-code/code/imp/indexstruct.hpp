@@ -22,6 +22,7 @@
 
 // imp stuff
 #include "utils.h"
+#include "imp_coord.h"
 
 // forward definitions
 template<typename I,int d>

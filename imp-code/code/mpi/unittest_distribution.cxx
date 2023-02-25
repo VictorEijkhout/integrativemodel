@@ -135,6 +135,9 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][05]" ) {
 
     ioperator<index_int,1> div2("/2");
     REQUIRE_NOTHROW( dist.operate( div2 ) );
+    auto new_dist = dist.operate( div2 );
+    REQUIRE_NOTHROW( new_dist.local_domain() );
+    auto new_local = new_dist.local_domain();
   }
 }
 

@@ -16,12 +16,18 @@
 #include "imp_decomp.h"
 
 template<int d>
-class domain : indexstructure<index_int,d> {
+class domain : public indexstructure<index_int,d> {
 public:
   domain( contiguous_indexstruct<index_int,d> ci )
     : indexstructure<index_int,d>::indexstructure<index_int,d>( ci ) {};
   domain( coordinate<index_int,d> c )
-    : domain( contiguous_indexstruct<index_int,d>( coordinate<index_int,d>(0),c ) ) {};
+    : domain<d>( contiguous_indexstruct<index_int,d>( coordinate<index_int,d>(0),c ) ) {};
+  /*! default constructor,
+   * needed for the _local_domain member of the `distribution' class,
+   * because that is constructed, not instantiated
+   */
+  domain()
+    : indexstructure<index_int,d>( empty_indexstruct<index_int,d>() ) {}
 };
 
 //! Different types of distributions
@@ -53,10 +59,18 @@ public:
   void assert_replicated() const;
 
 protected:
-  indexstructure<index_int,d> _local_domain;
+  //indexstructure<index_int,d> _local_domain;
+  domain<d> _local_domain;
 public:
-  const indexstructure<index_int,d>& local_domain() const;
+  //const indexstructure<index_int,d>& local_domain() const;
+  const domain<d>& local_domain() const;
+protected:
+  //indexstructure<index_int,d> _global_domain;
+  domain<d> _global_domain;
+public:
+  //const indexstructure<index_int,d>& global_domain() const;
+  const domain<d>& global_domain() const;
 
-  // new distribution by operating
-  virtual distribution<d> operate( const ioperator<index_int,d>& ) const;
+  // // new distribution by operating
+  // virtual distribution<d> operate( const ioperator<index_int,d>& ) const;
 };

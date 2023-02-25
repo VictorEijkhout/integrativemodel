@@ -30,7 +30,10 @@ template<int d>
 distribution<d>::distribution
     ( const coordinate<index_int,d>& dom,const decomposition<d>& procs,
       distribution_type type )
-      : my_decomposition(procs),my_distribution_type(type) {
+      : _global_domain( domain<d>( dom ) )
+      , my_decomposition(procs)
+      , my_distribution_type(type) {
+  // store global domain
   // give me a unique distribution number
   my_distribution_number = distribution_number++;
 
@@ -102,28 +105,42 @@ void distribution<d>::assert_replicated() const {
 };
 
 /*! Distributions own a local domain on each process
-  For MPI that is strictly local, for OpenMP the whole domain
+ * For MPI that is strictly local, for OpenMP the whole domain,
+ * so the local domain is set in the inherited constructors.
 */
 template<int d>
-const indexstructure<index_int,d>& distribution<d>::local_domain() const {
+const domain<d>& distribution<d>::local_domain() const {
   return _local_domain;
 };
 
-/*!
- * Make a new distribution from operating:
- *  - use the same distribution type
- *  - use the same process grid
- *  - but operate on the omega domain.
- */
+/*! Distributions are built on a global domain,
+ * this is set in the base constructor.
+ * \todo should we inherit from the `domain' class?
+*/
 template<int d>
-distribution<d> distribution::operate( const ioperator<index_int,d>& op ) const {
-  auto new_omega = op.operate(omega);
-  return distribution<d>( new_omega,my_decomposition,my_distribution_type);
+const domain<d>& distribution<d>::global_domain() const {
+  return _global_domain;
 };
+
+// /*!
+//  * Make a new distribution from operating:
+//  *  - use the same distribution type
+//  *  - use the same process grid
+//  *  - but operate on the omega domain.
+//  */
+// template<int d>
+// distribution<d> distribution::operate( const ioperator<index_int,d>& op ) const {
+//   auto new_omega = op.operate(omega);
+//   return distribution<d>( new_omega,my_decomposition,my_distribution_type);
+// };
 
 /*
  * Instantiations
  */
+template class domain<1>;
+template class domain<2>;
+template class domain<3>;
+
 template class distribution<1>;
 template class distribution<2>;
 template class distribution<3>;
