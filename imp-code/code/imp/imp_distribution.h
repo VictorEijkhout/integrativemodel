@@ -27,7 +27,7 @@ public:
    * because that is constructed, not instantiated
    */
   domain()
-    : indexstructure<index_int,d>( empty_indexstruct<index_int,d>() ) {}
+    : indexstructure<index_int,d>() {};
 };
 
 //! Different types of distributions

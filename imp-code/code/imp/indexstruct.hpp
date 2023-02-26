@@ -657,13 +657,10 @@ private:
   std::shared_ptr<indexstruct<I,d>> strct{nullptr};
   indexstruct_status known_status{indexstruct_status::KNOWN};
 public:
+  //! Default constructor: set to pointer of unknown indexstruct
   indexstructure() {
-    strct = std::shared_ptr<indexstruct<I,d>>( new unknown_indexstruct<I,d>() );
-  };
-  //! \todo get rid of this, and onl accept references
-  indexstructure( std::shared_ptr<indexstruct<I,d>> idx ) {
-    strct = idx->make_clone();
-  };
+    strct = std::shared_ptr<indexstruct<I,d>>( new unknown_indexstruct<I,d>() ); };
+  //! All other constructors, set to pointer of copy of that indexstruct
   indexstructure( contiguous_indexstruct<I,d> c )
     : indexstructure<I,d>
         ( std::shared_ptr<indexstruct<I,d>>( new contiguous_indexstruct<I,d>(c) ) ) {};
@@ -679,6 +676,8 @@ public:
     fmt::print("composite type=<{}> strct composite: <{}> this composite: <{}>\n",
 	       strct->type_as_string(),strct->is_composite(),is_composite());
   };
+  //! Constructor from polymorphic pointer to indexstruct: store pointer.
+  indexstructure( std::shared_ptr<indexstruct<I,d>> idx ) { strct = idx; };
   
   bool is_known()              const {    return strct->is_known(); };
   virtual bool is_empty( )     const {    return strct->is_empty(); };

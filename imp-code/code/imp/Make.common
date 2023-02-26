@@ -44,13 +44,26 @@ MPIFLAGS_intel    =
 MPIFLAGS_gnu      = 
 MPIFLAGS = ${MPIFLAGS_${LMOD_FAMILY_COMPILER}}
 
-CXXUNITFLAGS = # -fpermissive
-#-Wnounused-but-set-variable -Werror=no-unused-variable
+%.o : %.cxx
+	@echo "Generic compilation of $<" \
+	 && cmdline="${CXX_COMPILER} --std=c++20 ${CXXFLAGS} ${TEST_INCLUDES} -c $<" \
+	 && if [ "${ECHO}" = "1" ] ; then \
+	      echo "cmdline=$$cmdline" ; fi \
+	 && eval $$cmdline
+
+info ::
+	@echo "make coverage FILE=..."
+.PHONY: coverage
+COVERAGE_OPTIONS =
+#-output-dir=../imp/coverage
+coverage :
+	@gcov ${COVERAGE_OPTIONS} ${FILE}
 
 info ::
 	@echo "make clean"
 clean ::
 	@/bin/rm -rf *~ *.o ddt.o* *.dSYM *.ir out *.stf* ddt.o* \
+	  *.{gcov,gcda,gcno} \
 	  unittest.out *.out[0-9]* a.out
 	@for x in *.cxx ; do \
 	  /bin/rm -f $${x%%.cxx} ; \

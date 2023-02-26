@@ -18,17 +18,12 @@ info ::
 
 include ../imp/Make.inc
 include ../imp/Make.common
-IMPCODEDIR = ../imp
-OMPCODEDIR = ../omp
-MPICODEDIR = ../mpi
 include ../imp/Make.imp
 
-CXXFLAGS = ${CXX_OPTFLAGS} ${CXXUNITFLAGS} ${MPIFLAGS} 
-%.o : %.cxx
-	@tgt=$@ && tgtdir=$(dir $$tgt ) \
-	echo "Generic MPI compilation of $<" \
-	 && ${MPICXX} ${CXXFLAGS} ${MPIFLAGS} ${CXXUNITFLAGS} ${TEST_INCLUDES} \
-	    -c $<
+CXX_COMPILER = mpicxx
+# --coverage 
+CXX_LINKER   = mpicxx
+# --coverage 
 
 ####
 #### Unit tests
@@ -51,7 +46,7 @@ NEW_TESTS := unittest_env
 ENV_OBJS := mpi_env.o ${IMPCODEDIR}/imp_env.o ${IMPCODEDIR}/utils.o
 unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
 	@echo "Linking $@"
-	${MPICXX} ${CXXFLAGS} -o $@ \
+	${CXX_LINKER} ${CXXFLAGS} -o $@ \
 	    unittest_main.o $@.o ${ENV_OBJS} \
 	    ${TEST_LIBS}
 mpi_env.o : mpi_env.h ${IMPCODEDIR}/imp_env.h
@@ -63,7 +58,7 @@ NEW_TESTS += unittest_coord
 COORD_OBJS = ${IMPCODEDIR}/imp_coord.o ${ENV_OBJS}
 unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
 	@echo "Linking $@"
-	${MPICXX} ${CXXFLAGS} -o $@ \
+	${CXX_LINKER} ${CXXFLAGS} -o $@ \
 	    unittest_main.o $@.o ${COORD_OBJS} \
 	    ${TEST_LIBS}
 
@@ -75,7 +70,7 @@ DECOMP_OBJS = mpi_decomp.o ${IMPCODEDIR}/imp_decomp.o ${IMPCODEDIR}/indexstruct.
 	${COORD_OBJS}
 unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	@echo "Linking $@"
-	${MPICXX} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
+	${CXX_LINKER} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
 	    unittest_main.o $@.o ${DECOMP_OBJS} \
 	    ${TEST_LIBS}
 mpi_decomp.o : mpi_decomp.h ${IMPCODEDIR}/imp_decomp.h
@@ -88,7 +83,7 @@ DISTR_OBJS = mpi_distribution.o ${IMPCODEDIR}/imp_distribution.o \
     ${DECOMP_OBJS}
 unittest_distribution : unittest_main.o unittest_distribution.o ${DISTR_OBJS}
 	@echo "Linking $@"
-	${MPICXX} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
+	${CXX_LINKER} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
 	    unittest_main.o $@.o ${DISTR_OBJS} \
 	    ${TEST_LIBS}
 mpi_distribution.o : mpi_distribution.h ${IMPCODEDIR}/imp_distribution.h
@@ -101,7 +96,7 @@ OBJ_OBJS = mpi_object.o ${IMPCODEDIR}/imp_object.o \
     ${DISTR_OBJS}
 unittest_object : unittest_main.o unittest_object.o ${OBJ_OBJS}
 	@echo "Linking $@"
-	${MPICXX} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
+	${CXX_LINKER} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
 	    unittest_main.o $@.o ${OBJ_OBJS} \
 	    ${TEST_LIBS}
 mpi_object.o : mpi_object.h ${IMPCODEDIR}/imp_object.h
