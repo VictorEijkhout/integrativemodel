@@ -48,8 +48,7 @@ UNITTESTS = unittest_indexstruct
 unittest_indexstruct : unittest_indexstruct.o unittest_main.o indexstruct.o imp_coord.o
 	${CXX_LINKER} ${CXXFLAGS} ${CXXUNITFLAGS} \
 	    -o $@ $^ \
-	    -L${CATCH_LIB} -lCatch2Main -lCatch2 \
-	    ${CPPFORMAT_LIB}/${LIBFORMAT} ${LIBCXX}
+	    ${TEST_LIBS}
 unittest_indexstruct.o indexstruct.o : indexstruct.hpp
 
 include ../imp/Make.regress
