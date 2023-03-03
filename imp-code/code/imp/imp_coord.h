@@ -27,6 +27,8 @@ class ioperator;
 template<typename I,int d>
 std::array<I,d> endpoint(I s);
 template<typename I>
+std::vector<I> split_points(I,I,int);
+template<typename I>
 std::vector<I> split_points(I,int);
 
 //! Processor coordinates on a pretend grid. We order them by rows.

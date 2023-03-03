@@ -19,7 +19,7 @@ using fmt::print,fmt::format;
 //! The constructor builds the single local domain
 template<int d>
 mpi_distribution<d>::mpi_distribution
-    ( const coordinate<index_int,d>& dom, const decomposition<d>& procs,
+    ( const domain<d>& dom, const decomposition<d>& procs,
       distribution_type type )
       : distribution<d>(dom,procs,type) {
   const coordinate<int,d> this_proc = procs.this_proc();
@@ -36,7 +36,8 @@ mpi_distribution<d>::mpi_distribution
 //! Function to produce a single scalar, replicated over all processes
 template<int d>
 mpi_distribution<d> replicated_scalar_distribution( const mpi_decomposition<d>& dist) {
-  return mpi_distribution( coordinate<index_int,d>(1),dist,distribution_type::replicated );
+  return mpi_distribution
+    ( domain<d>( coordinate<index_int,d>(1) ),dist,distribution_type::replicated );
 };
 
 /*!
@@ -46,8 +47,10 @@ mpi_distribution<d> replicated_scalar_distribution( const mpi_decomposition<d>& 
  */
 template<int d>
 mpi_distribution<d> mpi_distribution<d>::operate( const ioperator<index_int,d>& op ) const {
-  auto new_omega = op.operate(this->omega);
-  return mpi_distribution<d>( new_omega,this->my_decomposition,this->my_distribution_type);
+  domain<d> the_domain( this->global_domain() );
+  domain<d> new_domain( the_domain.operate(op) );
+  return mpi_distribution<d>
+    ( new_domain,this->my_decomposition,this->my_distribution_type);
 };
 
 

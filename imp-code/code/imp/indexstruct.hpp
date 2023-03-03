@@ -80,22 +80,24 @@ public:
     report_unimplemented("first_index"); return 0; };
   virtual coordinate<I,d> last_index()  const{
     report_unimplemented("last_index"); return 0; };
+  virtual coordinate<I,d> last_actual_index()  const{
+    report_unimplemented("last_actual_index"); return 0; };
   virtual I volume() const {
     report_unimplemented("volume"); return 0; };
   virtual I outer_volume() const;
   virtual I stride() const { throw(std::string("Indexstruct has no stride")); };
-  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const;
+  virtual bool equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const;
   
   virtual std::shared_ptr<indexstruct<I,d>> make_strided(bool=false) const;
   virtual I find( coordinate<I,d> ) const { throw(std::string("Can not be found")); };
   I location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
     return find(inner->first_index()); };
   //! Test for element containment; this can not be const because of optimizations.
-  virtual bool contains_element( coordinate<I,d> idx ) const { return false; };
+  virtual bool contains_element( const coordinate<I,d>& idx ) const { return false; };
   virtual bool can_incorporate( coordinate<I,d> v ) const {
     report_unimplemented("can_incorporate"); return false; };
-  bool contains_element_in_range( coordinate<I,d> idx) const;
-  virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const {
+  bool contains_element_in_range( const coordinate<I,d>& idx) const;
+  virtual bool contains( const std::shared_ptr<indexstruct<I,d>>& idx ) const {
     report_unimplemented("contains"); return false; };
   virtual bool is_strided_between_indices(I,I,I&,bool=false) const {
     report_unimplemented("strided between"); return false; };
@@ -211,6 +213,8 @@ public:
     throw(std::string("No first index for empty")); };
   virtual coordinate<I,d> last_index()  const override {
     throw(std::string("No last index for empty")); };
+  virtual coordinate<I,d> last_actual_index()  const override {
+    throw(std::string("No last_actual index for empty")); };
   virtual coordinate<I,d> get_ith_element( const I i ) const override {
     throw(fmt::format("Can not get ith <<{}>> in empty",i)); };
   virtual std::shared_ptr<indexstruct<I,d>> translate_by( coordinate<I,d> shift ) const override {
@@ -245,7 +249,7 @@ public:
   virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> idx ,bool=false ) override;
   virtual bool can_merge_with_type( std::shared_ptr<indexstruct<I,d>> idx) override {
     return true; };
-  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override {
+  virtual bool equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const override {
     return idx->is_empty(); };
   virtual std::string as_string() const override { return std::string("empty"); };
 
@@ -278,22 +282,25 @@ public:
    * Statistics
    */
   coordinate<I,d> first_index() const override { return first; };
-  coordinate<I,d> last_index()  const override { return last; };
+  //! non-inclusive upper bound, mostly to be correct for contiguous
+  coordinate<I,d> last_index()  const override { return last+1; };
+  //! actually last contained index
+  coordinate<I,d> last_actual_index()  const override { return last; };
   virtual I outer_volume() const override;
   virtual I volume()  const override;
   virtual I stride() const override { return stride_amount; };
   virtual bool is_strided() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("strided"); };
   virtual I find( coordinate<I,d> idx ) const override;
-  virtual bool contains_element( coordinate<I,d> idx ) const override;
+  virtual bool contains_element( const coordinate<I,d>& idx ) const override;
   virtual coordinate<I,d> get_ith_element( const I i ) const override;
   virtual bool can_incorporate( coordinate<I,d> v ) const override {
     return ( v==first-stride_amount || v==last+stride_amount); };
   //  virtual bool contains( indexstruct *idx ) override;
-  virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
+  virtual bool contains( const std::shared_ptr<indexstruct<I,d>>& idx ) const override;
   //  virtual bool disjoint( indexstruct *idx ) override;
   virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) override;
-  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override;
+  virtual bool equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const override;
 
   /*
    * Operations that yield a new indexstruct
@@ -365,11 +372,6 @@ public:
   indexed_indexstruct() {}; //!< Create an empty indexed struct
   indexed_indexstruct( const std::vector<coordinate<I,d>> idxs );
   indexed_indexstruct( const std::vector<I> idxs );
-  // indexed_indexstruct( strided_indexstruct<I,d> *cont ) {
-  //   I s = cont->stride();
-  //   for (I idx = cont->first_index(); idx<=cont->last_index(); idx+=s)
-  //     indices.push_back(idx); };
-  // ~indexed_indexstruct() {};
   bool is_indexed() const override { return true; };
   virtual std::shared_ptr<indexstruct<I,d>> simplify() override;
   virtual std::shared_ptr<indexstruct<I,d>> force_simplify(bool=false) const override;
@@ -390,9 +392,11 @@ public:
   coordinate<I,d> first_index() const override {
     if (indices.size()==0) throw(std::string("Can not ask first for empty indexed"));
     return indices.at(0); };
-  coordinate<I,d> last_index() const override {
-    if (indices.size()==0) throw(std::string("Can not ask last for empty indexed"));
-    return indices.at(indices.size()-1); };
+  // coordinate<I,d> last_index() needs to stay undefined for indexed
+  //! actually last contained index
+  coordinate<I,d> last_actual_index() const override {
+    if (indices.size()==0) throw(std::string("Can not ask last_actual for empty indexed"));
+    return indices.back(); };
   I volume() const override { return indices.size(); };
   virtual I find( coordinate<I,d> idx ) const override {
     for (int i=0; i<indices.size(); i++)
@@ -401,7 +405,7 @@ public:
     //   if (*loc==idx) return loc.search_loc();
     throw(std::string("Index to find is out of range"));
   };
-  virtual bool contains_element( coordinate<I,d> idx ) const override {
+  virtual bool contains_element( const coordinate<I,d>& idx ) const override {
     if (indices.size()==0) return false;
     for (int i=0; i<indices.size(); i++)
       if (indices[i]==idx) return true;
@@ -410,10 +414,10 @@ public:
   virtual coordinate<I,d> get_ith_element( const I i ) const override;
   virtual std::shared_ptr<indexstruct<I,d>> make_strided(bool=false) const override;
   virtual bool is_strided_between_indices(I,I,I&,bool=false) const override;
-  virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
+  virtual bool contains( const std::shared_ptr<indexstruct<I,d>>& idx ) const override;
   virtual bool can_incorporate( coordinate<I,d> v ) const override { return true; } //!< We can always add an index.
   virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) override;
-  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override;
+  virtual bool equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const override;
 
   /*
    * Operations that yield a new indexstruct
@@ -465,11 +469,12 @@ public:
     for (auto s : structs )
       if (!s->is_empty()) return false; return true; };
   virtual coordinate<I,d> first_index() const override;
-  virtual coordinate<I,d> last_index()  const override;
+  // virtual coordinate<I,d> last_index() undefined for composite
+  virtual coordinate<I,d> last_actual_index()  const override;
   virtual I volume()  const override;
 
-  virtual bool contains_element( coordinate<I,d> idx ) const override;
-  virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) const override;
+  virtual bool contains_element( const coordinate<I,d>& idx ) const override;
+  virtual bool contains( const std::shared_ptr<indexstruct<I,d>>& idx ) const override;
   virtual I find( coordinate<I,d> idx ) const override ;
   virtual coordinate<I,d> get_ith_element( const I i ) const override;
   virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> ,bool=false ) override;
@@ -481,7 +486,7 @@ public:
   virtual std::shared_ptr<indexstruct<I,d>> minus( std::shared_ptr<indexstruct<I,d>> idx ) const override;
   //  virtual bool disjoint( indexstruct *idx ) override;
   virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) override;
-  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const override;
+  virtual bool equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const override;
 
   virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op ,bool=false) const override;
 
@@ -701,15 +706,18 @@ public:
    * Statistics
    */
   virtual coordinate<I,d> first_index() const {    return strct->first_index(); };
+  //! actually last contained index
   virtual coordinate<I,d> last_index()  const {    return strct->last_index(); };
+  //! non-inclusive upper bound, mostly to be correct for contiguous
+  virtual coordinate<I,d> last_actual_index()  const { return strct->last_actual_index(); };
   I volume()                            const {    return strct->volume(); };
   I outer_volume()                      const {    return strct->outer_volume(); };
   virtual int stride()                  const {    return strct->stride(); };
-  virtual bool equals( std::shared_ptr<indexstruct<I,d>> idx ) const {
+  virtual bool equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const {
     return strct->equals(idx); };
   virtual bool operator==( std::shared_ptr<indexstruct<I,d>> idx ) const {
     return strct->equals(idx); };
-  virtual bool equals( indexstructure &idx ) const {
+  virtual bool equals( const indexstructure& idx ) const {
     return strct->equals(idx.strct); };
   
   virtual I find( coordinate<I,d> idx )  const {    return strct->find(idx); };
@@ -718,12 +726,12 @@ public:
   I location_of( indexstructure &inner ) const {    return strct->location_of(inner.strct); };
   I location_of( indexstructure &&inner ) {
     return strct->location_of(inner.strct); };
-  virtual bool contains_element( coordinate<I,d> idx ) const {
+  virtual bool contains_element( const coordinate<I,d>& idx ) const {
     return strct->contains_element(idx); };
-  bool contains_element_in_range( coordinate<I,d> idx) const;
-  virtual bool contains( std::shared_ptr<indexstruct<I,d>> idx ) {
+  bool contains_element_in_range( const coordinate<I,d>& idx) const;
+  virtual bool contains( const std::shared_ptr<indexstruct<I,d>>& idx ) {
     return strct->contains(idx); };
-  virtual bool contains( indexstructure &idx ) const {
+  virtual bool contains( const indexstructure& idx ) const {
     return strct->contains(idx.strct); };
   virtual bool disjoint( std::shared_ptr<indexstruct<I,d>> idx ) {
     return strct->disjoint(idx); };

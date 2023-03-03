@@ -18,6 +18,8 @@
 template<int d>
 class domain : public indexstructure<index_int,d> {
 public:
+  domain( const indexstructure<index_int,d>& idx )
+    : indexstructure<index_int,d>( idx ) {};
   domain( contiguous_indexstruct<index_int,d> ci )
     : indexstructure<index_int,d>::indexstructure<index_int,d>( ci ) {};
   domain( coordinate<index_int,d> c )
@@ -52,7 +54,7 @@ protected:
     std::vector< indexstructure<index_int,1> >, // vector of length #proc-in-dimension
     d> patches;
 public:
-  distribution( const coordinate<index_int,d>&, const decomposition<d>&,
+  distribution( const domain<d>&, const decomposition<d>&,
 		distribution_type=distribution_type::orthogonal );
   void assert_compatible_with( const distribution<d>& other ) const;
   bool compatible_with( const distribution<d>& other ) const;

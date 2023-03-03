@@ -48,6 +48,36 @@ TEST_CASE( "creation","[mpi][distribution][01]" ) {
   }
 }
 
+TEST_CASE( "global domains","[mpi][distribution][02]" ) {
+  INFO( "proc: " << the_env.procid() );
+  {
+    INFO( "1D" );
+    const int points_per_proc = ipower(10,1);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,1> omega( total_points );
+    mpi_decomposition<1> procs( the_env );
+    mpi_distribution<1> omega_p( omega,procs );
+    REQUIRE_NOTHROW( omega_p.global_domain() );
+    indexstructure<index_int,1> global_domain = omega_p.global_domain();
+    REQUIRE_NOTHROW( global_domain.volume() );
+    index_int check_total_points = global_domain.volume();
+    REQUIRE( check_total_points==total_points );
+  }
+  {
+    INFO( "2D" );
+    const int points_per_proc = pow(10,2);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,2> omega( points_per_proc*the_env.nprocs() );
+    mpi_decomposition<2> procs( the_env );
+    mpi_distribution<2> omega_p( omega,procs );
+    REQUIRE_NOTHROW( omega_p.global_domain() );
+    indexstructure<index_int,2> global_domain = omega_p.global_domain();
+    REQUIRE_NOTHROW( global_domain.volume() );
+    index_int check_total_points = global_domain.volume();
+    REQUIRE( check_total_points==total_points );
+  }
+}
+
 TEST_CASE( "local domains","[mpi][distribution][02]" ) {
   INFO( "proc: " << the_env.procid() );
   {
@@ -132,12 +162,23 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][05]" ) {
     coordinate<index_int,1> omega( total_points );
     mpi_decomposition<1> procs( the_env );
     mpi_distribution<1> dist( omega,procs );
+    INFO( "original domain: " << dist.global_domain().as_string() );
 
     ioperator<index_int,1> div2("/2");
     REQUIRE_NOTHROW( dist.operate( div2 ) );
     auto new_dist = dist.operate( div2 );
+    REQUIRE_NOTHROW( new_dist.global_domain() );
+
+    REQUIRE_NOTHROW( new_dist.global_domain() );
+    auto new_global = new_dist.global_domain();
+    INFO( "divided global : " << new_global.as_string() );
+    REQUIRE( new_global.volume()==total_points/2 );
+
+    INFO( "original local : " << dist.local_domain().as_string() );
     REQUIRE_NOTHROW( new_dist.local_domain() );
     auto new_local = new_dist.local_domain();
+    INFO( "divided local  : " << new_local.as_string() );
+    REQUIRE( new_local.volume()==points_per_proc/2 );
   }
 }
 

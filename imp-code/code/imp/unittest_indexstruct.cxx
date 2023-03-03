@@ -61,7 +61,8 @@ TEST_CASE( "contiguous indexstruct, construction","[indexstruct][1]" ) {
     CHECK( i1.is_contiguous() );
     CHECK( !i1.is_indexed() );
     CHECK( ( i1.first_index()==0 ) );
-    CHECK( ( ( i1.last_index()==5 ) ) );
+    CHECK( ( ( i1.last_actual_index()==5 ) ) );
+    CHECK( ( ( i1.last_index()==6 ) ) );
     CHECK( i1.volume()==6 );
     CHECK( i1.stride()==1 );
     CHECK( i1.find(0)==0 );
@@ -73,7 +74,7 @@ TEST_CASE( "contiguous indexstruct, construction","[indexstruct][1]" ) {
     CHECK( ii.is_contiguous() );
     CHECK( !ii.is_indexed() );
     CHECK( ( ii.first_index()==0 ) );
-    CHECK( ( ( ii.last_index()==5 ) ) );
+    CHECK( ( ( ii.last_actual_index()==5 ) ) );
     CHECK( ii.volume()==6 );
     CHECK( ii.stride()==1 );
     CHECK( ii.find(0)==0 );
@@ -88,7 +89,7 @@ TEST_CASE( "Contiguous indexstruct accretion" ) {
   indexstructure<index_int,1> i1( contiguous_indexstruct<index_int,1>(2,5) );
   CHECK( i1.volume()==4 );
   CHECK( ( i1.first_index()==2 ) );
-  CHECK( ( i1.last_index()==5 ) );
+  CHECK( ( i1.last_actual_index()==5 ) );
 
   coordinate<index_int,1> c3(3);
   INFO( format("adding 3: {}",c3.as_string()) );
@@ -97,7 +98,7 @@ TEST_CASE( "Contiguous indexstruct accretion" ) {
   CHECK( i1.is_contiguous() );
   CHECK( i1.volume()==4 );
   CHECK( ( i1.first_index()==2 ) );
-  CHECK( ( i1.last_index()==5 ) );
+  CHECK( ( i1.last_actual_index()==5 ) );
 
   coordinate<index_int,1> c5(5);
   INFO( format("adding 5: {}",c5.as_string()) );
@@ -106,7 +107,7 @@ TEST_CASE( "Contiguous indexstruct accretion" ) {
   CHECK( i1.is_contiguous() );
   CHECK( i1.volume()==4 );
   CHECK( ( i1.first_index()==2 ) );
-  CHECK( ( i1.last_index()==5 ) );
+  CHECK( ( i1.last_actual_index()==5 ) );
 
   coordinate<index_int,1> c6(6);
   INFO( format("adding 6: {}",c6.as_string()) );
@@ -115,7 +116,7 @@ TEST_CASE( "Contiguous indexstruct accretion" ) {
   CHECK( i1.is_contiguous() );
   CHECK( i1.volume()==5 );
   CHECK( ( i1.first_index()==2 ) );
-  CHECK( ( i1.last_index()==6 ) );
+  CHECK( ( i1.last_actual_index()==6 ) );
 
   coordinate<index_int,1> c1(1);
   REQUIRE_NOTHROW( i1.add_element(c1) );
@@ -123,7 +124,7 @@ TEST_CASE( "Contiguous indexstruct accretion" ) {
   CHECK( i1.is_contiguous() );
   CHECK( i1.volume()==6 );
   CHECK( ( i1.first_index()==1 ) );
-  CHECK( ( i1.last_index()==6 ) );
+  CHECK( ( i1.last_actual_index()==6 ) );
 
   coordinate<index_int,1> c9(9);
   REQUIRE_NOTHROW( i1.add_element(c9) );
@@ -137,7 +138,7 @@ TEST_CASE( "more contiguous" ) {
   CHECK( i1.is_contiguous() );
   CHECK( !i1.is_indexed() );
   CHECK( ( i1.first_index()==1 ) );
-  CHECK( ( i1.last_index()==7 ) );
+  CHECK( ( i1.last_actual_index()==7 ) );
   CHECK( i1.stride()==1 );
   REQUIRE_THROWS( i1.find(0) );
 }
@@ -148,7 +149,7 @@ TEST_CASE( "strided" ) {
   CHECK( !i1.is_contiguous() );
   CHECK( !i1.is_indexed() );
   CHECK( ( i1.first_index()==2 ) );
-  CHECK( ( i1.last_index()==6 ) );
+  CHECK( ( i1.last_actual_index()==6 ) );
   CHECK( i1.volume()==3 );
   CHECK( i1.stride()==2 );
   CHECK( i1.find(2)==0 );
@@ -162,21 +163,26 @@ TEST_CASE( "strided" ) {
 
 TEST_CASE( "basic stride tests" ) {
   indexstructure i1( strided_indexstruct<index_int,1>(4,7,2) );
+  INFO( "i1: " << i1.as_string() );
   CHECK( !i1.is_contiguous() );
   CHECK( i1.is_strided() );
   CHECK( !i1.is_indexed() );
   CHECK( ( i1.first_index()==4 ) );
-  CHECK( ( i1.last_index()==6 ) );
+  CHECK( ( i1.last_actual_index()==6 ) );
   CHECK( i1.volume()==2 );
   CHECK( i1.stride()==2 );
+  CHECK( i1.contains(i1) );
+  CHECK( i1.equals(i1) );
 
   indexstructure i2( contiguous_indexstruct<index_int,1>(4,6) );
+  INFO( "i2: " << i2.as_string() );
   CHECK( !i1.equals(i2) );
   CHECK( !i2.equals(i1) );
   CHECK( i2.get_ith_element(1)==5 );
   CHECK_THROWS( i2.get_ith_element(3) );
   
   indexstructure i3( strided_indexstruct<index_int,1>(4,6,2) );
+  INFO( "i3: " << i3.as_string() );
   CHECK( i3.equals(i1) );
   CHECK( i1.equals(i3) );
   CHECK( i3.get_ith_element(1)==6 );
@@ -208,7 +214,7 @@ TEST_CASE( "strided containment" ) {
     CHECK( !i1.is_contiguous() );
     CHECK( !i1.is_indexed() );
     CHECK( ( i1.first_index()==5 ) );
-    CHECK( ( i1.last_index()==7 ) );
+    CHECK( ( i1.last_actual_index()==7 ) );
     CHECK( i1.volume()==2 );
     CHECK( i1.stride()==2 );
   }
@@ -218,7 +224,7 @@ TEST_CASE( "strided containment" ) {
     CHECK( i1.is_strided() );
     CHECK( !i1.is_indexed() );
     CHECK( ( i1.first_index()==2 ) );
-    CHECK( ( i1.last_index()==4 ) );
+    CHECK( ( i1.last_actual_index()==4 ) );
     CHECK( i1.volume()==2 );
     CHECK( i1.stride()==2 );
   }
@@ -229,7 +235,7 @@ TEST_CASE( "strided containment" ) {
     CHECK( !i1.is_contiguous() );
     CHECK( !i1.is_indexed() );
     CHECK( ( i1.first_index()==-1 ) );
-    CHECK( ( i1.last_index()==1 ) );
+    CHECK( ( i1.last_actual_index()==1 ) );
     CHECK( i1.volume()==2 );
     CHECK( i1.stride()==2 );
   }
@@ -265,7 +271,7 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
       CHECK( !i1.is_contiguous() );
       CHECK( i1.is_indexed() );
       CHECK( ( i1.first_index()==1 ) );
-      CHECK( ( i1.last_index()==4 ) );
+      CHECK( ( i1.last_actual_index()==4 ) );
       CHECK( i1.volume()==len );
     }
 
@@ -280,7 +286,7 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
       CHECK( !i1.is_contiguous() );
       CHECK( i1.is_indexed() );
       CHECK( ( i1.first_index()==-1 ) );
-      CHECK( ( i1.last_index()==4 ) );
+      CHECK( ( i1.last_actual_index()==4 ) );
       CHECK( i1.volume()==len );
 
       indexstructure<index_int,1> ii(i1);
@@ -288,7 +294,7 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
       CHECK( !ii.is_contiguous() );
       CHECK( ii.is_indexed() );
       CHECK( ( ii.first_index()==-1 ) );
-      CHECK( ( ii.last_index()==4 ) );
+      CHECK( ( ii.last_actual_index()==4 ) );
       CHECK( ii.volume()==len );
     }
 
@@ -297,23 +303,23 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
       indexstructure i1{ indexed_indexstruct<index_int,1>(idx) };
       CHECK( i1.volume()==3 );
       CHECK( ( i1.first_index()==4 ) );
-      CHECK( ( i1.last_index()==20 ) );
+      CHECK( ( i1.last_actual_index()==20 ) );
       REQUIRE_NOTHROW( i1.add_element(9) );
       CHECK( i1.volume()==3 );
       CHECK( ( i1.first_index()==4 ) );
-      CHECK( ( i1.last_index()==20 ) );
+      CHECK( ( i1.last_actual_index()==20 ) );
       REQUIRE_NOTHROW( i1.add_element(30) );
       CHECK( i1.volume()==4 );
       CHECK( ( i1.first_index()==4 ) );
-      CHECK( ( i1.last_index()==30 ) );
+      CHECK( ( i1.last_actual_index()==30 ) );
       REQUIRE_NOTHROW( i1.add_element(1) );
       CHECK( i1.volume()==5 );
       CHECK( ( i1.first_index()==1 ) );
-      CHECK( ( i1.last_index()==30 ) );
+      CHECK( ( i1.last_actual_index()==30 ) );
       REQUIRE_NOTHROW( i1.add_element(10) );
       CHECK( i1.volume()==6 );
       CHECK( ( i1.first_index()==1 ) );
-      CHECK( ( i1.last_index()==30 ) );
+      CHECK( ( i1.last_actual_index()==30 ) );
     }
 
     SECTION( "simplificy to strided" ) {
@@ -332,11 +338,13 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
 
     SECTION( "construction and simplify" ) {
       indexstructure i1{ indexed_indexstruct<index_int,1>( vector<index_int>{2,6,8} ) };
+      INFO( "i1: " << i1.as_string() );
       indexstructure i2{ indexed_indexstruct<index_int,1>( vector<index_int>{3,5,7} ) };
+      INFO( "i2: " << i2.as_string() );
       index_int stride;
       REQUIRE( not i1.is_strided_between_indices(0,2,stride) );
 
-      SECTION( "try forcing" ) {
+      SECTION( "try forcing 1" ) {
 	REQUIRE_NOTHROW( i1.force_simplify() );
 	CHECK( i1.is_indexed() );
       }
@@ -396,7 +404,7 @@ TEST_CASE( "striding and operations" ) {
     CHECK( !i1.is_contiguous() );
     CHECK( i1.is_indexed() );
     CHECK( ( i1.first_index()==1 ) );
-    CHECK( ( i1.last_index()==9 ) );
+    CHECK( ( i1.last_actual_index()==9 ) );
     CHECK( i1.volume()==len );
 
     CHECK( !i1.contains_element(0) );
@@ -420,7 +428,7 @@ TEST_CASE( "striding and operations" ) {
     CHECK( !i1.is_contiguous() );
     CHECK( i1.is_indexed() );
     CHECK( ( i1.first_index()==2 ) );
-    CHECK( ( i1.last_index()==10 ) );
+    CHECK( ( i1.last_actual_index()==10 ) );
     CHECK( i1.volume()==len );
   }
 
@@ -429,7 +437,7 @@ TEST_CASE( "striding and operations" ) {
     CHECK( !i1.is_contiguous() );
     CHECK( i1.is_indexed() );
     CHECK( ( i1.first_index()==-1 ) );
-    CHECK( ( i1.last_index()==7 ) );
+    CHECK( ( i1.last_actual_index()==7 ) );
     CHECK( i1.volume()==len );
   }
 }
@@ -489,7 +497,7 @@ TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
     //    INFO( format("ifinal: {}",streamed(ifinal)) );
     CHECK( !ifinal.is_contiguous() );
     CHECK( ( ifinal.first_index()==3 ) );
-    CHECK( ( ifinal.last_index()==12 ) );
+    CHECK( ( ifinal.last_actual_index()==12 ) );
     CHECK( ifinal.volume()==6 );
   }
   SECTION( "tricky composite simplify with indexed" ) {
@@ -617,7 +625,7 @@ TEST_CASE( "enumerating indexstructs","[10]" ) {
     indexstruct<index_int,1> idx;
     REQUIRE_NOTHROW( idx = strided_indexstruct<index_int,1>(3,10,2) ) );
     CHECK( ( idx.first_index()==3 ) );
-    CHECK( ( idx.last_index()==9 ) );
+    CHECK( ( idx.last_actual_index()==9 ) );
     int value = 3, count = 0;
     SECTION( "traditional" ) {
       for (auto i=idx.begin(); i!=idx.end(); ++i) {
@@ -694,7 +702,7 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
       REQUIRE( i3!=nullptr );
       CHECK( i3.is_contiguous() );
       CHECK( ( i3.first_index()==5 ) );
-      CHECK( ( i3.last_index()==10 ) );
+      CHECK( ( i3.last_actual_index()==10 ) );
       CHECK( !i1.contains(i2) );
       CHECK( i1.contains(i3) );
       CHECK( i2.contains(i3) );
@@ -703,14 +711,14 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
       REQUIRE_NOTHROW( I3 = I1.intersect(I2) );
       CHECK( I3.is_contiguous() );
       CHECK( ( I3.first_index()==5 ) );
-      CHECK( ( I3.last_index()==10 ) );
+      CHECK( ( I3.last_actual_index()==10 ) );
 
       i2 = indexstruct<index_int,1>{ new contiguous_indexstruct<index_int,1>(10,12) };
       REQUIRE_NOTHROW( i3 = i1.intersect(i2) );
       REQUIRE( i3!=nullptr );
       CHECK( i3.is_contiguous() );
       CHECK( ( i3.first_index()==10 ) );
-      CHECK( ( i3.last_index()==10 ) );
+      CHECK( ( i3.last_actual_index()==10 ) );
       CHECK( !i1.contains(i2) );
       CHECK( i1.contains(i3) );
       CHECK( i2.contains(i3) );
@@ -718,11 +726,11 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
       REQUIRE_NOTHROW( i4 = i3.relativize_to(i1) ); // [10,10] in [1,10] is [9,9]
       CHECK( i4.is_contiguous() );
       CHECK( ( i4.first_index()==9 ) );
-      CHECK( ( i4.last_index()==9 ) );
+      CHECK( ( i4.last_actual_index()==9 ) );
       REQUIRE_NOTHROW( i4 = i3.relativize_to(i2) );
       CHECK( i4.is_contiguous() );
       CHECK( ( i4.first_index()==0 ) );
-      CHECK( ( i4.last_index()==0 ) );
+      CHECK( ( i4.last_actual_index()==0 ) );
 
       i2 = indexstruct<index_int,1>{ new contiguous_indexstruct<index_int,1>(11,12) };
       REQUIRE_NOTHROW( i3 = i1.intersect(i2) );
@@ -734,7 +742,7 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
       CHECK( i4.stride()==1 );
       CHECK( i4.volume()==2 );
       CHECK( ( i4.first_index()==1 ) );
-      CHECK( ( i4.last_index()==2 ) );
+      CHECK( ( i4.last_actual_index()==2 ) );
     }
     SECTION( "cont-idx" ) {
       int len=3; vector<index_int> idx{4,8,11};
@@ -743,7 +751,7 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
       REQUIRE( !i3.is_empty() );
       CHECK( i3.is_indexed() );
       CHECK( ( i3.first_index()==4 ) );
-      CHECK( ( i3.last_index()==8 ) );
+      CHECK( ( i3.last_actual_index()==8 ) );
       CHECK( !i1.contains(i2) );
       CHECK( i1.contains(i3) );
       CHECK( i2.contains(i3) );
@@ -755,7 +763,7 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
       REQUIRE( !i3.is_empty() );
       CHECK( i3.is_indexed() );
       CHECK( ( i3.first_index()==4 ) );
-      CHECK( ( i3.last_index()==10 ) );
+      CHECK( ( i3.last_actual_index()==10 ) );
       CHECK( i1.contains(i2) );
       CHECK( i1.contains(i3) );
       CHECK( i2.contains(i3) );
@@ -766,7 +774,7 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
 
       CHECK( i4.is_indexed() );
       CHECK( ( i4.first_index()==3 ) );
-      CHECK( ( i4.last_index()==9 ) );
+      CHECK( ( i4.last_actual_index()==9 ) );
     }
   }
   SECTION( "stride-stride" ) {
@@ -805,7 +813,7 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
     REQUIRE_NOTHROW( i3 = i1.relativize_to(i2) );
     CHECK( i3.volume()==2 );
     CHECK( ( i3.first_index()==0 ) );
-    CHECK( ( i3.last_index()==2 ) );
+    CHECK( ( i3.last_actual_index()==2 ) );
   }
   SECTION( "idx-idx" ) {
     indexstruct<index_int,1> i5{nullptr};
@@ -818,7 +826,7 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
     CHECK( i4.volume()==2 );
     CHECK( i4.is_indexed() );
     CHECK( ( i4.first_index()==8 ) );
-    CHECK( ( i4.last_index()==11 ) );
+    CHECK( ( i4.last_actual_index()==11 ) );
     CHECK( !i2.contains(i3) );
     CHECK( i2.contains(i4) );
     CHECK( i3.contains(i4) );
@@ -828,7 +836,7 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
     CHECK( I4.volume()==2 );
     CHECK( I4.is_indexed() );
     CHECK( ( I4.first_index()==8 ) );
-    CHECK( ( I4.last_index()==11 ) );
+    CHECK( ( I4.last_actual_index()==11 ) );
 
     REQUIRE_THROWS( i5 = i3.relativize_to(i2) );
     REQUIRE_THROWS( i5 = i2.relativize_to(i3) );
@@ -838,11 +846,11 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
     REQUIRE_NOTHROW( i5 = i4.relativize_to(i2) ); // [8,11] in indexed:[4,8,11]
     CHECK( i5.is_indexed() );
     CHECK( ( i5.first_index()==1 ) );
-    CHECK( ( i5.last_index()==2 ) );
+    CHECK( ( i5.last_actual_index()==2 ) );
     REQUIRE_NOTHROW( i5 = i4.relativize_to(i3) ); // [8,11] in [3,8,10,11,12]
     CHECK( i5.is_indexed() );
     CHECK( ( i5.first_index()==1 ) );
-    CHECK( ( i5.last_index()==3 ) );
+    CHECK( ( i5.last_actual_index()==3 ) );
   }
 }
 
@@ -871,7 +879,7 @@ TEST_CASE( "indexstruct differences","[minus][21]" ) {
       REQUIRE_NOTHROW( i3 = i1.minus(i2) );
       CHECK( i3.volume()==20 );
       CHECK( ( i3.first_index()==5 ) );
-      CHECK( ( i3.last_index()==30 ) );
+      CHECK( ( i3.last_actual_index()==30 ) );
     }
     SECTION( "other way" ) {
       REQUIRE_NOTHROW( i3 = i2.minus(i1) );
@@ -886,13 +894,13 @@ TEST_CASE( "indexstruct differences","[minus][21]" ) {
       INFO( i3.as_string() );
       CHECK( i3.is_contiguous() );
       CHECK( ( i3.first_index()==5 ) );
-      CHECK( ( i3.last_index()==14 ) );
+      CHECK( ( i3.last_actual_index()==14 ) );
     }
     SECTION( "other way" ) {
       REQUIRE_NOTHROW( i3 = i2.minus(i1) );
       CHECK( i3.is_contiguous() );
       CHECK( ( i3.first_index()==21 ) );
-      CHECK( ( i3.last_index()==30 ) );
+      CHECK( ( i3.last_actual_index()==30 ) );
     }
   }
   SECTION( "contiguous minus contiguous, creating gap" ) {
@@ -936,18 +944,18 @@ TEST_CASE( "indexstruct differences","[minus][21]" ) {
     i1 = i1.convert_to_indexed() ;
     CHECK( i1.is_indexed() );
     CHECK( ( i1.first_index()==4 ) );
-    CHECK( ( i1.last_index()==16 ) );
+    CHECK( ( i1.last_actual_index()==16 ) );
     i2  = contiguous_indexstruct<index_int,1>( 13,17 ) );
     REQUIRE_NOTHROW( i3 = i1.minus(i2) );
     CHECK( i3.is_indexed() );
     CHECK( ( i3.first_index()==4 ) );
-    CHECK( ( i3.last_index()==12 ) );
+    CHECK( ( i3.last_actual_index()==12 ) );
 
     indexstructure<index_int,1> I1(strided_indexstruct<index_int,1>( 4,16,4 )), I2(i2), I3;
     REQUIRE_NOTHROW( I3 = I1.minus(I2) );
     CHECK( I3.volume()==3 );
     CHECK( ( I3.first_index()==4 ) );
-    CHECK( ( I3.last_index()==12 ) );
+    CHECK( ( I3.last_actual_index()==12 ) );
 
   }
   SECTION( "indexed-indexed" ) {
@@ -962,7 +970,7 @@ TEST_CASE( "indexstruct differences","[minus][21]" ) {
     REQUIRE_NOTHROW( i3 = i1.minus(i2) );
     CHECK( i3.volume()==3 );
     CHECK( ( i3.first_index()==4 ) );
-    CHECK( ( i3.last_index()==12 ) );
+    CHECK( ( i3.last_actual_index()==12 ) );
   }
 }
 
@@ -975,7 +983,7 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
     CHECK_NOTHROW( i2 = i1.convert_to_indexed() );
     CHECK( i2.is_indexed() );
     CHECK( ( i2.first_index()==2 ) );
-    CHECK( ( i2.last_index()==2+SMALLBLOCKSIZE-1 ) );
+    CHECK( ( i2.last_actual_index()==2+SMALLBLOCKSIZE-1 ) );
     CHECK( i2.volume()==i1.volume() );
   }
   SECTION( "convert from stride 2" ) {
@@ -983,7 +991,7 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
     CHECK_NOTHROW( i2 = i1.convert_to_indexed() );
     CHECK( i2.is_indexed() );
     CHECK( ( i2.first_index()==2 ) );
-    CHECK( ( i2.last_index()==2+2*SMALLBLOCKSIZE-2 ) );
+    CHECK( ( i2.last_actual_index()==2+2*SMALLBLOCKSIZE-2 ) );
     CHECK( i2.volume()==i1.volume() );
   }
   SECTION( "cont-cont" ) {
@@ -997,7 +1005,7 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
       REQUIRE( i3!=nullptr );
       CHECK( i3.is_contiguous() );
       CHECK( ( i3.first_index()==1 ) );
-      CHECK( ( i3.last_index()==12 ) );
+      CHECK( ( i3.last_actual_index()==12 ) );
     }
     SECTION( "2" ) {
       i2 = indexstruct<index_int,1>{ new contiguous_indexstruct<index_int,1>(11,13) };
@@ -1005,7 +1013,7 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
       REQUIRE( i3!=nullptr );
       CHECK( i3.is_contiguous() );
       CHECK( ( i3.first_index()==1 ) );
-      CHECK( ( i3.last_index()==13 ) );
+      CHECK( ( i3.last_actual_index()==13 ) );
     }
     SECTION( "3" ) {
       SECTION( "extend right" ) {
@@ -1021,7 +1029,7 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
 	REQUIRE_NOTHROW( i2l = i2.volume() );
 	CHECK( i3.volume()==(i1l+i2l) );
 	CHECK( ( i3.first_index()==1 ) );
-	CHECK( ( i3.last_index()==13 ) );
+	CHECK( ( i3.last_actual_index()==13 ) );
       }
       SECTION( "extend left" ) {
 	i1 = indexstruct<index_int,1>{ new contiguous_indexstruct<index_int,1>(1,10) };
@@ -1033,7 +1041,7 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
 	CHECK( i3.is_composite() );
 	CHECK( i3.volume()==(i1.volume()+i2.volume()) );
 	CHECK( ( i3.first_index()==1 ) );
-	CHECK( ( i3.last_index()==14 ) );
+	CHECK( ( i3.last_actual_index()==14 ) );
       }
     }
   }
@@ -1050,7 +1058,7 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
     CHECK( i2.volume()==3 );
     CHECK( i3.volume()==6 );
     CHECK( ( i3.first_index()==5 ) );
-    CHECK( ( i3.last_index()==12) );
+    CHECK( ( i3.last_actual_index()==12) );
   }
   SECTION( "cont-idx extending" ) {
     i1 = indexstruct<index_int,1>{ new contiguous_indexstruct<index_int,1>(5,11) };
@@ -1068,11 +1076,11 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
     CHECK( i3.is_contiguous() );
     CHECK( i3.volume()==8 );
     CHECK( ( i3.first_index()==5 ) );
-    CHECK( ( i3.last_index()==12) );
+    CHECK( ( i3.last_actual_index()==12) );
     // VLE do we need this? CHECK( I3.is_contiguous() );
     CHECK( I3.volume()==8 );
     CHECK( ( I3.first_index()==5 ) );
-    CHECK( ( I3.last_index()==12) );
+    CHECK( ( I3.last_actual_index()==12) );
   }
   SECTION( "cont-idx extending2" ) {
     i1 = indexstruct<index_int,1>{ new contiguous_indexstruct<index_int,1>(5,11) };
@@ -1086,7 +1094,7 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
     CHECK( i3.is_contiguous() );
     CHECK( i3.volume()==8 );
     CHECK( ( i3.first_index()==5 ) );
-    CHECK( ( i3.last_index()==12) );
+    CHECK( ( i3.last_actual_index()==12) );
   }
   SECTION( "idx-cont" ) {
     i1 = indexstruct<index_int,1>{ new strided_indexstruct<index_int,1>(8,12,2) };
@@ -1095,7 +1103,7 @@ TEST_CASE( "indexstruct<index_int,1> unions","[indexstruct<index_int,1>][union][
     REQUIRE_NOTHROW( i3 = i1.struct_union(i2) );
     CHECK( i3.volume()==6 );
     CHECK( ( i3.first_index()==5 ) );
-    CHECK( ( i3.last_index()==12) );
+    CHECK( ( i3.last_actual_index()==12) );
   }
   SECTION( "tricky composite stuff" ) {
     shared_ptr<composite_indexstruct<index_int,1>> icomp;
@@ -1349,7 +1357,7 @@ TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) 
     INFO( format("multiplied by 2: {}",i2.as_string()) );
     CHECK( i2.is_strided() );
     CHECK( ( i2.first_index()==10 ) );
-    CHECK( ( i2.last_index()==20 ) );
+    CHECK( ( i2.last_actual_index()==20 ) );
     CHECK( i2.volume()==i1.volume() );
     CHECK( i2.stride()==2 );
   }
@@ -1360,7 +1368,7 @@ TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) 
     auto i2 = i1.operate(op);
     CHECK( i2.is_contiguous() );
     CHECK( ( i2.first_index()==10 ) );
-    CHECK( ( i2.last_index()==21 ) );
+    CHECK( ( i2.last_actual_index()==21 ) );
     CHECK( i2.volume()==i1.volume()*2 );
     CHECK( i2.is_strided() );
   }
@@ -1375,13 +1383,13 @@ TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) 
     auto i2 = i1.operate(op);
     // CHECK( i2.is_strided() );
     CHECK( ( i2.first_index()==10 ) );
-    CHECK( ( i2.last_index()==20 ) );
+    CHECK( ( i2.last_actual_index()==20 ) );
   }
 #if 0
   SECTION( "shift strided" ) {
     i1 = strided_indexstruct<index_int,1>(1,10,2) );
     CHECK( ( i1.first_index()==1 ) );
-    CHECK( ( i1.last_index()==9 ) );
+    CHECK( ( i1.last_actual_index()==9 ) );
     CHECK( i1.volume()==5 );
     SECTION( "bump" ) {
       REQUIRE_NOTHROW( op = ioperator<index_int,1>("<=1") );
@@ -1391,7 +1399,7 @@ TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) 
     }
     REQUIRE_NOTHROW( i2 = i1.operate(op) );
     CHECK( ( i2.first_index()==0 ) );
-    CHECK( ( i2.last_index()==8 ) );
+    CHECK( ( i2.last_actual_index()==8 ) );
     CHECK( i2.volume()==5 );
   }
   SECTION( "test truncating by itself" ) {
@@ -1405,7 +1413,7 @@ TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) 
     REQUIRE_NOTHROW( op = ioperator<index_int,1>("<=1") );
     REQUIRE_NOTHROW( i2 = i1.operate(op,0,100) );
     CHECK( ( i2.first_index()==1 ) );
-    CHECK( ( i2.last_index()==9 ) );
+    CHECK( ( i2.last_actual_index()==9 ) );
     CHECK( i2.volume()==5 );
     REQUIRE_NOTHROW( I1 = indexstructure<index_int,1>(i1) );
     REQUIRE_NOTHROW( I2 = I1.operate(op,0,100) );
@@ -1425,13 +1433,13 @@ TEST_CASE( "division operation","[indexstruct<index_int,1>][operate][31]" ) {
       i1 = contiguous_indexstruct<index_int,1>(0,10) );
       REQUIRE_NOTHROW( i2 = i1.operate(op) );
       CHECK( ( i2.first_index()==0 ) );
-      CHECK( ( i2.last_index()==5 ) );
+      CHECK( ( i2.last_actual_index()==5 ) );
     }
     SECTION( "contiguous2" ) {
       i1 = contiguous_indexstruct<index_int,1>(0,9) );
       REQUIRE_NOTHROW( i2 = i1.operate(op) );
       CHECK( ( i2.first_index()==0 ) );
-      CHECK( ( i2.last_index()==4 ) );
+      CHECK( ( i2.last_actual_index()==4 ) );
     }
   }
   SECTION( "contiguous division" ) {
@@ -1441,13 +1449,13 @@ TEST_CASE( "division operation","[indexstruct<index_int,1>][operate][31]" ) {
       i1 = contiguous_indexstruct<index_int,1>(0,10) );
       REQUIRE_NOTHROW( i2 = i1.operate(op) );
       CHECK( ( i2.first_index()==0 ) );
-      CHECK( ( i2.last_index()==4 ) );
+      CHECK( ( i2.last_actual_index()==4 ) );
     }
     SECTION( "contiguous2" ) {
       i1 = contiguous_indexstruct<index_int,1>(0,9) );
       REQUIRE_NOTHROW( i2 = i1.operate(op) );
       CHECK( ( i2.first_index()==0 ) );
-      CHECK( ( i2.last_index()==4 ) );
+      CHECK( ( i2.last_actual_index()==4 ) );
     }
   }
 }
@@ -1460,13 +1468,13 @@ TEST_CASE( "copy indexstruct<index_int,1>","[indexstruct<index_int,1>][copy][42]
   // make a copy
   CHECK( i1.volume()==i2.volume() );
   CHECK( ( i1.first_index()==i2.first_index() ) );
-  CHECK( ( i1.last_index()==i2.last_index() ) );
+  CHECK( ( i1.last_actual_index()==i2.last_actual_index() ) );
 
   // shift the original
   REQUIRE_NOTHROW( i1 = i1.translate_by(1) );
   CHECK( i1.volume()==i2.volume() );
   CHECK( ( i1.first_index()==i2.first_index()+1 ) );
-  CHECK( ( i1.last_index()==i2.last_index()+1 ) );
+  CHECK( ( i1.last_actual_index()==i2.last_actual_index()+1 ) );
 }
 
 TEST_CASE( "big shift operators","[operator][shift][43]" ) {
@@ -1488,15 +1496,15 @@ TEST_CASE( "arbitrary shift of indexstruct<index_int,1>","[indexstruct<index_int
   SECTION( "shift by" ) {
     REQUIRE_NOTHROW( i2 = i1.operate( ioperator<index_int,1>("shift",7) ) );
     CHECK( ( i2.first_index()==12 ) );
-    CHECK( ( i2.last_index()==14 ) );
+    CHECK( ( i2.last_actual_index()==14 ) );
     REQUIRE_NOTHROW( I2 = I1.operate( ioperator<index_int,1>("shift",7) ) );
     CHECK( ( I2.first_index()==12 ) );
-    CHECK( ( I2.last_index()==14 ) );
+    CHECK( ( I2.last_actual_index()==14 ) );
   }
   // SECTION( "shift to" ) {
   //   REQUIRE_NOTHROW( i2 = i1.operate( ioperator<index_int,1>("shiftto",7) ) );
   //   CHECK( ( i2.first_index()==7 ) );
-  //   CHECK( ( i2.last_index()==9 ) );
+  //   CHECK( ( i2.last_actual_index()==9 ) );
   // }
 }
 
@@ -1517,12 +1525,12 @@ TEST_CASE( "sigma operator stuff","[50]" ) {
   INFO( "path: " << path );
   REQUIRE_NOTHROW( sstruct = cont.operate(sop) );
   CHECK( ( sstruct.first_index()==20 ) );
-  CHECK( ( sstruct.last_index()==40 ) );
+  CHECK( ( sstruct.last_actual_index()==40 ) );
   indexstructure<index_int,1> Cont,Sstruct;
   REQUIRE_NOTHROW( Cont = indexstructure<index_int,1>(cont) );
   REQUIRE_NOTHROW( Sstruct = Cont.operate(sop) );
   CHECK( ( Sstruct.first_index()==20 ) );
-  CHECK( ( Sstruct.last_index()==40 ) );
+  CHECK( ( Sstruct.last_actual_index()==40 ) );
 }
 
 #if 0
@@ -1557,7 +1565,7 @@ TEST_CASE( "create multidimensional by component","[multi][indexstruct<index_int
   REQUIRE_NOTHROW( val = mi.first_index_r() );
   CHECK( val.at(0)==2 );
   CHECK( val.at(1)==30 );
-  REQUIRE_NOTHROW( val = mi.last_index_r() );
+  REQUIRE_NOTHROW( val = mi.last_actual_index_r() );
   CHECK( val.at(0)==10 );
   CHECK( val.at(1)==41 );
 
@@ -1738,7 +1746,7 @@ TEST_CASE( "multidimensional union","[multi][union][indexstruct<index_int,1>][11
 		      mi1.as_string(),mi2.as_string(),mi3.as_string()) );
     CHECK( !mi3.is_multi() );
     CHECK( mi3.first_index_r()==domain_coordinate( vector<index_int>{10,30} ) );
-    CHECK( mi3.last_index_r()==domain_coordinate( vector<index_int>{20,41} ) );
+    CHECK( mi3.last_actual_index_r()==domain_coordinate( vector<index_int>{20,41} ) );
   }
 
   SECTION( "fit in dimension 2: multis are merged" ) {
@@ -1751,7 +1759,7 @@ TEST_CASE( "multidimensional union","[multi][union][indexstruct<index_int,1>][11
     REQUIRE_NOTHROW( mi3 = mi1.struct_union(mi2).force_simplify() );
     CHECK( !mi3.is_multi() );
     CHECK( mi3.first_index_r()==domain_coordinate( vector<index_int>{10,30} ) );
-    CHECK( mi3.last_index_r()==domain_coordinate( vector<index_int>{22,40} ) );
+    CHECK( mi3.last_actual_index_r()==domain_coordinate( vector<index_int>{22,40} ) );
   }
 
   SECTION( "unfit: first comes from one and last second original" ) {
@@ -1765,7 +1773,7 @@ TEST_CASE( "multidimensional union","[multi][union][indexstruct<index_int,1>][11
     REQUIRE_NOTHROW( mi3 = mi1.struct_union(mi2) );
     INFO( format("{} & {} gives {}",mi1.as_string(),mi2.as_string(),mi3.as_string()) );
     CHECK( mi3.is_multi() );
-    auto first = mi3.first_index_r(), last = mi3.last_index_r();
+    auto first = mi3.first_index_r(), last = mi3.last_actual_index_r();
     INFO( format("first = {}, last = {}",first.as_string(),last.as_string()) );
     CHECK( first==domain_coordinate( vector<index_int>{10,30} ) );
     CHECK( last==domain_coordinate( vector<index_int>{22,41} ) );
@@ -1780,7 +1788,7 @@ TEST_CASE( "multidimensional union","[multi][union][indexstruct<index_int,1>][11
   		     ( 1, contiguous_indexstruct<index_int,1>(10,20) ) ) );
     REQUIRE_NOTHROW( mi3 = mi1.struct_union(mi2) );
     CHECK( mi3.is_multi() );
-    auto first = mi3.first_index_r(), last = mi3.last_index_r();
+    auto first = mi3.first_index_r(), last = mi3.last_actual_index_r();
     INFO( format("first = {}, last = {}",first.as_string(),last.as_string()) );
     CHECK( first==domain_coordinate( vector<index_int>{10,10} ) );
     CHECK( last==domain_coordinate( vector<index_int>{30,40} ) );
@@ -1875,7 +1883,7 @@ TEST_CASE( "multidimensional intersection","[multi][indexstruct<index_int,1>][11
 
   INFO( format("Intersection runs {}--{}",
 		    mi3.first_index_r().as_string(),
-		    mi3.last_index_r().as_string()) );
+		    mi3.last_actual_index_r().as_string()) );
   CHECK( mi3.volume()==1 );
 }
 
@@ -2061,12 +2069,12 @@ TEST_CASE( "multi-dimensional operations","[multi][120]" ) {
     REQUIRE_NOTHROW( i0 = s2.get_component(0) );
     CHECK( i0.is_contiguous() );
     CHECK( ( i0.first_index()==12 ) );
-    CHECK( ( i0.last_index()==22 ) );
+    CHECK( ( i0.last_actual_index()==22 ) );
     REQUIRE_NOTHROW( i1 = s2.get_component(1) );
     CHECK( !i1.is_contiguous() );
     CHECK( i1.is_strided() );
     CHECK( ( i1.first_index()==25 ) );
-    CHECK( ( i1.last_index()==50 ) );
+    CHECK( ( i1.last_actual_index()==50 ) );
     CHECK( i1.stride()==5 );
   }
   SECTION( "second dim" ) {
@@ -2075,12 +2083,12 @@ TEST_CASE( "multi-dimensional operations","[multi][120]" ) {
     REQUIRE_NOTHROW( i0 = s2.get_component(0) );
     CHECK( i0.is_contiguous() );
     CHECK( ( i0.first_index()==10 ) );
-    CHECK( ( i0.last_index()==20 ) );
+    CHECK( ( i0.last_actual_index()==20 ) );
     REQUIRE_NOTHROW( i1 = s2.get_component(1) );
     CHECK( !i1.is_contiguous() );
     CHECK( i1.is_strided() );
     CHECK( ( i1.first_index()==27 ) );
-    CHECK( ( i1.last_index()==52 ) );
+    CHECK( ( i1.last_actual_index()==52 ) );
     CHECK( i1.stride()==5 );
   }
   SECTION( "both dimensions" ) {
@@ -2091,9 +2099,9 @@ TEST_CASE( "multi-dimensional operations","[multi][120]" ) {
     REQUIRE_NOTHROW( i0 = s2.get_component(0) );
     REQUIRE_NOTHROW( i1 = s2.get_component(1) );
     CHECK( ( i0.first_index()==12 ) );
-    CHECK( ( i0.last_index()==20 ) );
+    CHECK( ( i0.last_actual_index()==20 ) );
     CHECK( ( i1.first_index()==27 ) );
-    CHECK( ( i1.last_index()==47 ) );
+    CHECK( ( i1.last_actual_index()==47 ) );
   }
   SECTION( "operate with truncation" ) {
   }
@@ -2355,7 +2363,7 @@ TEST_CASE( "multi sigma operators","[multi][sigma][140]" ) {
   INFO( format("input block: {}\n",block.as_string()) );
   REQUIRE_NOTHROW( blocked = op.operate(block) );
   // REQUIRE_NOTHROW( firster = blocked.first_index() );
-  // REQUIRE_NOTHROW( laster = blocked.last_index() );
+  // REQUIRE_NOTHROW( laster = blocked.last_actual_index() );
   // for (int id=0; id<dim; id++) {
   //   CHECK( firster.coord(id)==first.coord(id)+2 );
   //   CHECK( laster.coord(id)==last.coord(id)+2 );

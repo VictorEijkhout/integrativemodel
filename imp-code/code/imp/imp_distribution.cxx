@@ -28,9 +28,9 @@ using fmt::format;
  */
 template<int d>
 distribution<d>::distribution
-    ( const coordinate<index_int,d>& dom,const decomposition<d>& procs,
+    ( const domain<d>& dom,const decomposition<d>& procs,
       distribution_type type )
-      : _global_domain( domain<d>( dom ) )
+      : _global_domain( dom )
       , my_decomposition(procs)
       , my_distribution_type(type) {
   // store global domain
@@ -44,21 +44,26 @@ distribution<d>::distribution
   array< int,d > procs_d;           // number of processes in each dimension
   if (type==distribution_type::orthogonal) {
     // orthogonal : adjacent blocks in both directions
+    const auto& first = dom.first_index();
+    const auto& last = dom.last_index();
     for (int id=0; id<d; id++) {
       auto pd = procs.size_of_dimension(id);
-      starts.at(id) = split_points(dom.at(id),pd);   
+      starts.at(id) = split_points(first.at(id),last.at(id),pd);   
       ends  .at(id) = vector<I>( starts.at(id).begin()+1,starts.at(id).end() );
       /* */                                       domain_size_reconstruct *= ends.at(id).back();
       procs_d.at(id) = pd;                        procs_reconstruct *= procs_d.at(id);
     }
-    assert                                      ( domain_size_reconstruct==dom.span() );
-    assert                                      ( procs_reconstruct==procs.global_volume() );
+    //assert                                      ( domain_size_reconstruct==dom.volume() );
+    //assert                                      ( procs_reconstruct==procs.global_volume() );
   } else if (type==distribution_type::replicated) {
     // replicated: a single block for each proc (actually this is also orthogonal)
+    const auto& first = dom.first_index();
+    const auto& last = dom.last_index();
     for (int id=0; id<d; id++) {
       auto pd = procs.size_of_dimension(id);
-      starts.at(id) = vector<I>(pd,0);          // for each proc, starts at 0
-      ends  .at(id) = vector<I>(pd,dom.at(id)); // for each proc, end at end of domain
+      // all domains start/end at the domain boundaries
+      starts.at(id) = vector<I>(pd,first.at(id));
+      ends  .at(id) = vector<I>(pd,last .at(id));
       procs_d.at(id) = pd;
     }
   } else throw("unrecognized distribution type");

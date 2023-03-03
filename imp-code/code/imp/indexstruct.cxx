@@ -25,15 +25,19 @@ using std::make_shared, std::shared_ptr;
 using std::string;
 using std::vector;
 
+#include <tuple>
+using std::pair;
+
 /****************
  ****************
  **************** structs
  ****************
  ****************/
 
+//! volume of bounding box
 template<typename I,int d>
 I indexstruct<I,d>::outer_volume() const {
-  auto outer_vector = last_index()-first_index()+1;
+  auto outer_vector = last_index()-first_index();
   return outer_vector.span();
 };
 
@@ -73,7 +77,7 @@ void indexstruct<I,d>::add_in_element( coordinate<I,d> idx ) {
 };
 
 template<typename I,int d>
-bool indexstruct<I,d>::equals( std::shared_ptr<indexstruct<I,d>> idx ) const {
+bool indexstruct<I,d>::equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const {
   throw(fmt::format("Equals not implemented for <<{}>> and <<{}>>",
 		    type_as_string(),idx->type_as_string()));
 };
@@ -89,14 +93,14 @@ shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
 };
 
 template<typename I,int d>
-bool indexstruct<I,d>::contains_element_in_range( coordinate<I,d> idx) const {
-  return first_index()<=idx && idx<=last_index();
+bool indexstruct<I,d>::contains_element_in_range( const coordinate<I,d>& idx) const {
+  return first_index()<=idx && idx<=last_actual_index();
 };
 
 //! Base test for disjointness; derived classes will build on this.
 template<typename I,int d>
 bool indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
-  return first_index()>idx->last_index() || last_index()<idx->first_index();
+  return first_index()>idx->last_actual_index() || last_index()<idx->first_index();
 };
 
 template<typename I,int d>
@@ -223,25 +227,32 @@ strided_indexstruct<I,d>::strided_indexstruct
 /*
  * stuff
  */
+/*! Volume of the bounding box
+ * For stride>1 this is one short of the next strided point
+ */
 template<typename I,int d>
 I strided_indexstruct<I,d>::outer_volume()  const {
   auto outer_vector = (last_index()-first_index()+stride_amount-1)+1;
   return outer_vector.span();
 };
 
+//! Number of points contained in this strided structure.
 template<typename I,int d>
 I strided_indexstruct<I,d>::volume()  const {
-  auto outer_vector = (last_index()-first_index()+stride_amount-1)/stride_amount+1;
+  auto outer_vector =
+    ( /* one before next strided: */ last_actual_index()+stride_amount-1
+      - first_index() +1 )
+    /stride_amount;
   return outer_vector.span();
 };
 
 template<typename I,int d>
-bool strided_indexstruct<I,d>::equals( shared_ptr<indexstruct<I,d>> idx ) const {
+bool strided_indexstruct<I,d>::equals( const shared_ptr<indexstruct<I,d>>& idx ) const {
   if (idx->is_empty())
     return false;
   strided_indexstruct *strided = dynamic_cast<strided_indexstruct*>(idx.get());
   if (strided!=nullptr)
-    return first==strided->first_index() && last==strided->last_index()
+    return first==strided->first_index() && last==strided->last_actual_index()
       && stride_amount==strided->stride();
   else {
     auto simple = idx->force_simplify();
@@ -286,7 +297,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::add_element( coordinate<I
 };
 
 template<typename I,int d>
-bool strided_indexstruct<I,d>::contains_element( coordinate<I,d> idx ) const {
+bool strided_indexstruct<I,d>::contains_element( const coordinate<I,d>& idx ) const {
   return first<=idx && idx<=last && (idx-first)%stride_amount==0;
 };
 
@@ -318,7 +329,7 @@ bool strided_indexstruct<I,d>::can_merge_with_type
 };
 
 template<typename I,int d>
-bool strided_indexstruct<I,d>::contains( shared_ptr<indexstruct<I,d>> idx ) const {
+bool strided_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx ) const {
   if (idx->volume()==0) return true;
   if (this->volume()==0) return false;
   if (idx->volume()==1)
@@ -919,6 +930,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::make_strided(bool trace) 
 
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify(bool trace) const {
+  print( "force simplify {}\n",this->as_string());
   try {
     if (false) {
     } else if (this->volume()==0) {
@@ -927,13 +939,14 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify(bool trace
       // easy simplification to contiguous
       return
 	shared_ptr<indexstruct<I,d>>
-	( make_shared<contiguous_indexstruct<I,d>>(first_index(),last_index()) );
+	( make_shared<contiguous_indexstruct<I,d>>(first_index(),last_actual_index()) );
     } else {
       auto ret = make_strided(trace);
       if (ret!=nullptr) {
 	if (trace) print("simplify to strided\n");
 	return ret;
       } else {
+	if (d>1) throw( "force case only for d==1" );
 	I ileft = 0, iright = this->volume()-1;
 	// find strided subsections
 	auto first = get_ith_element(ileft), last = get_ith_element(iright);
@@ -945,15 +958,18 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify(bool trace
 	    if (is_strided_between_indices(find_left,find_right,stride,trace)) {
 	      auto comp = shared_ptr<composite_indexstruct<I,d>>
 		( make_shared<composite_indexstruct<I,d>>() );
-	      auto found_left = get_ith_element(find_left),
-		found_right = get_ith_element(find_right);
-	      if (find_left>ileft) { // there is stuff to the left
-		auto left = get_ith_element(find_left);
-		auto left_part = this->minus
-		  ( shared_ptr<indexstruct<I,d>>
-		    (make_shared<contiguous_indexstruct<I,d>>(left,last)) );
-		comp->push_back(left_part);
-	      } 
+	      auto [found_left,found_right] = [=,*this,&comp] () {
+		auto found_left = get_ith_element(find_left),
+		  found_right = get_ith_element(find_right);
+		if (find_left>ileft) { // there is stuff to the left
+		  auto left = get_ith_element(find_left);
+		  auto left_part = this->minus
+		    ( shared_ptr<indexstruct<I,d>>
+		      (make_shared<contiguous_indexstruct<I,d>>(left,last)) );
+		  comp->push_back(left_part);
+		} 
+		return pair(found_left,found_right);
+	      }();
 	      shared_ptr<indexstruct<I,d>> strided;
 	      if (stride==1)
 		strided = shared_ptr<indexstruct<I,d>>
@@ -984,6 +1000,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify(bool trace
 	    }
 	  }
 	}
+	// if the above loop did not return, just return ourself
 	return this->make_clone();
       }
     }
@@ -1070,7 +1087,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::intersect
 
 //! \todo lose those clones
 template<typename I,int d>
-bool indexed_indexstruct<I,d>::contains( shared_ptr<indexstruct<I,d>> idx ) const {
+bool indexed_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx ) const {
   if (idx->volume()==0) return true;
   if (this->volume()==0) return false;
 
@@ -1183,11 +1200,10 @@ bool indexed_indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
 
 //! \todo what do we need that nonconst for? equals and contains are const methods.
 template<typename I,int d>
-bool indexed_indexstruct<I,d>::equals( shared_ptr<indexstruct<I,d>> idx ) const {
+bool indexed_indexstruct<I,d>::equals( const shared_ptr<indexstruct<I,d>>& idx ) const {
   // UGLY: just using shared_from_this gives you a const shared_ptr
-  auto nonconst = make_clone();
-  return nonconst->contains(idx) && idx->contains(nonconst);
-  //  return contains(idx) && idx->contains( this->shared_from_this() );
+  auto nonconst = make_clone(); // this->shared_from_this() ????
+  return this->contains(idx) && idx->contains(nonconst);
 };
 
 template<typename I,int d>
@@ -1352,13 +1368,12 @@ coordinate<I,d> composite_indexstruct<I,d>::first_index() const {
 };
 
 template<typename I,int d>
-coordinate<I,d> composite_indexstruct<I,d>::last_index() const {
-  //  throw("composite last index");
+coordinate<I,d> composite_indexstruct<I,d>::last_actual_index() const {
   if (structs.size()==0)
     throw(std::string("Can not get last from empty composite"));
-  auto f = structs.at(0)->last_index();
+  auto f = structs.at(0)->last_actual_index();
   for (auto s : structs)
-    f = MAX(f,s->last_index());
+    f = MAX(f,s->last_actual_index());
   return f;
 };
 
@@ -1404,7 +1419,7 @@ coordinate<I,d> composite_indexstruct<I,d>::get_ith_element( const I i ) const {
   \todo is there a way to optimize the indexed case?
 */
 template<typename I,int d>
-bool composite_indexstruct<I,d>::contains( shared_ptr<indexstruct<I,d>> idx ) const {
+bool composite_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx ) const {
   /*
    * Case: contains strided. 
    * test by chopping off pieces
@@ -1452,7 +1467,7 @@ bool composite_indexstruct<I,d>::contains( shared_ptr<indexstruct<I,d>> idx ) co
 };
 
 template<typename I,int d>
-bool composite_indexstruct<I,d>::contains_element( coordinate<I,d> idx ) const {
+bool composite_indexstruct<I,d>::contains_element( const coordinate<I,d>& idx ) const {
   //for (auto s : structs)
   for (int is=0; is<structs.size(); is++) {
     auto s = structs.at(is);
@@ -1883,7 +1898,7 @@ std::string composite_indexstruct<I,d>::as_string() const {
  ****/
 
 template<typename I,int d>
-bool composite_indexstruct<I,d>::equals( shared_ptr<indexstruct<I,d>> idx ) const {
+bool composite_indexstruct<I,d>::equals( const shared_ptr<indexstruct<I,d>>& idx ) const {
   if (structs.size()>1)
     return false;
   else

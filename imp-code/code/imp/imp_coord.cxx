@@ -41,11 +41,17 @@ using fmt::print,fmt::format;
  * Result is of size: length+1
  */
 template<typename I>
-vector<I> split_points(I total,int length) {
+vector<I> split_points(I first,I last,int length) {
+  I total = last-first;
   vector<I> points(length+1);
   for (int ip=0; ip<=length; ip++)
-    points.at(ip) = (ip*total)/length;
+    points.at(ip) = first+(ip*total)/length;
   return points;  
+};
+//! Split point when first==0 implicitly
+template<typename I>
+vector<I> split_points(I total,int length) {
+  return split_points(static_cast<I>(0),total,length);
 };
 
 /*! Construct non-inclusive upper bound on
@@ -462,6 +468,8 @@ template array<index_int,3> endpoint<index_int,3>(index_int);
 
 template vector<int> split_points(int total,int length);
 template vector<index_int> split_points(index_int total,int length);
+template vector<int> split_points(int first,int last,int length);
+template vector<index_int> split_points(index_int first,index_int last,int length);
 
 template void require_sorted( vector<coordinate<int,1>> idxs );
 template void require_sorted( vector<coordinate<int,2>> idxs );
