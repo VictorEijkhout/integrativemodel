@@ -103,6 +103,7 @@ bool indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
   return first_index()>idx->last_actual_index() || last_index()<idx->first_index();
 };
 
+//! Operate and truncate to boundary coordinates
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
         ( const sigma_operator<I,d> &op, coordinate<I,d> lo,coordinate<I,d> hi ) const {
@@ -112,7 +113,7 @@ shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
   return noright;
 };
 
-//! Operate, then cut boundaries to fit within `outer'.
+//! Operate with `ioperator', then cut boundaries to fit within `outer'.
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
     ( const ioperator<I,d> &op,shared_ptr<indexstruct<I,d>> outer ) const {
@@ -120,7 +121,7 @@ shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
   return this->operate(op,lo,hi);
 };
 
-//! Operate, then cut boundaries to fit within `outer'.
+//! Operate with `sigma_operator', then cut boundaries to fit within `outer'.
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexstruct<I,d>::operate
     ( const sigma_operator<I,d> &op,shared_ptr<indexstruct<I,d>> outer ) const {
@@ -1909,14 +1910,11 @@ bool composite_indexstruct<I,d>::equals( const shared_ptr<indexstruct<I,d>>& idx
  **** indexstructure
  ****/
 template<typename I,int d>
-void indexstructure<I,d>::push_back( contiguous_indexstruct<I,d> &&idx ) {
-  // print("pushing cnt <<{}>>\n",idx.as_string());
-  // print(".. onto <<{}>>\n",this->as_string());
+void indexstructure<I,d>::push_back( indexstructure<I,d> idx ) {
   auto comp = dynamic_cast<composite_indexstruct<I,d>*>(strct.get());
   if (comp!=nullptr) {
-    auto cnt_ptr = std::shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(idx) );
-    print("pushing cnt ptr <<{}>>\n",cnt_ptr->as_string());
-    comp->push_back(cnt_ptr);
+    //    auto cnt_ptr = std::shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(idx) );
+    comp->push_back( idx.strct );
   } else {
     print("Not composite; cannot push back\n");
     throw(fmt::format("Can not push into non-multi structure"));
@@ -2021,6 +2019,7 @@ coordinate<I,d> ioperator<I,d>::operate( const coordinate<I,d>& c ) const {
   return r;
 };
 
+//! Render `ioperator' as string
 template<typename I,int d>
 string ioperator<I,d>::as_string() const {
   if (is_none_op())
@@ -2044,7 +2043,7 @@ string ioperator<I,d>::as_string() const {
 };
 
 /*!
-  Operate on an index, and bump or wrap as needed.
+  Operate on a scalar, and bump or wrap as needed.
 */
 template<typename I,int d>
 I ioperator<I,d>::operate( I i, I m ) const {
@@ -2056,6 +2055,7 @@ I ioperator<I,d>::operate( I i, I m ) const {
   }
 };
 
+//! Inverse operate on a scalar
 template<typename I,int d>
 I ioperator<I,d>::inverse_operate( I i ) const {
   if (i<0) {
@@ -2130,7 +2130,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
   } else if (op.is_shift_op()) {
     auto
       f = op.operate(first_index()),
-      l = f+(last_index()-first_index());
+      l = f+(last_actual_index()-first_index());
     if (stride()==1)
       operated = shared_ptr<indexstruct<I,d>>
 	{ make_shared<contiguous_indexstruct<I,d>>(f,l) };
@@ -2148,14 +2148,14 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
     else
       new_stride = MAX(1,op.operate(stride()));
     if (op.is_contdiv_op())
-      new_last = coordmax<I,d>( new_first, op.operate(last_index()+stride())-new_stride );
+      new_last = coordmax<I,d>( new_first, op.operate(last_actual_index()+stride())-new_stride );
     else if (op.is_base_op())
-      new_last = op.operate(last_index()+1)-1;
+      new_last = op.operate(last_actual_index()+1)-1;
     else {
-      new_last = op.operate(last_index());
+      new_last = op.operate(last_actual_index());
       if (trace)
 	print(", mult last={} gives {}",
-	      last_index().as_string(),new_last.as_string()); // formatter broken
+	      last_actual_index().as_string(),new_last.as_string()); // formatter broken
     }
     if (new_stride==1)
       operated = shared_ptr<indexstruct<I,d>>
@@ -2249,13 +2249,13 @@ shared_ptr<indexstruct<I,d>> sigma_operator<I,d>::operate( shared_ptr<indexstruc
     return shared_ptr<indexstruct<I,d>>
       { make_shared<contiguous_indexstruct<I,d>>
 	( point_func.operate(i->first_index()),
-	  point_func.operate(i->last_index()) ) };
+	  point_func.operate(i->last_actual_index()) ) };
   } else if (lambda_i) {
     //print("sigma by point operator is dangerous\n");
     return shared_ptr<indexstruct<I,d>>
       { make_shared<contiguous_indexstruct<I,d>>
 	( func(i->first_index())->first_index(),
-	  func(i->last_index())->last_index() ) };
+	  func(i->last_actual_index())->last_actual_index() ) };
   } else {
     throw(std::string("sigma::operate(struct) weird case"));
   }

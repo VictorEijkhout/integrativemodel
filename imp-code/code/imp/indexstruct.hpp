@@ -696,11 +696,14 @@ public:
     return strct->reserve(s); };
   void report_unimplemented( const char *c ) const {
     return strct->report_unimplemented(c); };
+  indexstructure<I,d> make_clone() {
+    return indexstructure<I,d>( *this ); };
 
   /*
    * Multi
    */
-  void push_back( contiguous_indexstruct<I,d> &&idx );
+  //  void push_back( contiguous_indexstruct<I,d> &&idx );
+  void push_back( indexstructure<I,d> idx );
 
   /*
    * Statistics

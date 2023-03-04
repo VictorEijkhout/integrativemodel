@@ -59,6 +59,7 @@ TEST_CASE( "global domains","[mpi][distribution][02]" ) {
     mpi_distribution<1> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.global_domain() );
     indexstructure<index_int,1> global_domain = omega_p.global_domain();
+    INFO( "global domain: " << global_domain.as_string() );
     REQUIRE_NOTHROW( global_domain.volume() );
     index_int check_total_points = global_domain.volume();
     REQUIRE( check_total_points==total_points );
@@ -72,13 +73,14 @@ TEST_CASE( "global domains","[mpi][distribution][02]" ) {
     mpi_distribution<2> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.global_domain() );
     indexstructure<index_int,2> global_domain = omega_p.global_domain();
+    INFO( "global domain: " << global_domain.as_string() );
     REQUIRE_NOTHROW( global_domain.volume() );
     index_int check_total_points = global_domain.volume();
     REQUIRE( check_total_points==total_points );
   }
 }
 
-TEST_CASE( "local domains","[mpi][distribution][02]" ) {
+TEST_CASE( "local domains","[mpi][distribution][03]" ) {
   INFO( "proc: " << the_env.procid() );
   {
     INFO( "1D" );
@@ -106,7 +108,7 @@ TEST_CASE( "local domains","[mpi][distribution][02]" ) {
   }
 }
 
-TEST_CASE( "replicated distributions","[mpi][distribution][replication][03]" ) {
+TEST_CASE( "replicated distributions","[mpi][distribution][replication][04]" ) {
   {
     INFO( "1D" );
     const int points_per_proc = ipower(10,1);
@@ -133,7 +135,7 @@ TEST_CASE( "replicated distributions","[mpi][distribution][replication][03]" ) {
   }
 }
 
-TEST_CASE( "replicated scalars","[mpi][distribution][replication][04]" ) {
+TEST_CASE( "replicated scalars","[mpi][distribution][replication][05]" ) {
   {
     INFO( "1D" );
     mpi_decomposition<1> procs( the_env );
@@ -154,7 +156,7 @@ TEST_CASE( "replicated scalars","[mpi][distribution][replication][04]" ) {
   }
 }
 
-TEST_CASE( "divided distributions","[mpi][distribution][operation][05]" ) {
+TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
   {
     INFO( "1D" );
     const int points_per_proc = ipower(10,1);

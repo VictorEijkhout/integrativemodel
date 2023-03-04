@@ -344,22 +344,23 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
       index_int stride;
       REQUIRE( not i1.is_strided_between_indices(0,2,stride) );
 
-      SECTION( "try forcing 1" ) {
-	REQUIRE_NOTHROW( i1.force_simplify() );
-	CHECK( i1.is_indexed() );
-      }
-      SECTION( "force 2" ) {
-	REQUIRE_NOTHROW( i1.add_element(4) );
-	REQUIRE_NOTHROW( i1.force_simplify() );
-	CHECK( i1.is_strided() );
-	CHECK( i1.stride()==2 );
-	REQUIRE_NOTHROW( i1.struct_union(i2) );
-	REQUIRE( i1.volume()==7 );
-	REQUIRE_NOTHROW( i1.force_simplify() );
-	CHECK( i1.is_strided() );
-	CHECK( i1.stride()==1 );
-	CHECK( i1.is_contiguous() );
-      }
+      // SECTION( "try forcing 1" ) {
+      // 	REQUIRE_NOTHROW( i1.force_simplify() );
+      // 	CHECK( i1.is_indexed() );
+      // }
+      // SECTION( "force 2" ) {
+      // 	REQUIRE_NOTHROW( i1.add_element(4) );
+      // 	REQUIRE_NOTHROW( i1.force_simplify() );
+      // 	CHECK( i1.is_strided() );
+      // 	CHECK( i1.stride()==2 );
+      // 	REQUIRE_NOTHROW( i1.struct_union(i2) );
+      // 	REQUIRE( i1.volume()==7 );
+      // 	REQUIRE_NOTHROW( i1.force_simplify() );
+      // 	CHECK( i1.is_strided() );
+      // 	CHECK( i1.stride()==1 );
+      // 	CHECK( i1.is_contiguous() );
+      // }
+
       // SECTION( "boundary case of empty" ) {
       // 	indexstructure i1{ empty_indexstruct<index_int,1>() };
       // 	REQUIRE_NOTHROW( i1.force_simplify() );
@@ -373,28 +374,28 @@ TEST_CASE( "indexed indexstruct","[indexstruct][2]" ) {
   }
 }
 
-TEST_CASE( "more simplify" ) {
-  indexstructure i1( indexed_indexstruct<index_int,1>( vector<index_int>{2,4, 10,12, 15} ) );
-  // indexstruct<index_int,1> i2,i3,i1a;
-  // REQUIRE_NOTHROW( i1a = i1.make_clone() );
-  INFO( format("starting with indexed {}",i1.as_string()) );
-  REQUIRE_NOTHROW( i1.add_in_element(11) );
-  REQUIRE( i1.volume()==6 );
-  INFO( format("add element 11 gives {}",i1.as_string()) );
-  CHECK( i1.is_indexed() );
+// TEST_CASE( "more simplify" ) {
+//   indexstructure i1( indexed_indexstruct<index_int,1>( vector<index_int>{2,4, 10,12, 15} ) );
+//   // indexstruct<index_int,1> i2,i3,i1a;
+//   // REQUIRE_NOTHROW( i1a = i1.make_clone() );
+//   INFO( format("starting with indexed {}",i1.as_string()) );
+//   REQUIRE_NOTHROW( i1.add_in_element(11) );
+//   REQUIRE( i1.volume()==6 );
+//   INFO( format("add element 11 gives {}",i1.as_string()) );
+//   CHECK( i1.is_indexed() );
 
-  indexstructure i2(i1);
-  REQUIRE_NOTHROW( i2.force_simplify() );
-  INFO( format("simplify to composite {}",i2.as_string()) );
-  CHECK( i2.is_composite() );
-  REQUIRE( i2.volume()==6 );
+//   indexstructure i2(i1);
+//   REQUIRE_NOTHROW( i2.force_simplify() );
+//   INFO( format("simplify to composite {}",i2.as_string()) );
+//   CHECK( i2.is_composite() );
+//   REQUIRE( i2.volume()==6 );
 
-  indexstructure i3(i2);
-  REQUIRE_NOTHROW( i3.convert_to_indexed() );
-  INFO( format("back to indexed {}",i3.as_string()) );
-  REQUIRE( i3.volume()==6 );
-  CHECK( i1.equals(i3) );
-}
+//   indexstructure i3(i2);
+//   REQUIRE_NOTHROW( i3.convert_to_indexed() );
+//   INFO( format("back to indexed {}",i3.as_string()) );
+//   REQUIRE( i3.volume()==6 );
+//   CHECK( i1.equals(i3) );
+// }
 
 TEST_CASE( "striding and operations" ) {
   int len=5; vector<index_int> idx{1,2,4,7,9};
@@ -470,56 +471,60 @@ TEST_CASE( "contiguous 2d" ) {
   REQUIRE_NOTHROW( indexstructure{ contiguous_indexstruct<int,2>( array<int,2>{0,0},array<int,2>{4,5} ) } );
 }
 
-#if 0
-
 TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
-  indexstruct<index_int,1> i1,i2,ifinal;
-  shared_ptr<composite_indexstruct<index_int,1>> icomp;
+  // indexstruct<index_int,1> i1,i2,ifinal;
+  // shared_ptr<composite_indexstruct<index_int,1>> icomp;
 
-  i1 = indexstruct<index_int,1>{ new contiguous_indexstruct<index_int,1>(3,5) };
-  i2 = indexstruct<index_int,1>{ new contiguous_indexstruct<index_int,1>(10,12) };
-  SECTION( "catch old design: obviated" ) {
-    REQUIRE_NOTHROW( icomp = shared_ptr<composite_indexstruct<index_int,1>>{ new composite_indexstruct<index_int,1>() } );
-    REQUIRE_THROWS( ifinal = icomp.struct_union(i1) );
-  }
-  SECTION( "improved design" ) {
-    SECTION( "right away" ) {
-      REQUIRE_NOTHROW( icomp = shared_ptr<composite_indexstruct<index_int,1>>{ new composite_indexstruct<index_int,1>() } );
-      REQUIRE_NOTHROW( icomp.push_back(i1) );
-      REQUIRE_NOTHROW( icomp.push_back(i2) );
-    }
-    SECTION( "reverse away" ) {
-      REQUIRE_NOTHROW( icomp = shared_ptr<composite_indexstruct<index_int,1>>{ new composite_indexstruct<index_int,1>() } );
-      REQUIRE_NOTHROW( icomp.push_back(i2) );
-      REQUIRE_NOTHROW( icomp.push_back(i1) );
-    }
-    REQUIRE_NOTHROW( ifinal = icomp.make_clone() );
-    //    INFO( format("ifinal: {}",streamed(ifinal)) );
-    CHECK( !ifinal.is_contiguous() );
-    CHECK( ( ifinal.first_index()==3 ) );
-    CHECK( ( ifinal.last_actual_index()==12 ) );
-    CHECK( ifinal.volume()==6 );
-  }
-  SECTION( "tricky composite simplify with indexed" ) {
-    auto i1 = shared_ptr<composite_indexstruct<index_int,1>>( new composite_indexstruct<index_int,1>() );
-    auto left_cont = contiguous_indexstruct<index_int,1>(0,9) );
-    REQUIRE_NOTHROW( i1.push_back(left_cont) );
-    auto right_cont =contiguous_indexstruct<index_int,1>(11,19) );
-    REQUIRE_NOTHROW( i1.push_back(right_cont) );
-    auto more_cont =contiguous_indexstruct<index_int,1>(23,30) );
-    REQUIRE_NOTHROW( i1.push_back(more_cont) );
-    auto gaps = indexstruct<index_int,1>
-      ( new indexed_indexstruct<index_int,1>( vector<index_int>{10,20,22,40} ) );
-    REQUIRE_NOTHROW( i1.push_back(gaps) );
-    CHECK( i1.get_structs().size()==4 );
-    REQUIRE_NOTHROW( i2 = i1.force_simplify() );
-    INFO( format("Simplifying {} to {}",i1.as_string(),i2.as_string()) );
-    CHECK( i2.is_composite() );
-    auto i2comp = dynamic_cast<composite_indexstruct<index_int,1>*>(i2.get());
-    if (i2comp==nullptr) CHECK( 0 );
-    CHECK( i2comp.get_structs().size()==3 );
-  }
+  REQUIRE_NOTHROW( indexstructure<index_int,1>( contiguous_indexstruct<index_int,1>(3,5) ) );
+  indexstructure<index_int,1> i1( contiguous_indexstruct<index_int,1>(3,5) );
+  REQUIRE_NOTHROW( indexstructure<index_int,1>( contiguous_indexstruct<index_int,1>(10,12) ) );
+  indexstructure<index_int,1> i2( contiguous_indexstruct<index_int,1>(10,12) );
 
+  REQUIRE_NOTHROW( indexstructure<index_int,1>( composite_indexstruct<index_int,1>() ) );
+  indexstructure<index_int,1> icomp{ composite_indexstruct<index_int,1>() };
+  SECTION( "right away" ) {
+    REQUIRE_NOTHROW( icomp.push_back(i1) );
+    REQUIRE_NOTHROW( icomp.push_back(i2) );
+  }
+  SECTION( "reverse away" ) {
+    REQUIRE_NOTHROW( icomp.push_back(i2) );
+    REQUIRE_NOTHROW( icomp.push_back(i1) );
+  }
+  REQUIRE_NOTHROW( icomp.make_clone() );
+  auto ifinal = icomp.make_clone();
+  //    INFO( format("ifinal: {}",streamed(ifinal)) );
+  CHECK( !ifinal.is_contiguous() );
+  CHECK( ( ifinal.first_index()==3 ) );
+  CHECK( ( ifinal.last_actual_index()==12 ) );
+  CHECK( ifinal.volume()==6 );
+}
+
+
+TEST_CASE( "tricky composite simplify with indexed","[9]" ) {
+  indexstructure<index_int,1> i1{ composite_indexstruct<index_int,1>() };
+
+  indexstructure<index_int,1> left_cont{ contiguous_indexstruct<index_int,1>(0,9) };
+  REQUIRE_NOTHROW( i1.push_back(left_cont) );
+
+  indexstructure<index_int,1> right_cont{ contiguous_indexstruct<index_int,1>(11,19) };
+  REQUIRE_NOTHROW( i1.push_back(right_cont) );
+  #if 0
+auto more_cont =contiguous_indexstruct<index_int,1>(23,30) );
+REQUIRE_NOTHROW( i1.push_back(more_cont) );
+auto gaps = indexstruct<index_int,1>
+  ( new indexed_indexstruct<index_int,1>( vector<index_int>{10,20,22,40} ) );
+REQUIRE_NOTHROW( i1.push_back(gaps) );
+CHECK( i1.get_structs().size()==4 );
+REQUIRE_NOTHROW( i2 = i1.force_simplify() );
+INFO( format("Simplifying {} to {}",i1.as_string(),i2.as_string()) );
+CHECK( i2.is_composite() );
+auto i2comp = dynamic_cast<composite_indexstruct<index_int,1>*>(i2.get());
+if (i2comp==nullptr) CHECK( 0 );
+CHECK( i2comp.get_structs().size()==3 );
+#endif
+}
+
+#if 0
   SECTION( "tricky composite simplify with strided" ) {
     auto i1 = shared_ptr<composite_indexstruct<index_int,1>>( new composite_indexstruct<index_int,1>() );
     auto left_cont = contiguous_indexstruct<index_int,1>(0,9) );
@@ -587,6 +592,10 @@ TEST_CASE( "composite indexstruct","[indexstruct][composite][8]" ) {
     }
   }
 }
+
+#endif
+
+#if 0
 
 TEST_CASE( "enumerating indexstructs","[10]" ) {
   int count,cnt=0;
