@@ -34,7 +34,10 @@ using std::pair;
  ****************
  ****************/
 
-//! volume of bounding box
+/*! Volume of bounding box,
+ * this equals volume for contiguous,
+ * but is more for strided and such
+ */
 template<typename I,int d>
 I indexstruct<I,d>::outer_volume() const {
   auto outer_vector = last_index()-first_index();
@@ -242,7 +245,7 @@ template<typename I,int d>
 I strided_indexstruct<I,d>::volume()  const {
   auto outer_vector =
     ( /* one before next strided: */ last_actual_index()+stride_amount-1
-      - first_index() +1 )
+      - first_index() + 1 )
     /stride_amount;
   return outer_vector.span();
 };

@@ -18,12 +18,15 @@
 template<int d>
 class domain : public indexstructure<index_int,d> {
 public:
+  //! Make a domain from an indexstructure with inclusive upper bound
   domain( const indexstructure<index_int,d>& idx )
     : indexstructure<index_int,d>( idx ) {};
+  //! Make a domain from a indexstruct with inclusive upper bound
   domain( contiguous_indexstruct<index_int,d> ci )
     : indexstructure<index_int,d>::indexstructure<index_int,d>( ci ) {};
+  //! Make a domain from a presumable exclusive upper bound
   domain( coordinate<index_int,d> c )
-    : domain<d>( contiguous_indexstruct<index_int,d>( coordinate<index_int,d>(0),c ) ) {};
+    : domain<d>( contiguous_indexstruct<index_int,d>( coordinate<index_int,d>(0),c-1 ) ) {};
   /*! default constructor,
    * needed for the _local_domain member of the `distribution' class,
    * because that is constructed, not instantiated
