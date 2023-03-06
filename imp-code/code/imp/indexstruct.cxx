@@ -1909,15 +1909,27 @@ bool composite_indexstruct<I,d>::equals( const shared_ptr<indexstruct<I,d>>& idx
 /****
  **** indexstructure
  ****/
+//! Push onto the structs of a composite
 template<typename I,int d>
 void indexstructure<I,d>::push_back( indexstructure<I,d> idx ) {
   auto comp = dynamic_cast<composite_indexstruct<I,d>*>(strct.get());
   if (comp!=nullptr) {
-    //    auto cnt_ptr = std::shared_ptr<indexstruct<I,d>>( make_shared<contiguous_indexstruct<I,d>>(idx) );
     comp->push_back( idx.strct );
   } else {
     print("Not composite; cannot push back\n");
     throw(fmt::format("Can not push into non-multi structure"));
+  }
+};
+
+//! Get the structs of a composite
+template<typename I,int d>
+const vector<shared_ptr<indexstruct<I,d>>> indexstructure<I,d>::get_structs() const {
+  auto comp = dynamic_cast<composite_indexstruct<I,d>*>(strct.get());
+  if (comp!=nullptr) {
+    return comp->get_structs();
+  } else {
+    print("Not composite; cannot get structs\n");
+    throw(fmt::format("Can not get structs from non-multi structure"));
   }
 };
 

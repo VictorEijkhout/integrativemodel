@@ -524,40 +524,36 @@ CHECK( i2comp.get_structs().size()==3 );
 #endif
 }
 
-#if 0
-  SECTION( "tricky composite simplify with strided" ) {
-    auto i1 = shared_ptr<composite_indexstruct<index_int,1>>( new composite_indexstruct<index_int,1>() );
-    auto left_cont = contiguous_indexstruct<index_int,1>(0,9) );
-    REQUIRE_NOTHROW( i1.push_back(left_cont) );
-    auto right_cont =contiguous_indexstruct<index_int,1>(11,19) );
-    REQUIRE_NOTHROW( i1.push_back(right_cont) );
-    auto more_cont =contiguous_indexstruct<index_int,1>(23,29) );
-    REQUIRE_NOTHROW( i1.push_back(more_cont) );
-    SECTION( "fully incorporate" ) {
-      auto gaps = indexstruct<index_int,1>
-	( new strided_indexstruct<index_int,1>( 10,30,10 ) );
-      REQUIRE_NOTHROW( i1.push_back(gaps) );
-      CHECK( i1.get_structs().size()==4 );
-      REQUIRE_NOTHROW( i2 = i1.force_simplify() );
-      INFO( format("Simplifying {} to {}",i1.as_string(),i2.as_string()) );
-      CHECK( i2.is_composite() );
-      auto i2comp = dynamic_cast<composite_indexstruct<index_int,1>*>(i2.get());
-      if (i2comp==nullptr) CHECK( 0 );
-      CHECK( i2comp.get_structs().size()==2 );
-    }
-    SECTION( "shift left" ) {
-      auto gaps = indexstruct<index_int,1>
-	( new strided_indexstruct<index_int,1>( 10,50,10 ) );
-      REQUIRE_NOTHROW( i1.push_back(gaps) );
-      CHECK( i1.get_structs().size()==4 );
-      REQUIRE_NOTHROW( i2 = i1.force_simplify() );
-      INFO( format("Simplifying {} to {}",i1.as_string(),i2.as_string()) );
-      CHECK( i2.is_composite() );
-      auto i2comp = dynamic_cast<composite_indexstruct<index_int,1>*>(i2.get());
-      if (i2comp==nullptr) CHECK( 0 );
-      CHECK( i2comp.get_structs().size()==3 );
-    }
+TEST_CASE( "tricky composite simplify with strided" ) {
+  indexstructure<index_int,1> i1{ composite_indexstruct<index_int,1>() };
+  indexstructure<index_int,1> left_cont{ contiguous_indexstruct<index_int,1>(0,9) };
+  REQUIRE_NOTHROW( i1.push_back(left_cont) );
+  indexstructure<index_int,1> right_cont{ contiguous_indexstruct<index_int,1>(11,19) };
+  REQUIRE_NOTHROW( i1.push_back(right_cont) );
+  indexstructure<index_int,1> more_cont{ contiguous_indexstruct<index_int,1>(23,29) };
+  REQUIRE_NOTHROW( i1.push_back(more_cont) );
+  SECTION( "fully incorporate" ) {
+    indexstructure<index_int,1> gaps{ strided_indexstruct<index_int,1>( 10,30,10 ) };
+    REQUIRE_NOTHROW( i1.push_back(gaps) );
+    CHECK( i1.get_structs().size()==4 );
+    INFO( format("Struct after push: {}",i1.as_string()) );
+    REQUIRE_NOTHROW( i1.force_simplify() );
+    INFO( format(".. simplified to {}",i1.as_string()) );
+    CHECK( i1.is_composite() );
+    CHECK( i1.get_structs().size()==2 );
   }
+  SECTION( "shift left" ) {
+    indexstructure<index_int,1> gaps{ strided_indexstruct<index_int,1>( 10,50,10 ) };
+    REQUIRE_NOTHROW( i1.push_back(gaps) );
+    INFO( format("Struct after push: {}",i1.as_string()) );
+    CHECK( i1.get_structs().size()==4 );
+    REQUIRE_NOTHROW( i1.force_simplify() );
+    INFO( format("Simplifying to {}",i1.as_string()) );
+    CHECK( i1.is_composite() );
+    CHECK( i1.get_structs().size()==3 );
+  }
+}
+#if 0
   SECTION( "composite over simplify" ) {
     auto i1 = shared_ptr<composite_indexstruct<index_int,1>>( new composite_indexstruct<index_int,1>() );
     bool has_index{false};

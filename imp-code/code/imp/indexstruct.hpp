@@ -698,6 +698,7 @@ public:
     return strct->report_unimplemented(c); };
   indexstructure<I,d> make_clone() {
     return indexstructure<I,d>( *this ); };
+  const std::vector<std::shared_ptr<indexstruct<I,d>>> get_structs() const;
 
   /*
    * Multi
