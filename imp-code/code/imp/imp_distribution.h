@@ -20,13 +20,19 @@ class domain : public indexstructure<index_int,d> {
 public:
   //! Make a domain from an indexstructure with inclusive upper bound
   domain( const indexstructure<index_int,d>& idx )
-    : indexstructure<index_int,d>( idx ) {};
+    : indexstructure<index_int,d>( idx ) {
+    cout << "domain from istruct " << idx.as_string() << '\n';
+  };
   //! Make a domain from a indexstruct with inclusive upper bound
   domain( contiguous_indexstruct<index_int,d> ci )
-    : indexstructure<index_int,d>::indexstructure<index_int,d>( ci ) {};
+    : indexstructure<index_int,d>::indexstructure<index_int,d>( ci ) {
+    cout << "domain from contiguous " << ci.as_string() << '\n';
+  };
   //! Make a domain from a presumable exclusive upper bound
   domain( coordinate<index_int,d> c )
-    : domain<d>( contiguous_indexstruct<index_int,d>( coordinate<index_int,d>(0),c-1 ) ) {};
+    : domain<d>( contiguous_indexstruct<index_int,d>( coordinate<index_int,d>(0),c-1 ) ) {
+    cout << "domain from coordinate " << c.as_string() << '\n';
+  };
   /*! default constructor,
    * needed for the _local_domain member of the `distribution' class,
    * because that is constructed, not instantiated
@@ -48,8 +54,6 @@ protected:
   static inline int distribution_number{0};
   int my_distribution_number;
   distribution_type my_distribution_type;
-  //! extent of the domain
-  coordinate<index_int,d> omega;
   //! processor grid
   decomposition<d> my_decomposition;
   //! orthogonal product of extents in all dimensions
@@ -63,19 +67,16 @@ public:
   bool compatible_with( const distribution<d>& other ) const;
   void assert_replicated() const;
 
+  /*
+   * Local and global domain
+   */
 protected:
-  //indexstructure<index_int,d> _local_domain;
   domain<d> _local_domain;
-public:
-  //const indexstructure<index_int,d>& local_domain() const;
-  const domain<d>& local_domain() const;
-protected:
-  //indexstructure<index_int,d> _global_domain;
   domain<d> _global_domain;
 public:
-  //const indexstructure<index_int,d>& global_domain() const;
+  const domain<d>& local_domain() const;
   const domain<d>& global_domain() const;
 
-  // // new distribution by operating
+  // // new distribution by operating, only exists in derived classes. hm.
   // virtual distribution<d> operate( const ioperator<index_int,d>& ) const;
 };

@@ -42,14 +42,10 @@ LIBFORMAT = libfmt.a
 
 ####
 #### GSL
-####
-GSL_INC = ${HOME}/Installation/gsl/gsl-lite/include
-
-####
 #### Guidelines Support Library
 #### https://github.com/Microsoft/GSL
 ####
-GSL_INC =
+GSL_INC = ${LMOD_GSL_INC}
 
 LIBCXX_intel = 
 LIBCXX_gcc   = -lc++

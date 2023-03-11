@@ -42,7 +42,7 @@ LIBFORMAT = libfmt.a
 ####
 #### GSL
 ####
-GSL_INC = ${HOME}/Installation/gsl/gsl-lite/include
+GSL_INC = ${LMOD_GSL_INC}
 
 COVERITYBIN = ${HOME}/Installation/coverity/bin
 

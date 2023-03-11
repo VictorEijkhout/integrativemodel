@@ -127,18 +127,6 @@ const domain<d>& distribution<d>::global_domain() const {
   return _global_domain;
 };
 
-// /*!
-//  * Make a new distribution from operating:
-//  *  - use the same distribution type
-//  *  - use the same process grid
-//  *  - but operate on the omega domain.
-//  */
-// template<int d>
-// distribution<d> distribution::operate( const ioperator<index_int,d>& op ) const {
-//   auto new_omega = op.operate(omega);
-//   return distribution<d>( new_omega,my_decomposition,my_distribution_type);
-// };
-
 /*
  * Instantiations
  */

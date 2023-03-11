@@ -12,7 +12,7 @@
 #pragma once
 
 #include "fmt/format.h"
-#include "gsl/gsl-lite.hpp"
+#include "gsl/gsl"
 
 #include <algorithm>
 #include <chrono>
