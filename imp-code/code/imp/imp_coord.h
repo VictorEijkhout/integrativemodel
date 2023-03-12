@@ -33,15 +33,24 @@ std::vector<I> split_points(I,int);
 
 //! Processor coordinates on a pretend grid. We order them by rows.
 //! \todo write method to range over this
-template<class I,int d>
+template<typename I,int d>
 class coordinate {
-protected :
-  std::array<I,d> coordinates;
 public :
   coordinate();
   coordinate(I span);
   coordinate( std::array<I,d> );
   coordinate( const environment& );
+  //! Copy constructor from other int type
+  template<typename J>
+  coordinate( coordinate<J,d> other ) {
+    for (int id=0; id<d; id++)
+      coordinates.at(id) = static_cast<I>( other.data().at(id) );
+  };
+  
+  // data
+protected :
+  std::array<I,d> coordinates;
+public:
   auto &data() { return coordinates; };
   const auto& data() const { return coordinates; };
   

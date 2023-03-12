@@ -140,6 +140,7 @@ coordinate<I,d>::coordinate( const environment& e )
 /*
  * Access
  */
+
 /*! Span is another word for volume,
   if the coordinate is the non-inclusive upper bound
 */

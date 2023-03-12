@@ -14,10 +14,10 @@ info ::
 
 include ../imp/Make.common
 
-PROGRAMS = findit
+PROGRAMS = findit inttype
 
 % : %.cxx
-	$(CXX) -o $@ -std=c++17 $^
+	g++ -o $@ -std=c++17 $^
 
 clean ::
 	@/bin/rm -f ${PROGRAMS}

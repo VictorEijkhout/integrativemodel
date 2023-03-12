@@ -182,174 +182,36 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
     INFO( "divided local  : " << new_local.as_string() );
     REQUIRE( new_local.volume()==points_per_proc/2 );
   }
+  {
+    INFO( "2D" );
+    mpi_decomposition<2> procs( the_env );
+    INFO( "Decomposition: " << the_env.as_string() );
+
+    const int points_per_proc = ipower(10,2);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,2> omega( procs.domain_layout()*10 /* total_points */ );
+    mpi_distribution<2> dist( omega,procs );
+    INFO( "original domain: " << dist.global_domain().as_string() );
+
+    ioperator<index_int,2> div2("/2");
+    REQUIRE_NOTHROW( dist.operate( div2 ) );
+    auto new_dist = dist.operate( div2 );
+    REQUIRE_NOTHROW( new_dist.global_domain() );
+
+    REQUIRE_NOTHROW( new_dist.global_domain() );
+    auto new_global = new_dist.global_domain();
+    INFO( "divided global : " << new_global.as_string() );
+    REQUIRE( new_global.volume()==total_points/4 );
+
+    INFO( "original local : " << dist.local_domain().as_string() );
+    REQUIRE_NOTHROW( new_dist.local_domain() );
+    auto new_local = new_dist.local_domain();
+    INFO( "divided local  : " << new_local.as_string() );
+    REQUIRE( new_local.volume()==points_per_proc/4 );
+  }
 }
 
 #if 0
-TEST_CASE( "test presence of numa structure","[mpi][numa][04]" ) {
-  int nlocal = 100, s = nlocal*ntids;
-  auto d1 = 
-    shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,s) );
-  shared_ptr<multi_indexstruct> numa;
-  REQUIRE_NOTHROW( numa = d1->get_numa_structure() );
-  CHECK( !numa->is_empty() );
-  CHECK( numa->first_index_r()==mycoord_coord*nlocal );
-  CHECK( numa->volume()==nlocal );
-  decltype( d1->get_global_structure() ) global;
-  REQUIRE_NOTHROW( global = d1->get_global_structure() );
-  CHECK( !global->is_empty() );
-  CHECK( global->first_index_r()==coordinate<index_int,d>_zero(1) );
-  CHECK( global->volume()==ntids*nlocal );
-}
-
-TEST_CASE( "MPI distributions, sanity","[mpi][distribution][cookie][10]" ) {
-  int nlocal = 100, s = nlocal*ntids;
-  shared_ptr<distribution> d1;
-  REQUIRE_NOTHROW( d1 = shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,-1,s) ) );
-  CHECK( d1->get_cookie()==entity_cookie::DISTRIBUTION );
-  coordinate<int,d> pcoord;
-  REQUIRE_NOTHROW( pcoord = d1->proc_coord() );
-  CHECK( pcoord==mycoord );
-  shared_ptr<indexstruct> pstruct;
-  REQUIRE_NOTHROW( pstruct = d1->get_processor_structure(pcoord)->get_component(0) );
-};
-
-TEST_CASE( "MPI distributions, operations","[mpi][distribution][11]" ) {
-  int nlocal = 100, s = nlocal*ntids;
-  shared_ptr<distribution> d1;
-  REQUIRE_NOTHROW( d1 = shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,-1,s) ) );
-  int *senders = new int[ntids], receives;
-  REQUIRE_NOTHROW( receives = d1->reduce_scatter(senders,mytid) );
-}
-
-TEST_CASE( "MPI distributions copying","[mpi][distribution][hide][12]" ) {
-  
-  int nlocal = 100, s = nlocal*ntids;
-  auto d1 = 
-    shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,-1,s) );
-  CHECK( d1->has_defined_type() );
-  CHECK( d1->volume(mycoord)==nlocal );
-  auto
-    f = coordinate<index_int,d>( vector<index_int>{nlocal*mytid} ),
-    l = coordinate<index_int,d>( vector<index_int>{nlocal*(mytid+1)-1} );
-  CHECK( d1->first_index_r(mycoord)==f );
-  CHECK( d1->contains_element(mycoord,d1->first_index_r(mycoord)) );
-  CHECK( ( !d1->is_valid_index(f-1) || !d1->contains_element(mycoord,f-1)) );
-	 
-  // d2 is a copy of d1
-  shared_ptr<distribution> d2;
-  REQUIRE_NOTHROW( d2 = shared_ptr<distribution>( new mpi_distribution(d1) ) );
-  coordinate<index_int,d> d2c(0); index_int d2s;
-  REQUIRE_NOTHROW( d2s = d2->volume(mycoord) );
-  CHECK( d2s==nlocal );
-  REQUIRE_NOTHROW( d2c = d2->first_index_r(mycoord) );
-  CHECK( d2c==f );
-  CHECK( d2->contains_element(mycoord,f) );
-  CHECK( ( !d2->is_valid_index(f-1) || !d2->contains_element(mycoord,f-1)) );
-  
-  // make sure d1 was not corrupted by creating d2
-  CHECK( d1->last_index_r(mycoord)==l );
-  CHECK( d1->contains_element(mycoord,l) );
-  CHECK_NOTHROW( d1->contains_element
-		 (mycoord,coordinate<index_int,d>( vector<index_int>{s} ) ) );
-  CHECK( ( !d1->is_valid_index(l+1) || !d1->contains_element(mycoord,l+1) ) );
-  CHECK_NOTHROW
-    ( d1->contains_element(mycoord,coordinate<index_int,d>( vector<index_int>{-1} )) );
-}
-
-TEST_CASE( "MPI distributions, other types","[mpi][distribution][13]" ) {
-  
-  int nlocal = 100, s = nlocal*ntids;
-  auto d1 = 
-    shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,-1,s) );
-  CHECK( d1->has_defined_type() );
-  CHECK( d1->volume(mycoord)==nlocal );
-  auto
-    f = coordinate<index_int,d>( vector<index_int>{nlocal*mytid} ),
-    l = coordinate<index_int,d>( vector<index_int>{nlocal*(mytid+1)-1} );
-  CHECK( d1->first_index_r(mycoord)==f );
-  CHECK( d1->contains_element(mycoord,d1->first_index_r(mycoord)) );
-  CHECK( ( !d1->is_valid_index(f-1) || !d1->contains_element(mycoord,f-1)) );
-	 
-  // replicated has everyone the same
-  auto d3 = shared_ptr<distribution>( new mpi_replicated_distribution(decomp) );
-  CHECK( d3->volume(mycoord)==1 );
-  CHECK( d3->first_index_r(mycoord)==coordinate<index_int,d>_zero(1) );
-  CHECK( d3->last_index_r(mycoord)==coordinate<index_int,d>_zero(1) );
-  shared_ptr<object> scalar;
-  CHECK( d3->get_domains().size()==1 );
-  REQUIRE_NOTHROW( scalar = shared_ptr<object>( new mpi_object(d3) ) );
-  REQUIRE_NOTHROW( scalar->allocate() );
-
-  // scalar is block size=1
-  auto d4 = shared_ptr<distribution>( new mpi_scalar_distribution(decomp) );
-  CHECK( d4->volume(mycoord)==1 );
-  CHECK( d4->first_index_r(mycoord).coord(0)==mytid );
-  CHECK( d4->last_index_r(mycoord).coord(0)==mytid );
-}
-
-TEST_CASE( "Distribution creation","[mpi][distribution][14]" ) {
-  shared_ptr<distribution> d;
-  index_int
-    localsize = 10*(mytid+1),
-    globalsize = 10*ntids*(ntids+1)/2; const char *path;
-  REQUIRE_NOTHROW( d = shared_ptr<distribution>( new mpi_distribution(decomp) ) );
-  SECTION( "vector of local" ) { path = "vector of locals";
-    vector<index_int> sizes(ntids);
-    for (int tid=0; tid<ntids; tid++)
-      sizes[tid] = 10*(tid+1);
-    REQUIRE_NOTHROW( d->create_from_local_sizes( sizes ) );
-  }
-  SECTION( "unique local" ) { path = "from unique local";
-    auto my_local = shared_ptr<multi_indexstruct>
-          ( new contiguous_multi_indexstruct
-	    ( coordinate<index_int,d>( vector<index_int>{ 1 } ),
-	      coordinate<index_int,d>( vector<index_int>{ localsize } ) ) );
-    REQUIRE_NOTHROW( d->create_from_unique_local(my_local) );
-  }
-  REQUIRE_NOTHROW( d->memoize_structure() );
-  INFO( "distribution created: " << path );
-  index_int s;
-  REQUIRE_NOTHROW( s = d->global_volume() );
-  CHECK( s==globalsize );
-  REQUIRE_NOTHROW( s = d->volume(mycoord) );
-  CHECK( s==localsize );
-  auto 
-    sbfirst = mycoord_coord*(mytid+1)*5; // 5 = 10/2, see above for that 10
-  coordinate<index_int,d> myfirst;
-  REQUIRE_NOTHROW( myfirst = d->first_index_r(mycoord) );
-  CHECK( myfirst==sbfirst );
-}
-
-TEST_CASE( "objects","[mpi][object][distribution][15]" ) {
-  shared_ptr<distribution> block,scalar;
-  REQUIRE_NOTHROW( block = shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,10,-1) ) );
-  REQUIRE_NOTHROW( scalar = shared_ptr<distribution>( new mpi_scalar_distribution(decomp) ) );
-  CHECK( scalar->has_type_contiguous() );
-  CHECK( scalar->volume(mycoord)==1 );
-  CHECK( scalar->first_index_r(mycoord)==mycoord_coord );
-  CHECK( scalar->local_ndomains()==1 );
-
-  shared_ptr<object> scalar_object,block_object;
-  REQUIRE_NOTHROW( block_object = shared_ptr<object>( new mpi_object(block) ) );
-  return;
-  REQUIRE_NOTHROW( scalar_object = shared_ptr<object>( new mpi_object(scalar) ) );
-}
-
-TEST_CASE( "object factories","[mpi][object][distribution][16]" ) {
-  shared_ptr<distribution> block,scalar;
-  REQUIRE_NOTHROW( block = shared_ptr<distribution>( make_shared<mpi_block_distribution>(decomp,10,-1) ) );
-  REQUIRE_NOTHROW( scalar = block->new_scalar_distribution() );
-
-  CHECK( scalar->has_type_contiguous() );
-  CHECK( scalar->volume(mycoord)==1 );
-  CHECK( scalar->first_index_r(mycoord)==mycoord_coord );
-  CHECK( scalar->local_ndomains()==1 );
-
-  shared_ptr<object> scalar_object;
-  REQUIRE_NOTHROW( block->new_object!=nullptr );
-  REQUIRE_NOTHROW( scalar_object = scalar->new_object(scalar) );
-  //  CHECK( scalar->has_data_status_unallocated() );
-}
 
 TEST_CASE( "Operated distributions with modulo","[mpi][distribution][modulo][24]" ) {
 

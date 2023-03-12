@@ -21,17 +21,17 @@ public:
   //! Make a domain from an indexstructure with inclusive upper bound
   domain( const indexstructure<index_int,d>& idx )
     : indexstructure<index_int,d>( idx ) {
-    cout << "domain from istruct " << idx.as_string() << '\n';
+    //std::cout << "domain from istruct " << idx.as_string() << '\n';
   };
   //! Make a domain from a indexstruct with inclusive upper bound
   domain( contiguous_indexstruct<index_int,d> ci )
     : indexstructure<index_int,d>::indexstructure<index_int,d>( ci ) {
-    cout << "domain from contiguous " << ci.as_string() << '\n';
+    //std::cout << "domain from contiguous " << ci.as_string() << '\n';
   };
   //! Make a domain from a presumable exclusive upper bound
   domain( coordinate<index_int,d> c )
     : domain<d>( contiguous_indexstruct<index_int,d>( coordinate<index_int,d>(0),c-1 ) ) {
-    cout << "domain from coordinate " << c.as_string() << '\n';
+    //std::cout << "domain from coordinate " << c.as_string() << '\n';
   };
   /*! default constructor,
    * needed for the _local_domain member of the `distribution' class,
