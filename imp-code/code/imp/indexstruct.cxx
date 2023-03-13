@@ -205,14 +205,15 @@ std::string contiguous_indexstruct<I,d>::as_string() const {
 //! 1D constructor from scalars \todo does this make sense? lose?
 template<typename I,int d>
 strided_indexstruct<I,d>::strided_indexstruct(const I f,const I l,const I s)
-  : strided_indexstruct<I,d>( coordinate<I,d>(f), coordinate<I,d>(l), s ) {
+  : strided_indexstruct<I,d>( coordinate<I,d>(f), coordinate<I,d>(l), coordinate<I,d>(s) ) {
 };
 
 //! Constructor from arrays, delegates by making coordinates from them.
 template<typename I,int d>
 strided_indexstruct<I,d>::strided_indexstruct
-        (const std::array<I,d> f,const std::array<I,d>  l,const I s)
-  : strided_indexstruct<I,d>( coordinate<I,d>(f), coordinate<I,d>(l), s ) {
+    (const std::array<I,d> f,const std::array<I,d>  l,I s)
+      : strided_indexstruct<I,d>
+      ( coordinate<I,d>(f), coordinate<I,d>(l), coordinate<I,d>(s) ) {
 };
 
 /*!
@@ -221,11 +222,11 @@ strided_indexstruct<I,d>::strided_indexstruct
 */
 template<typename I,int d>
 strided_indexstruct<I,d>::strided_indexstruct
-        (const coordinate<I,d> f,const coordinate<I,d>  l,const I s)
-	  : first(f),last(l),stride_amount(s) {
+    (const coordinate<I,d>& f,const coordinate<I,d>& l,const coordinate<I,d>& s)
+      : first(f),last(l),stride_amount(s) {
   for (int id=0; id<d; id++)  // make sure last is actually included
     if (first[id]!=last[id])
-      last[id] -= (last[id]-first[id])%stride_amount;
+      last[id] -= (last[id]-first[id])%stride_amount[id];
 };
 
 /*
@@ -1377,7 +1378,7 @@ coordinate<I,d> composite_indexstruct<I,d>::last_actual_index() const {
     throw(std::string("Can not get last from empty composite"));
   auto f = structs.at(0)->last_actual_index();
   for (auto s : structs)
-    f = MAX(f,s->last_actual_index());
+    f = coordmax(f,s->last_actual_index());
   return f;
 };
 
@@ -1993,7 +1994,7 @@ ioperator<I,d>::ioperator( string op ) {
   - "shiftto" : shift to specific point
 */
 template<typename I,int d>
-ioperator<I,d>::ioperator( string op,I amt ) {
+ioperator<I,d>::ioperator( string op,const coordinate<I,d>& amt ) {
   if ( op=="shift" ) {
     type = iop_type::SHIFT_REL; by = amt;
   } else if ( op=="shiftto" ) {
@@ -2007,31 +2008,23 @@ ioperator<I,d>::ioperator( string op,I amt ) {
   the result to be valid. 
  */
 template<typename I,int d>
-I ioperator<I,d>::operate( I i ) const {
+coordinate<I,d> ioperator<I,d>::operate( const coordinate<I,d>& i ) const {
   if (is_none_op())
     return i;
   else if (is_shift_op()) {
-    I r = i+by;
+    coordinate<I,d> r = i+by;
     return r; // if (!is_modulo_op() && r<0) return 0; else 
   } else if (is_mult_op())
     return i*by;
   else if (is_div_op() || is_contdiv_op())
     return i/by;
-  else if (is_function_op())
-    return func(i);
-  else
-    throw(std::string("unknown operate type for operate"));
-};
-
-/*!
- * Operate on a coordinate by operating on each component
- */
-template<typename I,int d>
-coordinate<I,d> ioperator<I,d>::operate( const coordinate<I,d>& c ) const {
-  auto r(c);
-  for ( auto& e : r.data() )
-    e = operate(e);
-  return r;
+  else if (is_function_op()) {
+    auto r(i);
+    for (int id=0; id<d; id++)
+      r.data()[id] = func( r.data()[id] );
+    return r;
+  } else
+    throw( string("unknown operate type for operate") );
 };
 
 //! Render `ioperator' as string
@@ -2061,18 +2054,18 @@ string ioperator<I,d>::as_string() const {
   Operate on a scalar, and bump or wrap as needed.
 */
 template<typename I,int d>
-I ioperator<I,d>::operate( I i, I m ) const {
-  I r = operate(i);
+coordinate<I,d> ioperator<I,d>::operate( const coordinate<I,d>& i, const coordinate<I,d>& m ) const {
+  auto r = operate(i);
   if (is_modulo_op()) {
-    return MOD( r,m+1 );
+    return coordmod( r,m+1 );
   } else {
-    return MAX( 0, MIN(m,r) );
+    return coordmax( coordinate<I,d>(0), coordmin(m,r) );
   }
 };
 
 //! Inverse operate on a scalar
 template<typename I,int d>
-I ioperator<I,d>::inverse_operate( I i ) const {
+coordinate<I,d> ioperator<I,d>::inverse_operate( const coordinate<I,d>& i ) const {
   if (i<0) {
     throw(std::string("I don't like to operate negative indices")); }
   if (is_none_op())
@@ -2082,50 +2075,44 @@ I ioperator<I,d>::inverse_operate( I i ) const {
   else if (is_right_shift_op()) {
     if (i==0) {
       throw(std::string("Can't unrightshift zero"));
-    } else return MAX(0,i-1);
+    } else return coordmax( coordinate<I,d>(0),i-1);
   }
   throw(std::string("unknown operate type for inverse"));
 };
 
 template<typename I,int d>
-I ioperator<I,d>::inverse_operate( I i, I m ) const {
+coordinate<I,d> ioperator<I,d>::inverse_operate
+    ( const coordinate<I,d>& i, const coordinate<I,d>& m ) const {
+  throw("inverse operator not implemented");
+#if 0
   if (i<0 || i>=m) {
     throw(std::string("index out of range")); }
   if (is_none_op())
     return i;
   else {
-    I ii=-1;
+    auto ii=-1;
     if (is_left_shift_op()) {
       if (i==m-1) {
 	if (is_modulo_op())
-	  return 0;
+	  return coordinate<I,d>(0);
 	else {
 	  throw(std::string("Can not unleftshift last index")); }
-      } else ii = i+1;
+      } else ii = i+coordinate<I,d>(1);
     } else if (is_right_shift_op()) {
       if (i==0) {
 	if (is_modulo_op())
-	  return m-1;
+	  return m-coordinate<I,d>(1);
 	else {
 	  throw(std::string("Can not unrightshift zero")); }
-      } else ii = i-1;
+      } else ii = i-coordinate<I,d>(1);
     }
     if (is_modulo_op())
-      return MOD( ii,m );
+      return coordmod( ii,m );
     else
-      return MAX( 0, MIN(m-1,ii) );
+      return coordmax( coordinate<I,d>(0), coordmin(m-1,ii) );
   }
+#endif
 };
-
-// template<typename I,int d>
-// std::string strided_indexstruct<I,d>::as_string() const {
-//   fmt::memory_buffer w;
-//   format_to(w.end(),"indexed: {}:[",indices.size());
-//   for (auto i : indices)
-//     format_to(w.end(),"{},",i[0]);
-//   format_to(w.end(),"]");
-//   return to_string(w);
-// }
 
 /****
  **** Operate on indexstructs
@@ -2157,11 +2144,11 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
     coordinate<I,d>
       new_first  = op.operate(first_index()),
       new_last;
-    I new_stride;
+    coordinate<I,d> new_stride;
     if (op.is_base_op())
       new_stride  = stride();
     else
-      new_stride = MAX(1,op.operate(stride()));
+      new_stride = coordmax( coordinate<I,d>(1),op.operate(stride()) );
     if (op.is_contdiv_op())
       new_last = coordmax<I,d>( new_first, op.operate(last_actual_index()+stride())-new_stride );
     else if (op.is_base_op())

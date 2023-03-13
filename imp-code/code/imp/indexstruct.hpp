@@ -85,7 +85,8 @@ public:
   virtual I volume() const {
     report_unimplemented("volume"); return 0; };
   virtual I outer_volume() const;
-  virtual I stride() const { throw(std::string("Indexstruct has no stride")); };
+  virtual const coordinate<I,d>& stride() const {
+    throw(std::string("Indexstruct has no stride")); };
   virtual bool equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const;
   
   virtual std::shared_ptr<indexstruct<I,d>> make_strided(bool=false) const;
@@ -270,14 +271,13 @@ public:
 template<typename I,int d>
 class strided_indexstruct : public indexstruct<I,d> {
 protected:
-  coordinate<I,d> first,last;
-  I stride_amount{1};
+  coordinate<I,d> first,last,stride_amount{coordinate<I,d>(1)};
 public:
   strided_indexstruct(const I f,const I l,const I s);
   strided_indexstruct(const std::array<I,d> f,const std::array<I,d>  l,const I s);
-  strided_indexstruct(const coordinate<I,d>,const coordinate<I,d>  l,const I s);
+  strided_indexstruct(const coordinate<I,d>&,const coordinate<I,d>&,const coordinate<I,d>&);
   strided_indexstruct(const coordinate<I,d> f,const coordinate<I,d>  l )
-    : strided_indexstruct( f,l,1 ) {};
+    : strided_indexstruct( f,l,coordinate<I,d>(1) ) {};
   /*
    * Statistics
    */
@@ -288,7 +288,7 @@ public:
   coordinate<I,d> last_actual_index()  const override { return last; };
   virtual I outer_volume() const override;
   virtual I volume()  const override;
-  virtual I stride() const override { return stride_amount; };
+  virtual const coordinate<I,d>& stride() const override { return stride_amount; };
   virtual bool is_strided() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("strided"); };
   virtual I find( coordinate<I,d> idx ) const override;
@@ -529,27 +529,30 @@ class ioperator {
 protected:
   iop_type type{iop_type::INVALID};
   int mod{0}, baseop{0};
-  I by{0};
+  coordinate<I,d> by;
   std::function< I(I) > func;
 public:
   //! This constructor is  needed for the derived classes
   ioperator() {};
   ioperator( std::string op );
-  ioperator( std::string op,I amt );
+  ioperator( std::string op,const coordinate<I,d>& amt );
   //! In the most literal interpretation, we operate an actual function pointer.
   ioperator( I(*f)(I) ) { type = iop_type::FUNC; func = f; };
   ioperator( std::function< I(I) > f ) { type = iop_type::FUNC; func = f; };
-  I operate( I ) const;
+  // operate
   coordinate<I,d> operate( const coordinate<I,d>& ) const;
-  I operate( I, I ) const;
-  I inverse_operate( I ) const;
-  I inverse_operate( I, I ) const;
+  // operate and truncate
+  coordinate<I,d> operate( const coordinate<I,d>&,const coordinate<I,d>& ) const;
+  // operate
+  coordinate<I,d> inverse_operate( const coordinate<I,d>& ) const;
+  // operate and truncate
+  coordinate<I,d> inverse_operate( const coordinate<I,d>&,const coordinate<I,d>& ) const;
   bool is_none_op()        const { return type==iop_type::NONE; };
   bool is_shift_op()       const {
     return type==iop_type::SHIFT_REL || type==iop_type::SHIFT_ABS; };
   bool is_shift_to()       const { return type==iop_type::SHIFT_ABS; };
-  bool is_right_shift_op() const { return is_shift_op() && (by>0); };
-  bool is_left_shift_op()  const { return is_shift_op() && (by<0); };
+  bool is_right_shift_op() const { return is_shift_op() && (by.at(0)>0); };
+  bool is_left_shift_op()  const { return is_shift_op() && (by.at(0)<0); };
   bool is_modulo_op()      const { return is_shift_op() && mod; };
   bool is_bump_op()        const { return is_shift_op() && !mod; };
   bool is_restrict_op()    const { return type==iop_type::MULT; }; // VLE don't like the name. lose
@@ -558,7 +561,7 @@ public:
   bool is_div_op()         const { return type==iop_type::DIV; };
   bool is_contdiv_op()     const { return type==iop_type::CONTDIV; };
   bool is_function_op()    const { return type==iop_type::FUNC; };
-  I amount() const { return by; };
+  const coordinate<I,d>& amount() const { return by; };
   std::string type_string() const {
     if (type==iop_type::INVALID) return "INVALID";
     if (type==iop_type::NONE) return "NONE";
@@ -569,23 +572,19 @@ public:
     if (type==iop_type::FUNC) return "FUNC";
     return "MISSING"; };  
   std::string as_string() const;
-protected:
-  int dim{0}; //!< By default we shift in dimension zero.
-public:
-  int get_dimension() const { return dim; };
 };
 
 template<typename I,int d>
 class shift_operator : public ioperator<I,d> {
 public:
-  shift_operator( I n,bool relative=true )
+  shift_operator( coordinate<I,d> by,bool relative=true )
     : ioperator<I,d>() {
     if (relative)
       this->type = iop_type::SHIFT_REL;
     else
       this->type = iop_type::SHIFT_ABS;
-    this->by = n; };
-  //  shift_operator( int d,I n ) : shift_operator(n) { dim = d; };
+    this->by = by;
+  };
 };
 
 template<typename I,int d>
@@ -716,7 +715,7 @@ public:
   virtual coordinate<I,d> last_actual_index()  const { return strct->last_actual_index(); };
   I volume()                            const {    return strct->volume(); };
   I outer_volume()                      const {    return strct->outer_volume(); };
-  virtual int stride()                  const {    return strct->stride(); };
+  virtual const coordinate<I,d>& stride() const {    return strct->stride(); };
   virtual bool equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const {
     return strct->equals(idx); };
   virtual bool operator==( std::shared_ptr<indexstruct<I,d>> idx ) const {

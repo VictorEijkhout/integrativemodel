@@ -231,16 +231,25 @@ void coordinate<I,d>::operator-=( const coordinate<I,d>& other ) {
 // mult
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator*( I f ) const {
-  auto r(*this);
-  for ( int id=0; id<d; id++ )
-    r.coordinates[id] *= f;
-  return r;
+  return *this * coordinate<I,d>(f);
 };
 template<typename I,int d>
-coordinate<I,d> coordinate<I,d>::operator/( I f ) const {
+coordinate<I,d> coordinate<I,d>::operator*( const coordinate<I,d> f ) const {
   auto r(*this);
   for ( int id=0; id<d; id++ )
-    r.coordinates[id] /= f;
+    r.coordinates[id] *= f.coordinates[id];
+  return r;
+};
+// div
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator/( I f ) const {
+  return *this / coordinate<I,d>(f);
+};
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator/( const coordinate<I,d>& f ) const {
+  auto r(*this);
+  for ( int id=0; id<d; id++ )
+    r.coordinates[id] /= f.coordinates[id];
   return r;
 };
 template<typename I,int d>
@@ -267,43 +276,32 @@ bool coordinate<I,d>::operator==( I other ) const {
   return r;
 };
 
-// template<typename I,int d>
-// bool coordinate<I,d>::operator==( coordinate<I,d>&& other ) const {
-//   return *this==std::move(other);
-// };
-
 template<typename I,int d>
 bool coordinate<I,d>::operator!=( const coordinate<I,d>& other ) const {
   //  print("test neq\n");
   return not (*this==other);
-  // bool r{ coordinates[0]!=other.coordinates[0] };
-  // print("not eq {}",r);
-  // for ( int id=1; id<d; id++ ) {
-  //   r = r or coordinates[id]!=other.coordinates[id];
-  //   print("{}",r);
-  // } print("\n");
-  // return r;
 };
 template<typename I,int d>
-bool coordinate<I,d>::operator<=( coordinate<I,d> other ) const {
+bool coordinate<I,d>::operator<( const coordinate<I,d> other ) const {
   bool r{true};
   for ( int id=0; id<d; id++ )
-    r = r and coordinates[id]<=other.coordinates[id];
+    r = r and data()[id]<other.data()[id];
   return r;
 };
 template<typename I,int d>
-bool coordinate<I,d>::operator<( coordinate<I,d> other ) const {
+bool coordinate<I,d>::operator>( const coordinate<I,d> other ) const {
+  return (other < *this );
+};
+template<typename I,int d>
+bool coordinate<I,d>::operator<=( const coordinate<I,d> other ) const {
   bool r{true};
   for ( int id=0; id<d; id++ )
-    r = r and coordinates[id]<other.coordinates[id];
+    r = r and data()[id]<=other.data()[id];
   return r;
 };
 template<typename I,int d>
-bool coordinate<I,d>::operator>( coordinate<I,d> other ) const {
-  bool r{true};
-  for ( int id=0; id<d; id++ )
-    r = r and coordinates[id]>other.coordinates[id];
-  return r;
+bool coordinate<I,d>::operator>=( const coordinate<I,d> other ) const {
+  return (other <= *this );
 };
 
 /*
@@ -363,6 +361,16 @@ coordinate<I,d>  coordmin( coordinate<I,d> current,coordinate<I,d> other ) {
   for ( int id=0; id<d; id++ ) {
     auto cmp = other.data()[id];
     if (cmp<r.data()[id]) r.data()[id] = cmp;
+  }
+  return r;
+};
+/*! Pointwise mod of two coordinates */
+template<typename I,int d>
+coordinate<I,d> coordmod( coordinate<I,d> current,coordinate<I,d> other ) {
+  auto r(current);
+  for ( int id=0; id<d; id++ ) {
+    auto cmp = other.data()[id];
+    r.data()[id] = r.data()[id] % cmp;
   }
   return r;
 };

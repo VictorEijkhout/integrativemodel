@@ -96,7 +96,10 @@ public:
   void operator-=( const coordinate<I,d>& );
   coordinate<I,d> operator%( I ) const;
   coordinate<I,d> operator*( I ) const;
+  coordinate<I,d> operator*( const coordinate<I,d>& ) const;
   coordinate<I,d> operator/( I ) const;
+  coordinate<I,d> operator/( const coordinate<I,d>& ) const;
+
 // #include <compare>
 //   auto operator<=>( coordinate<I,d> ) const {
 //     return std::accumulate( coordinates.begin(),coordinates.end(),
@@ -104,9 +107,13 @@ public:
 //   };
   bool operator==( const coordinate<I,d>& other ) const;
   bool operator!=( const coordinate<I,d>& other ) const;
-  bool operator<=( coordinate<I,d> other ) const;
-  bool operator<( coordinate<I,d> ) const;
-  bool operator>( coordinate<I,d> ) const;
+
+  bool operator<( const coordinate<I,d> ) const;
+  bool operator<=( const coordinate<I,d> other ) const;
+  bool operator>( const coordinate<I,d> ) const;
+  bool operator>=( const coordinate<I,d> ) const;
+
+  bool operator>>( const coordinate<I,d> ) const;
   bool operator==( I ) const;
 
   // iterating
@@ -129,6 +136,8 @@ template<class I,int d>
 coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other );
 template<class I,int d>
 coordinate<I,d> coordmin( coordinate<I,d> current,coordinate<I,d> other );
+template<class I,int d>
+coordinate<I,d> coordmod( coordinate<I,d> current,coordinate<I,d> other );
 template<typename I,int d>
 void require_sorted( std::vector<coordinate<I,d>> idxs );
 

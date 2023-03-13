@@ -57,6 +57,7 @@ TEST_CASE( "contiguous indexstruct, construction","[indexstruct][1]" ) {
   REQUIRE_NOTHROW( contiguous_indexstruct<index_int,1>(0,5) );
   contiguous_indexstruct<index_int,1> i1(0,5);
 
+  coordinate<index_int,1> one(1);
   SECTION( "Basic" ) {
     CHECK( i1.is_contiguous() );
     CHECK( !i1.is_indexed() );
@@ -64,7 +65,7 @@ TEST_CASE( "contiguous indexstruct, construction","[indexstruct][1]" ) {
     CHECK( ( ( i1.last_actual_index()==5 ) ) );
     CHECK( ( ( i1.last_index()==6 ) ) );
     CHECK( i1.volume()==6 );
-    CHECK( i1.stride()==1 );
+    CHECK( i1.stride()==one );
     CHECK( i1.find(0)==0 );
     CHECK( i1.find(5)==5 );
     REQUIRE_THROWS( i1.find(6) );
@@ -76,7 +77,7 @@ TEST_CASE( "contiguous indexstruct, construction","[indexstruct][1]" ) {
     CHECK( ( ii.first_index()==0 ) );
     CHECK( ( ( ii.last_actual_index()==5 ) ) );
     CHECK( ii.volume()==6 );
-    CHECK( ii.stride()==1 );
+    CHECK( ii.stride()==one );
     CHECK( ii.find(0)==0 );
     CHECK( ii.find(5)==5 );
     REQUIRE_THROWS( ii.find(6) );
@@ -139,7 +140,8 @@ TEST_CASE( "more contiguous" ) {
   CHECK( !i1.is_indexed() );
   CHECK( ( i1.first_index()==1 ) );
   CHECK( ( i1.last_actual_index()==7 ) );
-  CHECK( i1.stride()==1 );
+  coordinate<index_int,1> one(1);
+  CHECK( i1.stride()==one );
   REQUIRE_THROWS( i1.find(0) );
 }
 
@@ -151,7 +153,8 @@ TEST_CASE( "strided" ) {
   CHECK( ( i1.first_index()==2 ) );
   CHECK( ( i1.last_actual_index()==6 ) );
   CHECK( i1.volume()==3 );
-  CHECK( i1.stride()==2 );
+  coordinate<index_int,1> one(1);
+  CHECK( i1.stride()==one*2 );
   CHECK( i1.find(2)==0 );
   REQUIRE_THROWS( i1.find(3) );
   CHECK( i1.find(4)==1 );
@@ -170,7 +173,8 @@ TEST_CASE( "basic stride tests" ) {
   CHECK( ( i1.first_index()==4 ) );
   CHECK( ( i1.last_actual_index()==6 ) );
   CHECK( i1.volume()==2 );
-  CHECK( i1.stride()==2 );
+  coordinate<index_int,1> one(1);
+  CHECK( i1.stride()==one*2 );
   CHECK( i1.contains(i1) );
   CHECK( i1.equals(i1) );
 
@@ -199,6 +203,7 @@ TEST_CASE( "strided containment" ) {
   indexstructure i2( contiguous_indexstruct<index_int,1>(4,8) );
   indexstructure i3( strided_indexstruct<index_int,1>(4,8,2) );
   indexstructure i4( strided_indexstruct<index_int,1>(4,8,4) );
+  coordinate<index_int,1> one(1);
   SECTION( "containment" ) {
     CHECK( i2.contains(i3) );
     CHECK( !i3.contains(i2) );
@@ -216,7 +221,7 @@ TEST_CASE( "strided containment" ) {
     CHECK( ( i1.first_index()==5 ) );
     CHECK( ( i1.last_actual_index()==7 ) );
     CHECK( i1.volume()==2 );
-    CHECK( i1.stride()==2 );
+    CHECK( i1.stride()==one*2 );
   }
   SECTION( "translation backward" ) {
     REQUIRE_NOTHROW( i1.translate_by(-2) );
@@ -226,7 +231,7 @@ TEST_CASE( "strided containment" ) {
     CHECK( ( i1.first_index()==2 ) );
     CHECK( ( i1.last_actual_index()==4 ) );
     CHECK( i1.volume()==2 );
-    CHECK( i1.stride()==2 );
+    CHECK( i1.stride()==one*2 );
   }
 
   SECTION( "translation through zero" ) {
@@ -237,7 +242,7 @@ TEST_CASE( "strided containment" ) {
     CHECK( ( i1.first_index()==-1 ) );
     CHECK( ( i1.last_actual_index()==1 ) );
     CHECK( i1.volume()==2 );
-    CHECK( i1.stride()==2 );
+    CHECK( i1.stride()==one*2 );
   }
 }
 
@@ -553,6 +558,7 @@ TEST_CASE( "tricky composite simplify with strided" ) {
     CHECK( i1.get_structs().size()==3 );
   }
 }
+
 #if 0
   SECTION( "composite over simplify" ) {
     auto i1 = shared_ptr<composite_indexstruct<index_int,1>>( new composite_indexstruct<index_int,1>() );
@@ -698,6 +704,7 @@ TEST_CASE( "enumerating indexstructs","[10]" ) {
 TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
   
   indexstruct<index_int,1> i1,i2,i3,i4;
+  coordinate<index_int,1> one(1);
   SECTION( "first cont" ) {
     i1 = indexstruct<index_int,1>{ new contiguous_indexstruct<index_int,1>(1,10) };
     indexstructure<index_int,1> I1( contiguous_indexstruct<index_int,1>(1,10) );
@@ -744,7 +751,7 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
       i2 = indexstruct<index_int,1>{ new strided_indexstruct<index_int,1>(10,12,2) };
       i3 = strided_indexstruct<index_int,1>(8,14,2) );
       REQUIRE_NOTHROW( i4 = i2.relativize_to(i3) );
-      CHECK( i4.stride()==1 );
+      CHECK( i4.stride()==one );
       CHECK( i4.volume()==2 );
       CHECK( ( i4.first_index()==1 ) );
       CHECK( ( i4.last_actual_index()==2 ) );
@@ -786,10 +793,11 @@ TEST_CASE( "indexstruct intersections","[indexstruct][intersect][20]" ) {
     i1 = indexstruct<index_int,1>{ new strided_indexstruct<index_int,1>(10,20,2) };
     CHECK( i1.volume()==6 );
     i2 = indexstruct<index_int,1>{ new strided_indexstruct<index_int,1>(12,14,2) };
+    coordinate<index_int,1> one(1);
     REQUIRE_NOTHROW( i3 = i1.intersect(i2) );
     CHECK( i3.volume()==2 );
     CHECK( i3.is_strided() );
-    CHECK( i3.stride()==2 );
+    CHECK( i3.stride()==one*2 );
 
     i2 = indexstruct<index_int,1>{ new strided_indexstruct<index_int,1>(12,22,10) };
     REQUIRE_NOTHROW( i3 = i1.intersect(i2) );
@@ -1346,16 +1354,19 @@ TEST_CASE( "struct split","[split][25]" ) {
 }
 #endif
 
-index_int itimes2(index_int i) { return 2*i; }
-indexstruct<index_int,1> *itimes2i(index_int i) { return new contiguous_indexstruct<index_int,1>(2*i,2*i); }
-
-TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) {
-  ioperator<index_int,1> op; 
-
-  SECTION( "multiply by constant" ) {
+TEST_CASE( "struct multiplying","[31]" ) {
+  {
+    INFO("1D");
     indexstructure i1(contiguous_indexstruct<index_int,1>(5,10));
     INFO( format("start with contiguous: {}",i1.as_string()) );
-    REQUIRE_NOTHROW( op = ioperator<index_int,1>("*2") );
+    ioperator<index_int,1> op;
+    coordinate<index_int,1> one(1);
+    SECTION( "old notation" ) {
+      REQUIRE_NOTHROW( op = ioperator<index_int,1>("*2") );
+    }
+    // SECTION( "new notation" ) {
+    //   REQUIRE_NOTHROW( op = ioperator<index_int,1>("*",2) );
+    // }
     REQUIRE_NOTHROW( i1.operate(op) );
     auto i2 = i1.operate(op);
     // printf("i2 s/b strided: <<%s>>\n",i2.as_string().data());
@@ -1364,7 +1375,17 @@ TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) 
     CHECK( ( i2.first_index()==10 ) );
     CHECK( ( i2.last_actual_index()==20 ) );
     CHECK( i2.volume()==i1.volume() );
-    CHECK( i2.stride()==2 );
+    CHECK( i2.stride()==one*2 );
+  }
+}
+
+index_int itimes2(index_int i) { return 2*i; }
+indexstruct<index_int,1> *itimes2i(index_int i) { return new contiguous_indexstruct<index_int,1>(2*i,2*i); }
+
+TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) {
+  ioperator<index_int,1> op; 
+
+  SECTION( "multiply by constant" ) {
   }
   SECTION( "multiply range by constant" ) {
     indexstructure i1{ contiguous_indexstruct<index_int,1>(5,10) };
@@ -1378,12 +1399,13 @@ TEST_CASE( "structs and operations","[indexstruct<index_int,1>][operate][30]" ) 
     CHECK( i2.is_strided() );
   }
   SECTION( "multiply by function" ) {
-    indexstructure i1{ contiguous_indexstruct<index_int,1>(5,10) };
     REQUIRE_NOTHROW( op = ioperator<index_int,1>(&itimes2) );
-    index_int is2;
-    REQUIRE_NOTHROW( is2 = op.operate(1) );
-    CHECK( is2==2 );
-    
+    {
+      coordinate<index_int,1> opped;
+      REQUIRE_NOTHROW( opped = op.operate( coordinate<index_int,1>(1) ) );
+      CHECK( opped==coordinate<index_int,1>(2) );
+    }
+    indexstructure i1{ contiguous_indexstruct<index_int,1>(5,10) };
     REQUIRE_NOTHROW( i1.operate(op) );
     auto i2 = i1.operate(op);
     // CHECK( i2.is_strided() );
@@ -2066,6 +2088,7 @@ TEST_CASE( "multi-dimensional operations","[multi][120]" ) {
     (1,indexstruct<index_int,1>(  new strided_indexstruct<index_int,1>(25,50,5) ) );
 
   multi_ioperator *op; REQUIRE_NOTHROW( op = new multi_ioperator(2) );
+    coordinate<index_int,1> one(1);
   CHECK( op.dimensionality()==2 );
 
   SECTION( "first dim" ) {
@@ -2080,7 +2103,7 @@ TEST_CASE( "multi-dimensional operations","[multi][120]" ) {
     CHECK( i1.is_strided() );
     CHECK( ( i1.first_index()==25 ) );
     CHECK( ( i1.last_actual_index()==50 ) );
-    CHECK( i1.stride()==5 );
+    CHECK( i1.stride()==one*5 );
   }
   SECTION( "second dim" ) {
     REQUIRE_NOTHROW( op.set_operator(1,ioperator(">>2")) );
@@ -2094,7 +2117,7 @@ TEST_CASE( "multi-dimensional operations","[multi][120]" ) {
     CHECK( i1.is_strided() );
     CHECK( ( i1.first_index()==27 ) );
     CHECK( ( i1.last_actual_index()==52 ) );
-    CHECK( i1.stride()==5 );
+    CHECK( i1.stride()==one*5 );
   }
   SECTION( "both dimensions" ) {
     auto div2 = ioperator(">>2");
