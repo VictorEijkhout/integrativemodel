@@ -319,7 +319,7 @@ template<typename I,int d>
 coordinate<I,d> strided_indexstruct<I,d>::get_ith_element( const I i ) const {
   if (i<0 || i>=volume())
     throw(fmt::format("Index {} out of range for {}",i,as_string()));
-  return first+i*stride_amount;
+  return first+stride_amount*i;
 };
 
 template<typename I,int d>
@@ -374,7 +374,8 @@ bool strided_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx
 
 template<typename I,int d>
 std::string strided_indexstruct<I,d>::as_string() const {
-  return fmt::format("strided: [{}-by{}--{}]",first[0],stride_amount,last[0]);
+  return fmt::format("strided: [{}-by{}--{}]",
+		     first.as_string(),stride_amount.as_string(),last.as_string());
 };
 
 
@@ -752,8 +753,9 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
   strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) {
     if (trace) print("union strided+strided\n");
-    int amt = idx->stride();
-    auto frst = idx->first_index(), lst = idx->last_index();
+    const auto& amt = idx->stride();
+    const auto& frst = idx->first_index();
+    const auto& lst = idx->last_index();
     if (stride_amount==amt && first%stride_amount==frst%amt &&
 	frst<=last+stride_amount && first-stride_amount<=lst) {
       auto
@@ -819,7 +821,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::split
     ( shared_ptr<indexstruct<I,d>> idx ) {
-  int s = stride();
+  const auto& s = stride();
   auto res = make_shared<composite_indexstruct<I,d>>();
   auto f = first_index(), ff = idx->first_index(), l = last_index(), ll = idx->last_index();
   shared_ptr<indexstruct<I,d>> s1,s2;
@@ -1285,7 +1287,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::struct_union
     if (trace) print("union indexed+strided\n");
     if (strided->volume()<SMALLBLOCKSIZE) {
       auto indexed = this->make_clone();
-      int s = strided->stride();
+      const auto& s = strided->stride();
       for (auto i : *strided)
 	indexed = indexed->add_element(i);
       return indexed->make_clone();
@@ -1417,7 +1419,6 @@ coordinate<I,d> composite_indexstruct<I,d>::get_ith_element( const I i ) const {
   }
   throw(fmt::format("still need to count down {} for ith element {} in composite {}",
 		    ilocal,i,as_string()));
-  //  throw(fmt::format("Cannot get index from true composite"));
 };
 
 /*! Composite containment is tricky
@@ -2034,16 +2035,16 @@ string ioperator<I,d>::as_string() const {
     return std::string("Id");
   else if (is_shift_op()) {
     if (by>=0)
-      return fmt::format("+{}",by);
+      return fmt::format("+{}",by.as_string());
     else
-      return fmt::format("-{}",-by);
+      return fmt::format("-{}",by.as_string());
   } else if (is_mult_op()) {
     if (is_base_op())
-      return fmt::format("x{}",by);
+      return fmt::format("x{}",by.as_string());
     else
-      return fmt::format("*{}",by);
+      return fmt::format("*{}",by.as_string());
   } else if (is_div_op() || is_contdiv_op())
-    return fmt::format("/{}",by);
+    return fmt::format("/{}",by.as_string());
   else if (is_function_op())
     return std::string("func");
   else

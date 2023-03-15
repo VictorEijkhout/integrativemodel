@@ -90,15 +90,20 @@ public:
   // operators
   coordinate<I,d> operator+( const coordinate<I,d>& ) const;
   coordinate<I,d> operator+( I ) const;
+
   coordinate<I,d> operator-( const coordinate<I,d>& ) const;
   coordinate<I,d> operator-( I ) const;
   coordinate<I,d> operator-( ) const;
   void operator-=( const coordinate<I,d>& );
+
+  coordinate<I,d> operator%( const coordinate<I,d>& ) const;
   coordinate<I,d> operator%( I ) const;
-  coordinate<I,d> operator*( I ) const;
+
   coordinate<I,d> operator*( const coordinate<I,d>& ) const;
-  coordinate<I,d> operator/( I ) const;
+  coordinate<I,d> operator*( I ) const;
+
   coordinate<I,d> operator/( const coordinate<I,d>& ) const;
+  coordinate<I,d> operator/( I ) const;
 
 // #include <compare>
 //   auto operator<=>( coordinate<I,d> ) const {
@@ -133,11 +138,11 @@ public:
 };
 
 template<class I,int d>
-coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other );
+coordinate<I,d> coordmax( const coordinate<I,d>& current,const coordinate<I,d>& other );
 template<class I,int d>
-coordinate<I,d> coordmin( coordinate<I,d> current,coordinate<I,d> other );
+coordinate<I,d> coordmin( const coordinate<I,d>& current,const coordinate<I,d>& other );
 template<class I,int d>
-coordinate<I,d> coordmod( coordinate<I,d> current,coordinate<I,d> other );
+coordinate<I,d> coordmod( const coordinate<I,d>& current,const coordinate<I,d>& other );
 template<typename I,int d>
 void require_sorted( std::vector<coordinate<I,d>> idxs );
 

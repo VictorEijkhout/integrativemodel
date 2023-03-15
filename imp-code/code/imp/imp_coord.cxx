@@ -234,7 +234,7 @@ coordinate<I,d> coordinate<I,d>::operator*( I f ) const {
   return *this * coordinate<I,d>(f);
 };
 template<typename I,int d>
-coordinate<I,d> coordinate<I,d>::operator*( const coordinate<I,d> f ) const {
+coordinate<I,d> coordinate<I,d>::operator*( const coordinate<I,d>& f ) const {
   auto r(*this);
   for ( int id=0; id<d; id++ )
     r.coordinates[id] *= f.coordinates[id];
@@ -252,11 +252,16 @@ coordinate<I,d> coordinate<I,d>::operator/( const coordinate<I,d>& f ) const {
     r.coordinates[id] /= f.coordinates[id];
   return r;
 };
+// mod
 template<typename I,int d>
-coordinate<I,d> coordinate<I,d>::operator%( I other ) const {
+coordinate<I,d> coordinate<I,d>::operator%( I f ) const {
+  return *this % coordinate<I,d>(f);
+};
+template<typename I,int d>
+coordinate<I,d> coordinate<I,d>::operator%( const coordinate<I,d>& other ) const {
   auto r(*this);
   for ( int id=0; id<d; id++ )
-    r.coordinates[id] %= other;
+    r.coordinates[id] %= other.coordinates[id];
   return r;
 };
 // equals and other comparisons
@@ -346,7 +351,7 @@ coordinate<I,d> coordinate<I,d>::location_of_linear( I s ) const {
 // stuff
 /*! Pointwise max of two coordinates */
 template<typename I,int d>
-coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other ) {
+coordinate<I,d> coordmax( const coordinate<I,d>& current,const coordinate<I,d>& other ) {
   auto r(current);
   for ( int id=0; id<d; id++ ) {
     auto cmp = other.data()[id];
@@ -356,7 +361,7 @@ coordinate<I,d> coordmax( coordinate<I,d> current,coordinate<I,d> other ) {
 };
 /*! Pointwise min of two coordinates */
 template<typename I,int d>
-coordinate<I,d>  coordmin( coordinate<I,d> current,coordinate<I,d> other ) {
+coordinate<I,d>  coordmin( const coordinate<I,d>& current,const coordinate<I,d>& other ) {
   auto r(current);
   for ( int id=0; id<d; id++ ) {
     auto cmp = other.data()[id];
@@ -366,7 +371,7 @@ coordinate<I,d>  coordmin( coordinate<I,d> current,coordinate<I,d> other ) {
 };
 /*! Pointwise mod of two coordinates */
 template<typename I,int d>
-coordinate<I,d> coordmod( coordinate<I,d> current,coordinate<I,d> other ) {
+coordinate<I,d> coordmod( const coordinate<I,d>& current,const coordinate<I,d>& other ) {
   auto r(current);
   for ( int id=0; id<d; id++ ) {
     auto cmp = other.data()[id];
@@ -510,21 +515,29 @@ template struct fmt::formatter<coordinate<index_int,1>>;
 template struct fmt::formatter<coordinate<index_int,2>>;
 template struct fmt::formatter<coordinate<index_int,3>>;
 
-template coordinate<int,1> coordmax<int,1>( coordinate<int,1>,coordinate<int,1> );
-template coordinate<int,2> coordmax<int,2>( coordinate<int,2>,coordinate<int,2> );
-template coordinate<int,3> coordmax<int,3>( coordinate<int,3>,coordinate<int,3> );
+template coordinate<int,1> coordmax<int,1>( const coordinate<int,1>&,const coordinate<int,1>& );
+template coordinate<int,2> coordmax<int,2>( const coordinate<int,2>&,const coordinate<int,2>& );
+template coordinate<int,3> coordmax<int,3>( const coordinate<int,3>&,const coordinate<int,3>& );
 
-template coordinate<index_int,1> coordmax<index_int,1>( coordinate<index_int,1>,coordinate<index_int,1> );
-template coordinate<index_int,2> coordmax<index_int,2>( coordinate<index_int,2>,coordinate<index_int,2> );
-template coordinate<index_int,3> coordmax<index_int,3>( coordinate<index_int,3>,coordinate<index_int,3> );
+template coordinate<index_int,1> coordmax<index_int,1>( const coordinate<index_int,1>&,const coordinate<index_int,1>& );
+template coordinate<index_int,2> coordmax<index_int,2>( const coordinate<index_int,2>&,const coordinate<index_int,2>& );
+template coordinate<index_int,3> coordmax<index_int,3>( const coordinate<index_int,3>&,const coordinate<index_int,3>& );
 
-template coordinate<int,1> coordmin<int,1>( coordinate<int,1>,coordinate<int,1> );
-template coordinate<int,2> coordmin<int,2>( coordinate<int,2>,coordinate<int,2> );
-template coordinate<int,3> coordmin<int,3>( coordinate<int,3>,coordinate<int,3> );
+template coordinate<int,1> coordmin<int,1>( const coordinate<int,1>&,const coordinate<int,1>& );
+template coordinate<int,2> coordmin<int,2>( const coordinate<int,2>&,const coordinate<int,2>& );
+template coordinate<int,3> coordmin<int,3>( const coordinate<int,3>&,const coordinate<int,3>& );
 
-template coordinate<index_int,1> coordmin<index_int,1>( coordinate<index_int,1>,coordinate<index_int,1> );
-template coordinate<index_int,2> coordmin<index_int,2>( coordinate<index_int,2>,coordinate<index_int,2> );
-template coordinate<index_int,3> coordmin<index_int,3>( coordinate<index_int,3>,coordinate<index_int,3> );
+template coordinate<index_int,1> coordmin<index_int,1>( const coordinate<index_int,1>&,const coordinate<index_int,1>& );
+template coordinate<index_int,2> coordmin<index_int,2>( const coordinate<index_int,2>&,const coordinate<index_int,2>& );
+template coordinate<index_int,3> coordmin<index_int,3>( const coordinate<index_int,3>&,const coordinate<index_int,3>& );
+
+template coordinate<int,1> coordmod<int,1>( const coordinate<int,1>&,const coordinate<int,1>& );
+template coordinate<int,2> coordmod<int,2>( const coordinate<int,2>&,const coordinate<int,2>& );
+template coordinate<int,3> coordmod<int,3>( const coordinate<int,3>&,const coordinate<int,3>& );
+
+template coordinate<index_int,1> coordmod<index_int,1>( const coordinate<index_int,1>&,const coordinate<index_int,1>& );
+template coordinate<index_int,2> coordmod<index_int,2>( const coordinate<index_int,2>&,const coordinate<index_int,2>& );
+template coordinate<index_int,3> coordmod<index_int,3>( const coordinate<index_int,3>&,const coordinate<index_int,3>& );
 
 template ostream &operator<<(ostream &os,const coordinate<int,1> &c);
 template ostream &operator<<(ostream &os,const coordinate<int,2> &c);
