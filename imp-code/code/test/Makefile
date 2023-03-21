@@ -14,10 +14,11 @@ info ::
 
 include ../imp/Make.common
 
-PROGRAMS = findit inttype vecarray
+PROGRAMS = construct1 inttype findit vecarray
 
+CPPSTANDARD = 17
 % : %.cxx
-	g++ -o $@ -std=c++17 $^
+	g++ -o $@ -std=c++${CPPSTANDARD} $^
 
 clean ::
 	@/bin/rm -f ${PROGRAMS}

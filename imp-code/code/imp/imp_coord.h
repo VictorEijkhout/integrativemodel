@@ -18,7 +18,7 @@
 #include "fmt/format.h"
 
 // forward definition
-template<class I,int d>
+template<typename I,int d>
 class ioperator;
 
 /*
@@ -37,9 +37,9 @@ template<typename I,int d>
 class coordinate {
 public :
   coordinate();
-  coordinate(I span);
   coordinate( std::array<I,d> );
-  coordinate( const environment& );
+  //! Simplified case for 1D
+  coordinate( I i ) requires (d==1) : coordinate( std::array<I,1>{i} ) {};
   //! Copy constructor from other int type
   template<typename J>
   coordinate( coordinate<J,d> other ) {
@@ -53,6 +53,7 @@ protected :
 public:
   auto &data() { return coordinates; };
   const auto& data() const { return coordinates; };
+  coordinate<I,d>& set( I val );
   
   // basic manipulation
   constexpr int dimensionality() const { return d; }
@@ -137,11 +138,19 @@ public:
     return v; };
 };
 
-template<class I,int d>
+template<typename I,int d>
+coordinate<I,d> constant_coordinate( I v ) {
+  coordinate<I,d> r;
+  for (int id=0; id<d; id++)
+    r[id] = v;
+  return r;
+};
+
+template<typename I,int d>
 coordinate<I,d> coordmax( const coordinate<I,d>& current,const coordinate<I,d>& other );
-template<class I,int d>
+template<typename I,int d>
 coordinate<I,d> coordmin( const coordinate<I,d>& current,const coordinate<I,d>& other );
-template<class I,int d>
+template<typename I,int d>
 coordinate<I,d> coordmod( const coordinate<I,d>& current,const coordinate<I,d>& other );
 template<typename I,int d>
 void require_sorted( std::vector<coordinate<I,d>> idxs );

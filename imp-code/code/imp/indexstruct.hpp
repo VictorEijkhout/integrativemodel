@@ -273,11 +273,16 @@ class strided_indexstruct : public indexstruct<I,d> {
 protected:
   coordinate<I,d> first,last,stride_amount{coordinate<I,d>(1)};
 public:
-  strided_indexstruct(const I f,const I l,const I s);
-  strided_indexstruct(const std::array<I,d> f,const std::array<I,d>  l,const I s);
-  strided_indexstruct(const coordinate<I,d>&,const coordinate<I,d>&,const coordinate<I,d>&);
-  strided_indexstruct(const coordinate<I,d> f,const coordinate<I,d>  l )
+  strided_indexstruct( const I f,const I l,const I s) requires (d==1)
+    : strided_indexstruct( std::array<I,1>{f}, std::array<I,1>{l}, std::array<I,d>{s} ) {};
+  strided_indexstruct( const std::array<I,d> f,const std::array<I,d>  l,const I s);
+  strided_indexstruct( const coordinate<I,d>&,const coordinate<I,d>&,const coordinate<I,d>&);
+  //! Scalar stride means identically same value in all components
+  strided_indexstruct( const coordinate<I,d>& f,const coordinate<I,d>& l,I s )
+    : strided_indexstruct( f,l,constant_coordinate<I,d>(s) ) {};
+  strided_indexstruct( const coordinate<I,d> f,const coordinate<I,d>  l )
     : strided_indexstruct( f,l,coordinate<I,d>(1) ) {};
+
   /*
    * Statistics
    */
@@ -349,8 +354,10 @@ public:
     : contiguous_indexstruct<I,d>(f,f) {};
   //! Constructor from first/last arrays delegates to strided. \todo delegate to coordinate version?
   contiguous_indexstruct( const std::array<I,d> s,const std::array<I,d> l )
-  //  : strided_indexstruct<I,d>(s,l,1) {};
     : contiguous_indexstruct( coordinate<I,d>(s), coordinate<I,d>(l) ) {};
+  //! special case d==1
+  contiguous_indexstruct( I f,I l ) requires (d==1)
+    : contiguous_indexstruct( coordinate<I,1>( {f} ),coordinate<I,1>( {l} ) ) {};
 
   virtual bool is_contiguous() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("contiguous"); };
@@ -723,7 +730,11 @@ public:
   virtual bool equals( const indexstructure& idx ) const {
     return strct->equals(idx.strct); };
   
-  virtual I find( coordinate<I,d> idx )  const {    return strct->find(idx); };
+  I find( coordinate<I,d> idx )  const { return strct->find(idx); };
+  I find( I idx ) const requires (d==1) {
+    return strct->find( coordinate<I,1>(idx) );
+  };
+
   I location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
     return strct->location_of(inner); };
   I location_of( indexstructure &inner ) const {    return strct->location_of(inner.strct); };

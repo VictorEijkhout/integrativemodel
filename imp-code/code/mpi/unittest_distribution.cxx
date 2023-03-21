@@ -66,17 +66,20 @@ TEST_CASE( "global domains","[mpi][distribution][02]" ) {
   }
   {
     INFO( "2D" );
-    const int points_per_proc = pow(10,2);
-    index_int total_points = points_per_proc*the_env.nprocs();
-    coordinate<index_int,2> omega( points_per_proc*the_env.nprocs() );
     mpi_decomposition<2> procs( the_env );
+    INFO( "Decomposition: " << procs.as_string() );
+
+    coordinate<index_int,2> omega( procs.domain_layout()*16 /* total_points */ );
+    index_int total_points = omega.span();
     mpi_distribution<2> omega_p( omega,procs );
+    INFO( "domain: " << omega_p.global_domain().as_string() );
+
     REQUIRE_NOTHROW( omega_p.global_domain() );
     indexstructure<index_int,2> global_domain = omega_p.global_domain();
     INFO( "global domain: " << global_domain.as_string() );
     REQUIRE_NOTHROW( global_domain.volume() );
     index_int check_total_points = global_domain.volume();
-    REQUIRE( check_total_points==total_points );
+     REQUIRE( check_total_points==total_points );
   }
 }
 
@@ -187,9 +190,8 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
     mpi_decomposition<2> procs( the_env );
     INFO( "Decomposition: " << the_env.as_string() );
 
-    const int points_per_proc = ipower(10,2);
-    index_int total_points = points_per_proc*the_env.nprocs();
-    coordinate<index_int,2> omega( procs.domain_layout()*10 /* total_points */ );
+    coordinate<index_int,2> omega( procs.domain_layout()*16 /* total_points */ );
+    index_int total_points = omega.span();
     mpi_distribution<2> dist( omega,procs );
     INFO( "original domain: " << dist.global_domain().as_string() );
 
@@ -207,7 +209,8 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
     REQUIRE_NOTHROW( new_dist.local_domain() );
     auto new_local = new_dist.local_domain();
     INFO( "divided local  : " << new_local.as_string() );
-    REQUIRE( new_local.volume()==points_per_proc/4 );
+    index_int check_total_points = the_env.allreduce_ii( new_local.volume() );
+    REQUIRE( check_total_points==total_points/4 );
   }
 }
 

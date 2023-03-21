@@ -119,23 +119,31 @@ coordinate<I,d>::coordinate() {
   for (int id=0; id<d; id++)
     coordinates.at(id) = -1;
 };
-/*! Make a coordinate from a given span
-  Side-effect: giving zero makes a zero coordinate
+
+/*! Make a coordinate identically equal some scalar.
 */
 template<typename I,int d>
-coordinate<I,d>::coordinate( I s )
-  : coordinate( endpoint<I,d>(s) ) {
+coordinate<I,d>& coordinate<I,d>::set( I s ) {
+  for (int id=0; id<d; id++)
+    coordinates[id] = s;
+  return *this;
 };
+// /*! Make a coordinate from a given span
+//   Side-effect: giving zero makes a zero coordinate
+// */
+// coordinate<I,d>::coordinate( I s )
+//   : coordinate( endpoint<I,d>(s) ) {
+// };
 template<typename I,int d>
 coordinate<I,d>::coordinate( std::array<I,d> c)
   : coordinates( c ) {
 };
-//! Make a coordinate with one point per process
-template<typename I,int d>
-coordinate<I,d>::coordinate( const environment& e )
-  : coordinate( e.nprocs() ) {
-};
-//snippet end
+
+// //! Make a coordinate with one point per process
+// template<typename I,int d>
+// coordinate<I,d>::coordinate( const environment& e )
+//   : coordinate( e.nprocs() ) {
+// };
 
 /*
  * Access
@@ -231,7 +239,7 @@ void coordinate<I,d>::operator-=( const coordinate<I,d>& other ) {
 // mult
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator*( I f ) const {
-  return *this * coordinate<I,d>(f);
+  return *this * coordinate<I,d>().set(f);
 };
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator*( const coordinate<I,d>& f ) const {
@@ -243,7 +251,7 @@ coordinate<I,d> coordinate<I,d>::operator*( const coordinate<I,d>& f ) const {
 // div
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator/( I f ) const {
-  return *this / coordinate<I,d>(f);
+  return *this / coordinate<I,d>().set(f);
 };
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator/( const coordinate<I,d>& f ) const {
@@ -255,7 +263,7 @@ coordinate<I,d> coordinate<I,d>::operator/( const coordinate<I,d>& f ) const {
 // mod
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator%( I f ) const {
-  return *this % coordinate<I,d>(f);
+  return *this % coordinate<I,d>().set(f);
 };
 template<typename I,int d>
 coordinate<I,d> coordinate<I,d>::operator%( const coordinate<I,d>& other ) const {
@@ -492,6 +500,14 @@ template void require_sorted( vector<coordinate<int,3>> idxs );
 template void require_sorted( vector<coordinate<index_int,1>> idxs );
 template void require_sorted( vector<coordinate<index_int,2>> idxs );
 template void require_sorted( vector<coordinate<index_int,3>> idxs );
+
+template coordinate<int,1> constant_coordinate( int );
+template coordinate<int,2> constant_coordinate( int );
+template coordinate<int,3> constant_coordinate( int );
+
+template coordinate<index_int,1> constant_coordinate( index_int );
+template coordinate<index_int,2> constant_coordinate( index_int );
+template coordinate<index_int,3> constant_coordinate( index_int );
 
 template class coordinate<int,1>;
 template class coordinate<int,2>;
