@@ -272,7 +272,9 @@ coordinate<I,d> coordinate<I,d>::operator%( const coordinate<I,d>& other ) const
     r.coordinates[id] %= other.coordinates[id];
   return r;
 };
-// equals and other comparisons
+/*
+  Equals and other comparison operators
+*/
 template<typename I,int d>
 bool coordinate<I,d>::operator==( const coordinate<I,d>& other ) const {
   // print("test equal\n");
@@ -294,6 +296,7 @@ bool coordinate<I,d>::operator!=( const coordinate<I,d>& other ) const {
   //  print("test neq\n");
   return not (*this==other);
 };
+
 template<typename I,int d>
 bool coordinate<I,d>::operator<( const coordinate<I,d> other ) const {
   bool r{true};
@@ -301,6 +304,14 @@ bool coordinate<I,d>::operator<( const coordinate<I,d> other ) const {
     r = r and data()[id]<other.data()[id];
   return r;
 };
+template<typename I,int d>
+bool coordinate<I,d>::operator<( I other ) const {
+  bool r{true};
+  for ( int id=0; id<d; id++ )
+    r = r and data()[id]<other;
+  return r;
+};
+
 template<typename I,int d>
 bool coordinate<I,d>::operator>( const coordinate<I,d> other ) const {
   return (other < *this );
@@ -315,6 +326,10 @@ bool coordinate<I,d>::operator<=( const coordinate<I,d> other ) const {
 template<typename I,int d>
 bool coordinate<I,d>::operator>=( const coordinate<I,d> other ) const {
   return (other <= *this );
+};
+template<typename I,int d>
+bool coordinate<I,d>::operator>=( I other ) const {
+  return not (*this < other );
 };
 
 /*

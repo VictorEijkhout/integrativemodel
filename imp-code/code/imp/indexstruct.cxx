@@ -202,18 +202,12 @@ std::string contiguous_indexstruct<I,d>::as_string() const {
 /*
  * Constructors
  */
-//! 1D constructor from scalars \todo does this make sense? lose?
-template<typename I,int d>
-strided_indexstruct<I,d>::strided_indexstruct(const I f,const I l,const I s)
-  : strided_indexstruct<I,d>( coordinate<I,d>(f), coordinate<I,d>(l), coordinate<I,d>(s) ) {
-};
-
 //! Constructor from arrays, delegates by making coordinates from them.
 template<typename I,int d>
 strided_indexstruct<I,d>::strided_indexstruct
     (const std::array<I,d> f,const std::array<I,d>  l,I s)
       : strided_indexstruct<I,d>
-      ( coordinate<I,d>(f), coordinate<I,d>(l), coordinate<I,d>(s) ) {
+      ( coordinate<I,d>(f), coordinate<I,d>(l), constant_coordinate<I,d>(s) ) {
 };
 
 /*!
@@ -690,9 +684,10 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::relativize_to
   indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) {
     auto relext = shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>() );
-    for (auto i : *this) {
-      relext->add_in_element( idx->find(i) );
-    }
+    throw("disabled case");
+    // for (auto i : *this) {
+    //   relext->add_in_element( idx->find(i) );
+    // }
     return relext;
   }
 
@@ -856,7 +851,7 @@ template<typename I,int d>
 indexed_indexstruct<I,d>::indexed_indexstruct( const vector<I> idxs )
   : indexed_indexstruct<I,d>( vector<coordinate<I,d>>( idxs.size() ) ) {
   for ( int i=0; i<indices.size(); i++ ) {
-    indices.at(i) = coordinate<I,d>( idxs.at(i) );
+    indices.at(i) = constant_coordinate<I,d>( idxs.at(i) );
   }
   require_sorted(indices);
 };
@@ -1049,7 +1044,7 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &s
     if (trace)
       print("element {}: {} has modulo: {}\n",
 	    inext,elt.as_string(),inplace.as_string());  // formatter broken
-    if ( not ( inplace==coordinate<I,d>(0) ) )
+    if ( not ( inplace==0 ) ) // coordinate<I,d>(0) ) )
       // strange. why doesn't the != operator work here?
       return false;
   }
@@ -1237,8 +1232,8 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::relativize_to
     auto relative = shared_ptr<indexstruct<I,d>>{ make_shared<indexed_indexstruct<I,d>>() };
     int count = 0;
     for (auto v : indices)
-      //relative = relative->add_element( count++ );
-      relative = relative->add_element( indexed->find(v) );
+      throw("this completely doesn't make sense");
+      // relative = relative->add_element( indexed->find(v) );
     return relative;
   }
 
@@ -1250,7 +1245,8 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::relativize_to
     auto relative = shared_ptr<indexstruct<I,d>>{ make_shared<indexed_indexstruct<I,d>>() };
     int count = 0;
     for (auto v : indices)
-      relative = relative->add_element( composite->find(v) );
+      throw("I doubt that this makes sense");
+      //relative = relative->add_element( composite->find(v) );
     return relative;
   }
   
@@ -1971,7 +1967,7 @@ ioperator<I,d>::ioperator( string op ) {
   } else if ( op[0]=='>' || op[0]=='<' ) {
     type = iop_type::SHIFT_REL;
     mod = op[1]!='=';
-    by = std::stoi(string(op.begin()+2,op.end()));
+    by = constant_coordinate<I,d>( std::stoi(string(op.begin()+2,op.end())) );
     if (op[0]=='<') by = -by;
   } else if (op[0]=='*') {
     type = iop_type::MULT;
@@ -1986,7 +1982,7 @@ ioperator<I,d>::ioperator( string op ) {
     throw(string("Can not parse operator"));
   }
   if (type==iop_type::MULT || type==iop_type::DIV || type==iop_type::CONTDIV)
-    by = std::stoi(string(op.begin()+1,op.end()));
+    by = constant_coordinate<I,d>( std::stoi(string(op.begin()+1,op.end())) );
 };
 
 /*!
@@ -2060,7 +2056,7 @@ coordinate<I,d> ioperator<I,d>::operate( const coordinate<I,d>& i, const coordin
   if (is_modulo_op()) {
     return coordmod( r,m+1 );
   } else {
-    return coordmax( coordinate<I,d>(0), coordmin(m,r) );
+    return coordmax( constant_coordinate<I,d>(0), coordmin(m,r) );
   }
 };
 
@@ -2076,7 +2072,7 @@ coordinate<I,d> ioperator<I,d>::inverse_operate( const coordinate<I,d>& i ) cons
   else if (is_right_shift_op()) {
     if (i==0) {
       throw(std::string("Can't unrightshift zero"));
-    } else return coordmax( coordinate<I,d>(0),i-1);
+    } else return coordmax( constant_coordinate<I,d>(0),i-1);
   }
   throw(std::string("unknown operate type for inverse"));
 };
@@ -2149,7 +2145,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
     if (op.is_base_op())
       new_stride  = stride();
     else
-      new_stride = coordmax( coordinate<I,d>(1),op.operate(stride()) );
+      new_stride = coordmax( constant_coordinate<I,d>(1),op.operate(stride()) );
     if (op.is_contdiv_op())
       new_last = coordmax<I,d>( new_first, op.operate(last_actual_index()+stride())-new_stride );
     else if (op.is_base_op())
@@ -2310,15 +2306,21 @@ template class indexstructure<index_int,3>;
 
 template class ioperator<int,1>;
 template class ioperator<index_int,1>;
+template class shift_operator<int,1>;
+template class shift_operator<index_int,1>;
 template class sigma_operator<int,1>;
 template class sigma_operator<index_int,1>;
 
 template class ioperator<int,2>;
 template class ioperator<index_int,2>;
+template class shift_operator<int,2>;
+template class shift_operator<index_int,2>;
 template class sigma_operator<int,2>;
 template class sigma_operator<index_int,2>;
 
 template class ioperator<int,3>;
 template class ioperator<index_int,3>;
+template class shift_operator<int,3>;
+template class shift_operator<index_int,3>;
 template class sigma_operator<int,3>;
 template class sigma_operator<index_int,3>;

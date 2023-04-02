@@ -77,11 +77,14 @@ public:
    * Statistics
    */
   virtual coordinate<I,d> first_index() const {
-    report_unimplemented("first_index"); return 0; };
+    report_unimplemented("first_index");
+    return constant_coordinate<I,d>(0); };
   virtual coordinate<I,d> last_index()  const{
-    report_unimplemented("last_index"); return 0; };
+    report_unimplemented("last_index"); 
+    return constant_coordinate<I,d>(0); };
   virtual coordinate<I,d> last_actual_index()  const{
-    report_unimplemented("last_actual_index"); return 0; };
+    report_unimplemented("last_actual_index");
+    return constant_coordinate<I,d>(0); };
   virtual I volume() const {
     report_unimplemented("volume"); return 0; };
   virtual I outer_volume() const;
@@ -152,22 +155,23 @@ public:
   virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d> &op,bool=false ) const {
     throw(fmt::format("ioperate: Not implemented for struct type <<{}>>",type_as_string())); };
   virtual std::shared_ptr<indexstruct<I,d>> operate
-      ( const ioperator<I,d>&,coordinate<I,d>,coordinate<I,d>) const;
+  ( const ioperator<I,d>&,coordinate<I,d>,coordinate<I,d>) const;
 
   virtual std::shared_ptr<indexstruct<I,d>> operate( const sigma_operator<I,d> &op ) const {
     throw(fmt::format("sigma operate: Not implemented for struct type <<{}>>",type_as_string()));
   };
   virtual std::shared_ptr<indexstruct<I,d>> operate
-      ( const sigma_operator<I,d> &op, coordinate<I,d>,coordinate<I,d>) const;
+  ( const sigma_operator<I,d> &op, coordinate<I,d>,coordinate<I,d>) const;
   virtual std::shared_ptr<indexstruct<I,d>> operate( const ioperator<I,d>&,std::shared_ptr<indexstruct<I,d>> ) const;
   virtual std::shared_ptr<indexstruct<I,d>> operate
-      ( const sigma_operator<I,d>&,std::shared_ptr<indexstruct<I,d>> outer ) const;
+  ( const sigma_operator<I,d>&,std::shared_ptr<indexstruct<I,d>> outer ) const;
 
   // Iterable functions
 protected:
   int current_iterate{-1},last_iterate{-2};
   std::function< coordinate<I,d>(I) > ith_iterate
-    { [] (I i) -> coordinate<I,d> { fmt::print("No ith_iterate defined\n"); return 0; } };
+    { [] (I i) -> coordinate<I,d> { fmt::print("No ith_iterate defined\n");
+	return constant_coordinate<I,d>(0); } };
 public:
   virtual indexstruct<I,d>& begin() {
     ith_iterate = [&] ( I i ) { return get_ith_element(i); };
@@ -281,7 +285,7 @@ public:
   strided_indexstruct( const coordinate<I,d>& f,const coordinate<I,d>& l,I s )
     : strided_indexstruct( f,l,constant_coordinate<I,d>(s) ) {};
   strided_indexstruct( const coordinate<I,d> f,const coordinate<I,d>  l )
-    : strided_indexstruct( f,l,coordinate<I,d>(1) ) {};
+    : strided_indexstruct( f,l,constant_coordinate<I,d>(1) ) {};
 
   /*
    * Statistics
@@ -592,6 +596,10 @@ public:
       this->type = iop_type::SHIFT_ABS;
     this->by = by;
   };
+  // shift_operator( I by,bool relative=true ) requires (d==1)
+  //   : shift_operator( constant_coordinate<I,d>(by) ) {};
+  shift_operator( I by,bool relative=true )
+    : shift_operator( constant_coordinate<I,d>(by),relative ) {};
 };
 
 template<typename I,int d>
@@ -619,6 +627,9 @@ protected:
   ioperator<I,d> point_func;
   bool lambda_p{false};
 public:
+  /*
+   * Constructors
+   */
   //! Default creator
   sigma_operator() {};
   //! Create from function pointer
@@ -640,11 +651,16 @@ public:
   //! Create from scalar lambda \todo this should be the pointfunc?
   sigma_operator( std::function< I(I) > f ) {
     throw("You sure this is not the pointfunc?\n");
-    // func = [f] ( coordinate<I,d> i ) -> std::shared_ptr<indexstruct<I,d>> {
-    //   return std::shared_ptr<indexstruct<I,d>>{new contiguous_indexstruct<I,d>( f(i) )};
-    // };
     lambda_i = true;
   };
+  /*
+   * Operate
+   */
+  std::shared_ptr<indexstruct<I,d>> operate( I i ) const;
+  std::shared_ptr<indexstruct<I,d>> operate( std::shared_ptr<indexstruct<I,d>> idx ) const;
+  /*
+   * Utility
+   */
   //! Does this produce a single point?
   bool is_point_operator() const { return lambda_p; };
   bool is_struct_operator() const { return lambda_s; };
@@ -653,8 +669,6 @@ public:
   const ioperator<I,d> &point_operator() const {
     if (!is_point_operator()) throw(std::string("Is not point operator"));
     return point_func; };
-  std::shared_ptr<indexstruct<I,d>> operate( I i ) const;
-  std::shared_ptr<indexstruct<I,d>> operate( std::shared_ptr<indexstruct<I,d>> idx ) const;
   std::string as_string() const;
 };
 
@@ -793,11 +807,11 @@ public:
   // operate
   auto operate( const ioperator<I,d> &op ) { return indexstructure(strct->operate(op)); };
   auto operate( const ioperator<I,d> &&op ) { return indexstructure(strct->operate(op)); };
-  auto operate( const ioperator<I,d> &op,I i0,I i1) {
+  auto operate( const ioperator<I,d> &op,coordinate<I,d> i0,coordinate<I,d> i1) {
     return indexstructure(strct->operate(op,i0,i1)); };
 
   auto operate( const sigma_operator<I,d> &op ) { return indexstructure(strct->operate(op)); };
-  auto operate( const sigma_operator<I,d> &op, I lo,I hi ){
+  auto operate( const sigma_operator<I,d> &op, coordinate<I,d> lo,coordinate<I,d> hi ){
     return indexstructure(strct->operate(op,lo,hi)); };
   auto operate( const ioperator<I,d> &op,std::shared_ptr<indexstruct<I,d>> outer ) {
     return indexstructure(strct->operate(op,outer)); };
@@ -885,4 +899,3 @@ std::ostream &operator<<(std::ostream &os,const std::shared_ptr<composite_indexs
 
 
 #endif
-
