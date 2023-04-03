@@ -358,10 +358,10 @@ public:
     : contiguous_indexstruct<I,d>(f,f) {};
   //! Constructor from first/last arrays delegates to strided. \todo delegate to coordinate version?
   contiguous_indexstruct( const std::array<I,d> s,const std::array<I,d> l )
-    : contiguous_indexstruct( coordinate<I,d>(s), coordinate<I,d>(l) ) {};
+    : contiguous_indexstruct<I,d>( coordinate<I,d>(s), coordinate<I,d>(l) ) {};
   //! special case d==1
   contiguous_indexstruct( I f,I l ) requires (d==1)
-    : contiguous_indexstruct( coordinate<I,1>( {f} ),coordinate<I,1>( {l} ) ) {};
+    : contiguous_indexstruct<I,d>( coordinate<I,d>( {f} ),coordinate<I,d>( {l} ) ) {};
 
   virtual bool is_contiguous() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("contiguous"); };
@@ -656,7 +656,7 @@ public:
   /*
    * Operate
    */
-  std::shared_ptr<indexstruct<I,d>> operate( I i ) const;
+  std::shared_ptr<indexstruct<I,d>> operate( coordinate<I,d> i ) const;
   std::shared_ptr<indexstruct<I,d>> operate( std::shared_ptr<indexstruct<I,d>> idx ) const;
   /*
    * Utility

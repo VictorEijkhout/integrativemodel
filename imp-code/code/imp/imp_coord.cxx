@@ -128,22 +128,11 @@ coordinate<I,d>& coordinate<I,d>::set( I s ) {
     coordinates[id] = s;
   return *this;
 };
-// /*! Make a coordinate from a given span
-//   Side-effect: giving zero makes a zero coordinate
-// */
-// coordinate<I,d>::coordinate( I s )
-//   : coordinate( endpoint<I,d>(s) ) {
-// };
+
 template<typename I,int d>
 coordinate<I,d>::coordinate( std::array<I,d> c)
   : coordinates( c ) {
 };
-
-// //! Make a coordinate with one point per process
-// template<typename I,int d>
-// coordinate<I,d>::coordinate( const environment& e )
-//   : coordinate( e.nprocs() ) {
-// };
 
 /*
  * Access
@@ -324,12 +313,24 @@ bool coordinate<I,d>::operator<=( const coordinate<I,d> other ) const {
   return r;
 };
 template<typename I,int d>
+bool coordinate<I,d>::operator<=( I other ) const {
+  bool r{true};
+  for ( int id=0; id<d; id++ )
+    r = r and data()[id]<=other;
+  return r;
+};
+
+template<typename I,int d>
 bool coordinate<I,d>::operator>=( const coordinate<I,d> other ) const {
   return (other <= *this );
 };
 template<typename I,int d>
 bool coordinate<I,d>::operator>=( I other ) const {
   return not (*this < other );
+};
+template<typename I,int d>
+bool coordinate<I,d>::operator>( I other ) const {
+  return not (*this <= other );
 };
 
 /*

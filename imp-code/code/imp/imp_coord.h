@@ -117,7 +117,9 @@ public:
   bool operator<( const coordinate<I,d> ) const;
   bool operator<( I ) const;
   bool operator<=( const coordinate<I,d> other ) const;
+  bool operator<=( I ) const;
   bool operator>( const coordinate<I,d> ) const;
+  bool operator>( I ) const;
   bool operator>=( const coordinate<I,d> ) const;
   bool operator>=( I ) const;
 

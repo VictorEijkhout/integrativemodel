@@ -654,7 +654,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::relativize_to
   }
   if (volume()==1)
     return shared_ptr<indexstruct<I,d>>{
-      make_shared<contiguous_indexstruct<I,d>>( idx->find( first_index() ) ) };
+      make_shared<contiguous_indexstruct<I,d>>( idx->first_index() ) };
 
   /*
    * Case : relativize against other strided
@@ -2223,7 +2223,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::operate( const ioperato
  ****/
 
 template<typename I,int d>
-shared_ptr<indexstruct<I,d>> sigma_operator<I,d>::operate(I i) const {
+shared_ptr<indexstruct<I,d>> sigma_operator<I,d>::operate( coordinate<I,d> i) const {
   if (lambda_s)
     throw(std::string("Can not operate on point: only defined for structs"));
   if (is_point_operator()) {
