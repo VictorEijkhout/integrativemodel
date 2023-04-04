@@ -26,6 +26,8 @@ class ioperator;
  */
 template<typename I,int d>
 std::array<I,d> endpoint(I s);
+template<typename I,int d>
+std::array<I,d> farpoint(I s);
 template<typename I>
 std::vector<I> split_points(I,I,int);
 template<typename I>
@@ -39,7 +41,15 @@ public :
   coordinate();
   coordinate( std::array<I,d> );
   //! Simplified case for 1D
-  coordinate( I i ) requires (d==1) : coordinate( std::array<I,1>{i} ) {};
+  coordinate( I i ) requires (d==1)
+    : coordinate( std::array<I,1>{i} ) {};
+  //! Simplified case for 2D
+  coordinate( I i ) requires (d==2)
+    : coordinate( std::array<I,2>{i,i} ) {};
+  //! Simplified case for 3D
+  coordinate( I i ) requires (d==3)
+    : coordinate( std::array<I,3>{i,i,i} ) {};
+
   //! Copy constructor from other int type
   template<typename J>
   coordinate( coordinate<J,d> other ) {

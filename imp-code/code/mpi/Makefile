@@ -29,7 +29,7 @@ CXX_LINKER   = mpicxx
 #### Unit tests
 ####
 info ::
-	@echo "make unittest_TYPE (choices: ${UNITTESTS})"
+	@echo "make unittest_TYPE (choices: ${NEW_TESTS})"
 
 ##
 ## Gradually building up tests

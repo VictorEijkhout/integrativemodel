@@ -82,11 +82,14 @@ TEST_CASE( "coordinates" ) {
     REQUIRE( ci2_0.at(1)==0 );
   }
   {
-    auto ci2_14 = coordinate<int,2>(14);
+    const int n1=7,n2=2, n = n1*n2;
+    auto fp = endpoint<int,2>(n);
+    INFO( "endpoint 14: " << fp[0] << "," << fp[1] );
+    auto ci2_14 = coordinate<int,2>(fp);
     auto top = ci2_14.span();
-    REQUIRE( ci2_14.span()==14 );
-    REQUIRE( ci2_14.at(0)==7 );
-    REQUIRE( ci2_14.at(1)==2 );
+    REQUIRE( ci2_14.span()==n );
+    REQUIRE( ci2_14.at(0)==n1 );
+    REQUIRE( ci2_14.at(1)==n2 );
     // 7x2 : 3,0 = 6, 2,1 = 5
     coordinate<int,2> c5,c6;
     REQUIRE_NOTHROW( c5 = ci2_14.location_of_linear(5) );
@@ -114,17 +117,21 @@ TEST_CASE( "MPI coordinates" ) {
   int np; MPI_Comm_size(MPI_COMM_WORLD,&np);
 
   SECTION( "using proc counts" ) {
-    auto mpi_grid1 = coordinate<int,1>( mpi_env.nprocs() );
+    auto ep1 = endpoint<int,1>( mpi_env.nprocs() );
+    auto mpi_grid1 = coordinate<int,1>(ep1);
     REQUIRE( mpi_grid1.span()==np );
 
-    auto mpi_grid2 = coordinate<int,2>( mpi_env.nprocs() );
+    auto ep2 = endpoint<int,2>( mpi_env.nprocs() );
+    auto mpi_grid2 = coordinate<int,2>(ep2);
     REQUIRE( mpi_grid2.span()==np );
   }
   SECTION( "using env itself" ) {
-    auto mpi_grid1 = coordinate<int,1>( mpi_env );
+    auto ep1 = endpoint<int,1>( mpi_env.nprocs() );
+    auto mpi_grid1 = coordinate<int,1>( ep1 );
     REQUIRE( mpi_grid1.span()==np );
 
-    auto mpi_grid2 = coordinate<int,2>( mpi_env );
+    auto ep2 = endpoint<int,2>( mpi_env.nprocs() );
+    auto mpi_grid2 = coordinate<int,2>( ep2 );
     REQUIRE( mpi_grid2.span()==np );
   }
 }
