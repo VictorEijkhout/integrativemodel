@@ -42,7 +42,7 @@ decomposition<d>::decomposition( const environment& env )
  * This only copies to internal data.
  */
 template<int d>
-decomposition<d>::decomposition( const coordinate<int,d>& grid )
+decomposition<d>::decomposition( const coordinate<int,d> grid )
   : _domain_layout(grid) {
 };
 

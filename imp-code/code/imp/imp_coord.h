@@ -21,18 +21,6 @@
 template<typename I,int d>
 class ioperator;
 
-/*
- * Some free functions
- */
-template<typename I,int d>
-std::array<I,d> endpoint(I s);
-template<typename I,int d>
-std::array<I,d> farpoint(I s);
-template<typename I>
-std::vector<I> split_points(I,I,int);
-template<typename I>
-std::vector<I> split_points(I,int);
-
 //! Processor coordinates on a pretend grid. We order them by rows.
 //! \todo write method to range over this
 template<typename I,int d>
@@ -159,6 +147,18 @@ coordinate<I,d> constant_coordinate( I v ) {
     r[id] = v;
   return r;
 };
+
+/*
+ * Some free functions
+ */
+template<typename I,int d>
+coordinate<I,d> endpoint(I s);
+template<typename I,int d>
+coordinate<I,d> farpoint(I s);
+template<typename I>
+std::vector<I> split_points(I,I,int);
+template<typename I>
+std::vector<I> split_points(I,int);
 
 template<typename I,int d>
 coordinate<I,d> coordmax( const coordinate<I,d>& current,const coordinate<I,d>& other );

@@ -29,7 +29,7 @@ template<int d>
 class mpi_decomposition : public decomposition<d> {
 public:
   mpi_decomposition( const mpi_environment& env );
-  mpi_decomposition( const coordinate<int,d>&,int );
+  mpi_decomposition( const coordinate<int,d>,int );
   void set_decomp_factory();
   virtual std::string as_string() const override;
 protected:

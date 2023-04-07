@@ -60,7 +60,7 @@ vector<I> split_points(I total,int length) {
   Probably only works for d=1 and d=2
 */
 template<typename I,int d>
-array<I,d> endpoint(I s) {
+coordinate<I,d> endpoint(I s) {
   array<I,d> endpoint; constexpr I last=d-1;
   for (int id=0; id<d; id++)
     endpoint.at(id) = 1;
@@ -105,15 +105,12 @@ array<I,d> endpoint(I s) {
       assert(prime<=s);
     } // end else
   }
-  return endpoint;
+  return coordinate<I,d>(endpoint);
 };
 
 template<typename I,int d>
-array<I,d> farpoint(I s) {
-  auto f = endpoint<I,d>(s);
-  for (int id=0; id<d; id++)
-    f[id]++;
-  return f;
+coordinate<I,d> farpoint(I s) {
+  return endpoint<I,d>(s)+1;
 };
 
 /*
@@ -504,21 +501,21 @@ ostream &operator<<(ostream &os,const shared_ptr<coordinate<I,d>> &c) {
  * Specializations
  */
 
-template array<int,1> endpoint<int,1>(int);
-template array<int,2> endpoint<int,2>(int);
-template array<int,3> endpoint<int,3>(int);
+template coordinate<int,1> endpoint<int,1>(int);
+template coordinate<int,2> endpoint<int,2>(int);
+template coordinate<int,3> endpoint<int,3>(int);
 
-template array<index_int,1> endpoint<index_int,1>(index_int);
-template array<index_int,2> endpoint<index_int,2>(index_int);
-template array<index_int,3> endpoint<index_int,3>(index_int);
+template coordinate<index_int,1> endpoint<index_int,1>(index_int);
+template coordinate<index_int,2> endpoint<index_int,2>(index_int);
+template coordinate<index_int,3> endpoint<index_int,3>(index_int);
 
-template array<int,1> farpoint<int,1>(int);
-template array<int,2> farpoint<int,2>(int);
-template array<int,3> farpoint<int,3>(int);
+template coordinate<int,1> farpoint<int,1>(int);
+template coordinate<int,2> farpoint<int,2>(int);
+template coordinate<int,3> farpoint<int,3>(int);
 
-template array<index_int,1> farpoint<index_int,1>(index_int);
-template array<index_int,2> farpoint<index_int,2>(index_int);
-template array<index_int,3> farpoint<index_int,3>(index_int);
+template coordinate<index_int,1> farpoint<index_int,1>(index_int);
+template coordinate<index_int,2> farpoint<index_int,2>(index_int);
+template coordinate<index_int,3> farpoint<index_int,3>(index_int);
 
 template vector<int> split_points(int total,int length);
 template vector<index_int> split_points(index_int total,int length);

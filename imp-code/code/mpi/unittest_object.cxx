@@ -81,7 +81,7 @@ TEST_CASE( "local domain","[mpi][object][02]" ) {
     // setup as in distribution test
     const int points_per_proc = ipower(5,2);
     index_int total_points = points_per_proc*the_env.nprocs();
-    coordinate<index_int,2> omega( total_points );
+    coordinate<index_int,2> omega( endpoint<index_int,2>(total_points) );
     mpi_decomposition<2> procs( the_env );
     mpi_distribution<2> omega_p( omega,procs );
 
@@ -104,7 +104,7 @@ TEST_CASE( "addition","[mpi][object][03]" ) {
     index_int total_points = points_per_proc*the_env.nprocs();
     coordinate<index_int,1> omega( total_points );
     mpi_decomposition<1> procs( the_env );
-    mpi_distribution omega_p( omega,procs );
+    mpi_distribution<1> omega_p( omega,procs );
     mpi_object xp( omega_p ), yp( omega_p );
 
     // set and operate
@@ -122,7 +122,7 @@ TEST_CASE( "addition","[mpi][object][03]" ) {
     index_int total_points = points_per_proc*the_env.nprocs();
     coordinate<index_int,2> omega( total_points );
     mpi_decomposition<2> procs( the_env );
-    mpi_distribution omega_p( omega,procs );
+    mpi_distribution<2> omega_p( omega,procs );
     mpi_object xp( omega_p ), yp( omega_p );
 
     // set and operate
@@ -143,7 +143,7 @@ TEST_CASE( "norm","[mpi][object][04]" ) {
     index_int total_points = points_per_proc*the_env.nprocs();
     coordinate<index_int,1> omega( total_points );
     mpi_decomposition<1> procs( the_env );
-    mpi_distribution omega_p( omega,procs );
+    mpi_distribution<1> omega_p( omega,procs );
     mpi_object xp( omega_p ), yp( omega_p );
     REQUIRE_NOTHROW( xp.set_constant(1.) );
 
@@ -163,9 +163,9 @@ TEST_CASE( "norm","[mpi][object][04]" ) {
     // big object
     const int points_per_proc = ipower(5,2);
     index_int total_points = points_per_proc*the_env.nprocs();
-    coordinate<index_int,2> omega( total_points );
+    coordinate<index_int,2> omega( endpoint<index_int,2>(total_points) );
     mpi_decomposition<2> procs( the_env );
-    mpi_distribution omega_p( omega,procs );
+    mpi_distribution<2> omega_p( omega,procs );
     mpi_object xp( omega_p ), yp( omega_p );
     xp.set_constant(1.);
 
@@ -190,7 +190,7 @@ TEST_CASE( "inner product","[mpi][object][05]" ) {
     index_int total_points = points_per_proc*the_env.nprocs();
     coordinate<index_int,1> omega( total_points );
     mpi_decomposition<1> procs( the_env );
-    mpi_distribution omega_p( omega,procs );
+    mpi_distribution<1> omega_p( omega,procs );
     mpi_object xp( omega_p ), yp( omega_p );
     REQUIRE_NOTHROW( xp.set_constant(1.) );
     REQUIRE_NOTHROW( yp.set_constant(2.) );

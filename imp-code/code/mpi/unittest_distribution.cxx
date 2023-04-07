@@ -101,8 +101,12 @@ TEST_CASE( "local domains","[mpi][distribution][03]" ) {
     INFO( "2D" );
     const int points_per_proc = pow(10,2);
     index_int total_points = points_per_proc*the_env.nprocs();
-    coordinate<index_int,2> omega( points_per_proc*the_env.nprocs() );
+    INFO( "points/proc=" << points_per_proc << ", total=" << total_points );
+    auto omega_point = endpoint<index_int,2>( points_per_proc*the_env.nprocs() );
+    coordinate<index_int,2> omega( omega_point );
+    INFO( "omega=" << omega.as_string() );
     mpi_decomposition<2> procs( the_env );
+    INFO( "procs=" << procs.as_string() );
     mpi_distribution<2> omega_p( omega,procs );
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,2> local_domain = omega_p.local_domain();
@@ -128,7 +132,7 @@ TEST_CASE( "replicated distributions","[mpi][distribution][replication][04]" ) {
     INFO( "2D" );
     const int points_per_proc = ipower(10,2);
     index_int total_points = points_per_proc*the_env.nprocs();
-    coordinate<index_int,2> omega( total_points );
+    coordinate<index_int,2> omega( endpoint<index_int,2>(total_points) );
     mpi_decomposition<2> procs( the_env );
     REQUIRE_NOTHROW( mpi_distribution<2>( omega,procs,distribution_type::replicated ) );
     mpi_distribution<2> repl2( omega,procs,distribution_type::replicated );

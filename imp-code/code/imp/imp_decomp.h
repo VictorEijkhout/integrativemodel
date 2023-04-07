@@ -23,9 +23,6 @@
 #include "imp_coord.h"
 #include "indexstruct.hpp"
 
-template<class I,int d>
-std::array<I,d> endpoint(I s);
-
 class message;
 template<int d>
 class distribution;
@@ -44,7 +41,7 @@ class decomposition : public std::vector<coordinate<int,d>> {
 public:
   decomposition() {}; //!< default constructor
   //! Constructor from explicit endpoint coordinate
-  decomposition( const coordinate<int,d> &nd );
+  decomposition( const coordinate<int,d> nd );
   //! Constructor from environment: uses the endpoint coordinate of the env
   decomposition( const environment& env );
 private:

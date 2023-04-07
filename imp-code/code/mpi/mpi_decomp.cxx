@@ -32,7 +32,7 @@ mpi_decomposition<d>::mpi_decomposition( const mpi_environment& env )
  */
 template<int d>
 mpi_decomposition<d>::mpi_decomposition
-    ( const coordinate<int,d> &grid,int procid )
+    ( const coordinate<int,d> grid,int procid )
       : decomposition<d>(grid) {
   // record our process number
   _procno = procid;
