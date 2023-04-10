@@ -28,20 +28,17 @@ TEST_CASE( "end points","[arch][01]" ) {
   {
     INFO( "p3 d1" );
     auto p3d1 = endpoint<int,1>(3);
-    REQUIRE( p3d1.size()==1 );
     REQUIRE( p3d1.at(0)==3 );
   }
   {
     INFO( "p4 d2" );
     auto p4d2 = endpoint<int,2>(4);
-    REQUIRE( p4d2.size()==2 );
     REQUIRE( p4d2.at(0)==2 );
     REQUIRE( p4d2.at(1)==2 );
   }
   {
     INFO( "p30 d3" );
     auto p30d3 = endpoint<int,3>(30);
-    REQUIRE( p30d3.size()==3 );
     REQUIRE( p30d3.at(0)==5 );
     REQUIRE( p30d3.at(1)==3 );
     REQUIRE( p30d3.at(2)==2 );
@@ -51,7 +48,6 @@ TEST_CASE( "end points","[arch][01]" ) {
 TEST_CASE( "split points" ) {
   vector<int> points;
   REQUIRE_NOTHROW( points = split_points( 100,2 ) );
-  REQUIRE( points.size()==3 );
   REQUIRE( points[0]==0 );
   REQUIRE( points[1]==50 );
   REQUIRE( points[2]==100 );

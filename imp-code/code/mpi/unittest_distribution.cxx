@@ -218,6 +218,11 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
   }
 }
 
+/****
+ **** Operations on distribution
+ ****/
+
+
 #if 0
 
 TEST_CASE( "Operated distributions with modulo","[mpi][distribution][modulo][24]" ) {
