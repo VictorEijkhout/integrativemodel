@@ -163,6 +163,45 @@ TEST_CASE( "replicated scalars","[mpi][distribution][replication][05]" ) {
   }
 }
 
+/****
+ **** Operations on distribution
+ ****/
+
+TEST_CASE( "distribution shifting" ) {
+  {
+    INFO( "1D" );
+    const int points_per_proc = ipower(10,1);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    // global domain
+    coordinate<index_int,1> omega( total_points );
+    domain<1> dom(omega);
+    // processors
+    mpi_decomposition<1> procs( the_env );
+    // distributed domain
+    mpi_distribution<1> dist( omega,procs );
+    INFO( "original domain: " << dist.global_domain().as_string() );
+    REQUIRE( dist.global_domain().first_index()==constant_coordinate<index_int,1>(0) );
+
+    ioperator<index_int,1> right1(">>1");
+    REQUIRE_NOTHROW( dom.operate( right1 ) );
+    REQUIRE_NOTHROW( dist.operate( right1 ) );
+    auto new_dist = dist.operate( right1 );
+    REQUIRE_NOTHROW( new_dist.global_domain() );
+    REQUIRE( new_dist.global_domain().first_index()==constant_coordinate<index_int,1>(1) );
+
+    REQUIRE_NOTHROW( new_dist.global_domain() );
+    auto new_global = new_dist.global_domain();
+    INFO( "shifted global : " << new_global.as_string() );
+    REQUIRE( new_global.volume()==total_points );
+
+    INFO( "original local : " << dist.local_domain().as_string() );
+    REQUIRE_NOTHROW( new_dist.local_domain() );
+    auto new_local = new_dist.local_domain();
+    INFO( "shifted local  : " << new_local.as_string() );
+    REQUIRE( new_local.volume()==points_per_proc );
+  }
+}
+
 TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
   {
     INFO( "1D" );
@@ -217,11 +256,6 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
     REQUIRE( check_total_points==total_points/4 );
   }
 }
-
-/****
- **** Operations on distribution
- ****/
-
 
 #if 0
 
