@@ -56,7 +56,6 @@ mpi_distribution<d> mpi_distribution<d>::operate( const ioperator<index_int,d>& 
     ( new_domain,this->my_decomposition,this->my_distribution_type);
 };
 
-
 /*
  * Instantiations
  */

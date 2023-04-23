@@ -76,7 +76,4 @@ protected:
 public:
   const domain<d>& local_domain() const;
   const domain<d>& global_domain() const;
-
-  // // new distribution by operating, only exists in derived classes. hm.
-  // virtual distribution<d> operate( const ioperator<index_int,d>& ) const;
 };

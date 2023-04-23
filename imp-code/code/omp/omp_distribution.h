@@ -18,8 +18,9 @@
 template<int d>
 class omp_distribution : public distribution<d> {
 public:
-  omp_distribution( const coordinate<index_int,d>&, const omp_decomposition<d>&,
+  omp_distribution( const domain<d>&, const omp_decomposition<d>&,
 		    distribution_type=distribution_type::orthogonal );
+  omp_distribution<d> operate( const ioperator<index_int,d>& ) const;
 };
 
 template<int d>
