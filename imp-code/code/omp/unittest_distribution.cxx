@@ -217,7 +217,7 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
     REQUIRE_NOTHROW( new_dist.local_domain() );
     auto new_local = new_dist.local_domain();
     INFO( "divided local  : " << new_local.as_string() );
-    REQUIRE( new_local.volume()==points_per_proc/2 );
+    REQUIRE( new_local.volume()==total_points/2 );
   }
   {
     INFO( "2D" );

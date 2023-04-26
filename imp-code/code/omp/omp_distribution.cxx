@@ -17,7 +17,7 @@ using std::array;
 //! The constructor builds the single local domain
 template<int d>
 omp_distribution<d>::omp_distribution
-    ( const domain<d>& dom, const omp_decomposition<d>& procs,
+    ( const domain<d>& dom, const decomposition<d>& procs,
       distribution_type type )
       : distribution<d>(dom,procs,type) {
   using I = index_int;
