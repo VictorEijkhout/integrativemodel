@@ -1,0 +1,191 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%%
+%%%% copyright Victor Eijkhout 2014-8
+%%%% (eijkhout@tacc.utexas.edu)
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\label{sec:avoid-framework}
+
+Above, we showed the
+traditional strategy of communication a larger halo than would be
+strictly
+necessary~\cite{Douglas:caching-multigrid,Eijkhout:poly-smooth,OpJo:improved-ssor}.
+With this, and some redundant computation, it is possible to remove
+some synchronization
+synchronization points from the computation.
+
+However, this is not guaranteed to overlap communication and
+computation; also, it is possible to avoid some of the redundant work.
+We will now formalize this `communication avoiding'
+strategy~\cite{Demmel2008IEEE:avoiding}.
+
+\begin{figure}[ht]
+  \includegraphics[scale=.4]{L123}
+  \caption{Subdivision of a local computation for minimizing communication and redundant computation.}
+  \label{fig:avoid}
+\end{figure}
+
+We start with a distributed task graph
+%$\{ L_{k,p} \}_{k,p}$
+$\{ L_{p} \}_{p}$ with a predecessor relation
+\[ t' \in \pred(t)\equiv \{\hbox{task $t'$ computes direct input data for
+  task $t$}\}
+\]
+which holds on the global graph.
+
+We now derive subsets
+%$L^{(1)}_{k,p},L^{(2)}_{k,p},L^{(3)}_{k,p}$
+$L^{(1)}_{p},L^{(2)}_{p},L^{(3)}_{p}$
+based on a formal latency-avoiding argument:
+%
+we will have
+\[
+    L_{p} \subsetneq L^{(1)}_{p} \cup L^{(2)}_{p} \cup L^{(3)}_{p}
+%    L_{k,p} \subsetneq L^{(1)}_{k,p} \cup L^{(2)}_{k,p} \cup L^{(3)}_{k,p}
+\]
+and any latency will be hidden by the computation of
+$L^{(2)}_{p}$,
+%$L^{(2)}_{k,p}$
+dependent of course on the size of the  original task graph.
+
+We now derive a collection of subsets, not neceessarily disjoint, that
+defines our latency tolerant computation.
+These
+concepts are illustrated in figure~\ref{fig:avoid}.
+
+\heading{Subset 0: inherited from previous level}
+
+We define
+$L^{(0)}_{p}$
+%$L^{(0)}_{k,p}$
+as the data that is available
+on process~$p$
+%in step~$k$
+before any computation takes place:
+%in step~$k$:
+\[
+L^{(0)}_{p} \quad\hbox{contains initial conditions}
+%    L^{(0)}_{k,p} \equiv L_{k-1,p}
+\]
+This is either a true initial condition, or the final result of a
+previous block step.
+
+\heading{Subset 4: all locally computed tasks}
+
+We define an auxiliary set
+$L^{(4)}_{p}$
+%$L^{(4)}_{k,p}$
+as the tasks in
+$L_{p}$
+%$L_{k,p}$
+that can be computed without
+needed data from processors $q\not=p$. 
+\[
+L^{(4)}_{p} \equiv
+\bigl\{ t\colon \pred(t)\in \{ L^{(0)}_{p} \cup L^{(4)}_{p} \} 
+\bigr\}
+\]
+This is a subset of all the $L_p$ local tasks.
+
+\heading{Subset 5: all predecessors of local tasks}
+  
+Next we define
+$L^{(5)}_{p}$
+%$L^{(5)}_{k,p}$
+as all tasks
+%in $L_k$
+that are computed anywhere to construct the local result
+$L_{p}$:
+%$L_{k,p}$:
+\[
+L^{(5)}_{p} \equiv
+L_{p} \cup \pred(L_{p})
+\]
+This is a superset of the local tasks~$L_p$; it includes non-local
+tasks (that is in $L_q$ for $q\not=p$) that would be communicated in a
+naive computation.
+
+\heading{Subset 1: locally computed tasks, to be used remotely}
+
+We now define
+$L^{(1)}_{p}$
+%$L^{(1)}_{k,p}$
+as the locally
+computed tasks on~$p$ that are needed for a $q\not=p$:
+\[
+L^{(1)}_{p}\equiv
+L^{(4)}_{p} \cup \bigcup_{q\not=p} L^{(5)}_{q}
+- L^{(0)}_{p}
+%% L^{(1)}_{k,p}\equiv
+%% L^{(4)}_{k,p} \cup \bigcup_{q\not=p} L^{(5)}_{k,q}
+%% - L^{(0)}_{k,p}
+\]
+These are the tasks computed first. For each $q\not=p$, a subset of
+these elements will be sent to process~$q$, in a communication step
+that overlaps the computation of the next subset.
+
+\heading{Subset 2: locally computed tasks, only used locally}
+
+While elements of
+$L^{(1)}_{p}$
+%$L^{(1)}_{k,p}$
+are being sent, we can do a local
+computation of the remainder of
+$L^{(4)}_{p}$:
+%$L^{(4)}_{k,p}$:
+\[
+L^{(2)}_{p} \equiv L^{(4)}_{p} - L^{(1)}_{p}
+%L^{(2)}_{k,p} \equiv L^{(4)}_{k,p} - L^{(1)}_{k,p}
+\]
+These tasks use results from~$L_1$, but are otherwise entirely local,
+since they are part of the local set~$L_4$.
+
+\heading{Subset 3: halo elements and their successors}
+
+The final part of the computation on~$p$ consist of those tasks that,
+recursively, need results from other processors.
+
+Having received remote elements
+$L^{(1)}_{q\rightarrow p}$
+%$L^{(1)}_{k,q}$
+from neighbouring
+processors~$q\not=p$, we can construct the remaining elements
+%
+of~$L^{(5)}_{p}$ that are needed for~$L_{p}$:
+%of~$L^{(5)}_{k,p}$ that are needed for~$L_{k,p}$:
+\[
+L^{(3)}_{p} \equiv
+L^{(5)}_{p} - L^{(4)}_{p} - \bigcup_{q\not=p} L^{(1)}_{q}
+%% L^{(3)}_{k,p} \equiv
+%% L^{(5)}_{k,p} - L^{(4)}_{k,p} - \bigcup_{q\not=p} L^{(1)}_{k,q}
+\]
+
+
+\begin{theorem}
+  The splitting $L^{(1)},L^{(2)},L^{(3)}$ is well-formed and has overlap
+  of communication $L^{(1)}\rightarrow L^{(3)}$ with the computation of $L^{(2)}$.
+  Neither $L^{(1)}$ nor $L^{(2)}$ have synchronization points, so the whole algorithm
+  has overlap.
+\end{theorem}
+
+However, note that $L^{(1)}\cup L^{(2)}\cup L^{(3)}$ is most
+likely larger than~$L_{k}$,
+corresponding to redundant calculation.
+
+%\textbf{Write out predecessor relations with proof}
+
+\begin{figure}[ht]
+  \includegraphics[scale=.32]{L123456}
+  \caption{Communicated sets in the communication avoiding scheme}
+  \label{fig:avoid-comm}
+\end{figure}
+
+In figure~\ref{fig:avoid-comm} we indicate in red the part of
+$L^{(0)}$ that is sent, and the part of~$L^{(3)}$ that is received.

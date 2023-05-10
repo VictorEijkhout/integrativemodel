@@ -1,0 +1,88 @@
+The proposed research program is based on the intersection of two
+fundamental principles:
+\begin{itemize}
+\item \textbf{Data Motion Must be Visible and Controllable at a Software Layer}  The
+  portions of a computational process that are most expensive in terms
+  of either time or energy should be explicitly visible and
+  controllable in the hardware and software architectures. From the software
+  side this means that communication and synchronization should be explicit
+  objects, amenable to formal and dynamic analysis and optimization.
+  Here we
+  consider both "vertical" communication of data moving through the
+  cache/memory hierarchy and "horizontal" communication of information
+  between computational tasks from a combined hardware/software
+  perspective.
+\item \textbf{Hardware Must Expose Efficient Communication and
+  Synchronization Mechanisms to Software.}  Current processor
+  implementations include myriad efficient mechanisms for
+  communication and synchronization (such as FIFOs, dataflow engines,
+  and guaranteed atomicity of cache-line transfers), but these are not
+  exposed to software, which must rely on indirect and inefficient
+  mechanisms.  Here we consider the impact of extending the hardware
+  architecture definition in various ways to include support for
+  explicit communication and synchronization features as fundamental
+  architectural components, and how to expose those mechanisms to high
+  level software.
+\end{itemize}
+
+
+\endinput
+\subsection*{Topic 1: Data Motion Must Be Visible and Controllable}
+
+Current hardware technologies go to great lengths to make data motion
+through the memory hierarchy both invisible and uncontrollable,
+requiring increasingly large expenditures of design time, silicon
+area, and power consumption to maintain the model of transparent
+caches. 
+
+At the same time, such motion is also not addressed explicitly
+in software: data motion and affinity have no status in OpenMP, and
+communication `just happens' in MPI, but does not correspond to any
+language objects.
+     
+\begin{comment}
+  Continued performance gains in parallel computing require that design
+  time, silicon area, and energy use be substantially reduced.  While it
+  would be convenient from a programming perspective to eliminate the
+  memory hierarchy entirely (as proposed, for example, in the Tera MTA
+  programming model~\cite{Tera1990}), the memory hierarchy is based on
+  fundamental physics, and for the foreseeable future we will have to
+  exploit hierarchical memories in order to bound power consumption.
+\end{comment}
+
+Providing an alternate mechanism to control data motion through the
+memory hierarchy explicitly
+     %% that is independent of the complexity and
+     %% power consumption of coherent caches 
+seems a promising (and
+perhaps inevitable) approach. Programming this explicit data motion
+requires a powerful new model for parallelism. We argue that the
+\ac{IMP} model provides this.
+     
+\begin{comment}
+       Although it is unlikely that caches can (or should) be completely
+       eliminated, alternate mechanisms are required to allow visibility
+       and control of data motion through the memory hierarchy whenever
+       possible, with caches retained (if at all) only to maintain a
+       simple and familiar programming model for
+       non-performance-critical memory accesses.
+\end{comment}
+     
+     
+\subsection*{Topic 2: Hardware Must Expose Efficient Communication and Synchronization Mechanisms to Software}
+
+Technology trends are leading us to depend on explicit parallelism
+across more and more tasks as the primary means of obtaining
+performance improvements.  As applications are correspondingly
+parallelized at finer granularity, the cost of communication and
+synchronization operations are becoming increasingly important.
+     
+The NRC 2011 report~\cite{nrc2011} on the future of computing
+performance notes that compiler-generated automatic parallelism is a
+mature technology, but that ``these approaches are more effective in
+fine-grained parallelism than in the more useful coarse-grained
+parallelism.''~(page 118).  We speculate that one reason coarse-grain
+parallelism is more ``useful'' is that the overheads of communication
+and synchronization are too high, and we will demonstrate how we can
+shift this balance through exposing low level hardware primitives such
+as FIFOs.

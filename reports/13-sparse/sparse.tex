@@ -1,0 +1,76 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% sparse.tex : master file for report IMP-13
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-13}
+
+\usepackage{geometry,fancyhdr,wrapfig}
+
+\input setup
+
+\title[Sparse operations in IMP]{Sparse Operations in the Integrative Model for Parallelism}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We consider the sparse matrix vector product.
+\end{abstract}
+
+\section{Introduction}
+
+In the formal treatment of \acf{IMP} (see IMP-03) we introduced the `indirect'
+function $\kw{Ind}$ mapping output indices to required input indices.
+
+%\begin{quotation}
+\quotesnippet{indfunction}
+%\end{quotation}
+
+As remarked, this function can be represented as a boolean sparse matrix,
+and for the case where $f$ computes a matrix-vector product,
+that boolean matrix corresponds to the sparsity pattern of~$f$.
+
+\section{Implementation}
+
+We define the sparse matrix-vector product as inheriting from a regular kernel,
+by setting the sparse matrix as both the pattern that will determine the beta
+distribution, and as context for the local function:
+\verbatimsnippet{spmvpkernel}
+
+The pattern is stored as as the local part of the beta distribution:
+\verbatimsnippet{pstructfrompattern}
+
+which means that dependency analysis can be done as for an explicit beta:
+\verbatimsnippet{analyzepatterndependence}
+
+\section{Remapping and caching}
+
+In the class definition of \n{mpi_spmvp_kernel} above we did not yet
+note the overloaded definition of \n{analyze_dependencies}:
+this includes a call to remap the matrix:
+%
+\verbatimsnippet{mpimatrixremap}
+%
+where MPI remapping is based on an internal routine:
+%
+\verbatimsnippet{matrixremap}
+
+%\section{Discussion}
+
+%\bibliography{vle}
+%\bibliographystyle{plain}
+
+\end{document}

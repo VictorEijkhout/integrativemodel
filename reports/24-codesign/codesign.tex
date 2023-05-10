@@ -1,0 +1,70 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% codesign.tex : master file for report IMP-24
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-24}
+
+\input setup
+
+\def\bparagraph#1{\paragraph*{\textbf{#1}}}
+
+\title[Codesign and IMP]{IMP as a vehicle for software/hardware co-design}
+\author[Eijkhout]{Victor Eijkhout and John McCalpin\thanks{{\tt
+      \{eijkhout,mccalpin\}@tacc.utexas.edu}, Texas Advanced Computing
+    Center, The University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  \input abstract
+\end{abstract}
+
+\acresetall
+
+\section{Introduction}
+\input introduction
+
+\section{Illustrations of the Impact of Current Architectural Shortcomings}
+\label{sec:diagnosis}
+\input diagnosis
+\input morewrong
+
+\section{Possible solutions to the hardware problem}
+\label{sec:sketch}
+\input solutionsketch
+
+\section{Solutions through a programming model}
+\label{sec:imp}
+\input imp
+
+%% \section{Philosophy}
+%% \input motivation
+
+%% \section{Survey of hardware and software}
+%% Several aspects of software and hardware are in need of redesign.
+%% \input hw-overview
+%% \input sw-overview
+
+\section{Proposed research}
+\label{sec:proposed}
+\input proposed
+
+\section{Evaluation plan}
+\label{sec:eval}
+\input evaluation
+
+\bibliography{vle,jdm,morebib}
+\bibliographystyle{plain}
+
+\end{document}

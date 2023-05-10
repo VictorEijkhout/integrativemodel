@@ -1,0 +1,55 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% type.tex : master file for report IMP-03
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-03}
+
+\usepackage{geometry,fancyhdr,wrapfig}
+
+\input setup
+
+\title[IMP type system]{The type system of the Integrative Model}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+In a previous note we described the mathematical ideas behind 
+the Integrative Model for Parallelism.
+Here we formalize these as a type system.
+This gives us rigorous definitions of all the concepts;
+an implementation of IMP can be based on these.
+\end{abstract}
+
+\section{Motivation}
+
+In \emph{IMP-01} we described the mathematical theory of the \acf{IMP}.
+We are probably not exaggerating in saying that \ac{IMP} is more
+based on a mathematical theory
+than other systems for parallel programming. 
+This also means that its programming concepts are direct translations
+of these mathematical concepts. In this note we 
+reintroduce the mathematical ideas, but immediately translate them 
+into program concepts.
+
+\section{A type system for the IMP model}
+\label{sec:formal}
+\input formal
+
+%\bibliography{vle}
+%\bibliographystyle{plain}
+
+\end{document}

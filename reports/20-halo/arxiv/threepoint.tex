@@ -1,0 +1,110 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% threepoint.tex : threepoint difference example as introduction
+%%%%     of alpha/beta/gamma
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+We consider a simple data parallel example, and show how it leads
+to the basic distribution concepts of \ac{IMP}: the three-point operation
+\[ \forall_i\colon y_i=f(x_i,x_{i-1},x_{i+1}) \]
+which describes for instance the 1D heat equation
+\[ y_i = 2x_i-x_{i-1}-x_{i+1}. \]
+(Stencil operations are much studied; see e.g.,~\cite{Tang:2011:pochoir}
+and the polyhedral model, e.g.,~\cite{Dathathri:generating-movement}.
+However, we claim far greater generality for our model.)
+We  illustrate this graphically by depicting the input and output vectors,
+stored distributed over the processors by contiguous blocks,
+and the three-point combining operation:
+
+\includegraphics[scale=.12]{3pt-avg-abc}
+
+The distribution indicated by vertical dotted lines
+we call the $\alpha$-distribution for the input,
+and the $\gamma$-distribution for the output.
+These distributions are mathematically given as
+an assignment from processors to sets of indices:
+\[ \alpha\colon p\mapsto [ i_{p,\min},\ldots,i_{p,\max}]. \]
+The traditional concept of distributions in parallel programming systems
+is that of an assignment of data indices to a processor,
+reflecting that each index `lives on' one processor,
+or that that processor is responsible for computing that index of the output.
+We turn this upside down: we define a distribution as a mapping from 
+processors to indices. This means that an index can `belong' to more than
+one processor. (The utility of this for redundant computing is
+obvious. However, it will also seen to be crucial for our general framework.)
+
+For purposes of exposition we will now equate
+the input $\alpha$-distribution and the output $\gamma$-distribution,
+although that will
+not be necessary in general.
+
+\includegraphics[scale=.12]{3pt-avg-ac}
+
+This 
+picture shows how, for the three-point operation,
+some of the output elements on processor~$p$
+need inputs that are not present on~$p$.
+For instance, the computation of~$y_i$
+for $i_{p,\min}$ takes an element from processor~$p-\nobreak1$.
+This gives rise to what we call the $\beta$-distribution:
+\begin{quotation}
+\begin{mdframed}{$\beta(p)$~is the set
+of indices that processor~$p$ needs to compute the indices in~$\gamma(p)$.}
+\end{mdframed}
+\end{quotation}
+
+The next illustration depicts the different distributions
+for one particular process:
+
+\includegraphics[scale=.12]{3pt-avg-ab}
+
+Observe that the $\beta$-distribution, unlike the $\alpha$
+and~$\gamma$ ones, is not disjoint: certain elements live on
+more than one processing element. It is also, unlike
+the $\alpha$ and $\gamma$ distributions, not specified by
+the programmer: it is derived from the $\gamma$-distribution
+by applying the shift operations of the stencil. That is,
+\begin{quotation}
+  \begin{mdframed}{The $\beta$-distribution brings together properties of the algorithm
+    and of the data distribution.}
+  \end{mdframed}
+\end{quotation}
+We will formalize
+this derivation below.
+
+\subsection{Definition of parallel computing}
+\label{sec:3pt-dag}
+
+This gives us all the ingredients for reasoning about parallelism.
+Defining a `kernel' as a mapping from one distributed data set
+to another, and a `task' as a kernel on one particular process(or),
+all data dependence of a task results from transforming
+data from $\alpha$ to $\beta$-distribution.
+By analyzing the relation between these two we derive at dependencies
+between processors or tasks: each processor~$p$ depends on
+some predecessors~$q_i$, and this set of predecessors can be derived
+from the $\alpha,\beta$ distributions: $q_i$~is a predecessor if
+\[ \alpha(q_i)\cap\beta(p)\not=\emptyset. \]
+
+\includegraphics[scale=.12]{3pt-avg-DAG}
+
+In message passing, these dependences obviously corresponds
+to actual messages: for each process~$p$, the processes~$q$
+that have elements in $\beta(p)$
+send data to~$p$. (If $p=q$, of course at most a copy is called for.)
+Interestingly, this story has an interpretation in tasks on shared
+memory too.  If we identify the $\alpha$-distribution on the input
+with tasks that produce this input, then the $\beta$-distribution
+describes what input-producing tasks a task~$p$ is dependent on. In
+this case, the transformation from $\alpha$ to $\beta$-distribution
+gives rise to a \emph{dataflow} formulation of the
+algorithm.
+

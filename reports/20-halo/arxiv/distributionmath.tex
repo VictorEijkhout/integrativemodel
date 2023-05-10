@@ -1,0 +1,168 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% distributionmath.tex : mathematical definitions of distributions.
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Data parallel computation}
+
+The \acf{IMP} is a theory of data parallel functions. By this we mean
+functions where each element of a distributed output object is computed from
+one or more elements of one or more distributed input
+objects.
+\begin{itemize}
+\item Without loss of generality we limit ourselves to a single
+  input object.
+\item Since all output elements can be computed independently of each
+  other, we call this a `data parallel' function. In our context this
+  has no connotations of SIMD or synchronization; it merely expresses
+  independence.
+\end{itemize}
+Formally, a data parallel computation is the use of a 
+function with a single output to compute the elements of a distributed object:
+\[ \kw{Func} \equiv  \kw{Real}^k\rightarrow \kw{Real} \]
+where $k$ is some integer.
+
+Since we will mostly talk about indices rather than data, we define
+%
+$\kw{Ind} \equiv 2^N$
+%
+and we describe the structure of the data parallel computation
+through a `signature function':
+%
+\[ \kw{Signature}\equiv N\rightarrow \kw{Ind}. \]
+%
+
+In our motivating example, where we computed
+$y_i=f(x_{i-1},x_i,x_{i+1})$, our signature function was
+\[ \sigma_f\equiv i\mapsto \{ i-1,i,i+1 \}. \]
+
+\begin{itemize}
+\item The signature function can be compactly rendered in cases of a
+  stencil computation.
+\item In general it describeds the bi-partite graph of data
+  dependencies. Thus, for sparse computations it is isomorphic to the
+  sparse matrix, and can be specified as such.
+\item In certain cases, the signature function can be most compactly
+  be rendered as a function recipe. For instance, for 1D multigrid
+  restriction it would be given as $\sigma(i)=\{2i,2i+1\}$.
+\item For collectives such as an `allreduce', the signature function
+  expresses that the output is a function of all inputs:
+  $\forall_i\colon\sigma(i)=N$.
+\end{itemize}
+
+\subsection{Distributions}
+
+We now formally define distributions as mappings from processors to
+sets of indices:
+%
+\[ \kw{Distr}\equiv \kw{Proc} \rightarrow \kw{Ind}. \]
+%
+Traditionally, distributions are considered as mappings from data elements 
+to processors, which assumes a model where a data element lives uniquely 
+on one processor. By turning this definition around we have an elegant way of describing:
+\begin{itemize}
+\item Overlapping distributions such as halo data, where data has been
+  gathered on a processor for local operations. Traditionally, this is
+  considered a copy of data `owned' by another processor.
+\item Rootless collectives: rather than stating that all processors
+  receive an identical copy of a result, we consider them to actually
+  own the same item.
+\item Redundant execution. There are various reasons for having
+  operation executed redundantly on more than one processor. This can
+  for instance happen in the top levels of a coarsening multilevel
+  method, or in redundant computation
+  for resilience. 
+\end{itemize}
+
+We now bring together the concepts of signature function and distribution:
+\begin{enumerate}
+\item We can extend the signature function concept, defined above as
+  mapping integers to sets of integers, to a mapping from sets to sets:
+%
+% \[ \kw{Signature} \equiv \kw{Ind}\rightarrow \kw{Ind} \]
+%
+with the obvious definion that, for $\sigma\in\kw{Signature},S\in\kw{Ind}$:
+\[ \sigma(S) = \{ \sigma(i)\colon i\in S \}. \]
+In our motivating example,
+\[ \sigma\bigl([i_{\min},i_{\max}]\bigr) = [i_{\min}-1,i_{\max}+1]. \]
+\item We then extend this to distributions
+%
+% \[ \kw{Signature} \equiv \kw{Distr} \rightarrow \kw{Distr} \]
+%
+with the definition that
+for $\sigma\in\kw{Signature}$ and $u\in\kw{Distr}$
+\[ \sigma(u) \equiv p\mapsto \sigma(u(p)) \quad\hbox{where}\quad
+   \sigma(u(p)) = \{ \sigma(i)\mid i\in u(p) \}
+\]
+\end{enumerate}
+
+We now have the tools for our grand result.
+
+\subsection{Definition and use of $\beta$-distribution}
+\label{sec:beta-theorem}
+
+Consider a data parallel operation $y=f(x)$ where $y$ has
+distribution~$\gamma$, and $x$ has distribution~$\alpha$. We call a
+local operation to be one where every processor has all
+the elements of~$x$ needed to compute its part of~$y$. By the above
+overloading mechanism, we find that the total needed input on
+processor~$p$ is $\sigma\bigl(\gamma(p)\bigr)$.
+
+This leads us to define a \emph{local operation} formally as:
+\begin{definition}
+  We call a kernel $y=f(x)$ a local operation if $x$~has
+  distribution~$\alpha$, $y$~has distribution~$\gamma$, and
+  \[ \alpha\supset \sigma_f(\gamma). \]
+\end{definition}
+
+That is, for a local operation every processor already owns all the
+elements it needs for its part of the computation.
+
+Next, we call $\sigma_f(\gamma)$ the `$\beta$-distribution' of a function~$f$:
+
+\begin{definition}
+  If $\gamma$ is the output distribution of a computation~$f$,
+  we define
+  the $\beta$-distribution as \[ \beta=\sigma_f(\gamma). \]
+\end{definition}
+
+Clearly, if $\alpha\supset\beta$, each processor has all its needed
+inputs, and the computation can proceed locally. However, this is
+often not the case, and considering the difference between $\beta$
+and~$\alpha$ gives us the description of the
+task/process communication:
+\begin{corollary}
+  If $\alpha$ is the input distribution of a data parallel operation,
+  and $\beta$ as above, then processor~$q$ is a predecessor of
+  processor~$p$ if \[ \alpha(q)\cap\beta(p)\not=\emptyset. \]
+\end{corollary}
+\begin{proof}
+  The set $\beta(p)$ describes all indices needed by processor~$p$;
+  if the stored elements in~$q$ overlap with this, the computation
+  on~$q$ that produces these is a predecessor of the subsequent
+  computation on~$p$.
+\end{proof}
+
+This predecessor relation takes a specific form depending on the
+parallelism mode. For instance, in message passing it takes form of an
+actual message from $q$ to~$p$; in a \ac{DAG} model such as OpenMP
+tasking it becomes a `task wait' operation.
+
+\begin{remark}
+  In the context of \ac{PDE} based applications, our
+  $\beta$-distribution corresponds loosely to the `halo' region. The
+  process of constructing the $\beta$-distribution is implicitly part of
+  such packages as PETSc~\cite{GrSm:petsc}, where the communication
+  resulting from it is constructed in the
+  \n{MatAssembly} call. Our work takes this ad-hoc calculation, and
+  shows that it can formally be seen to underlie a large part of
+  scientific parallel computing.
+\end{remark}

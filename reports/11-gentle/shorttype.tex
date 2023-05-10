@@ -1,0 +1,69 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% shorttype.tex : include file for IMP-11
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+In \emph{IMP-03} we give a full mathematical definition of the IMP model.
+Here we only list some of the basic concepts.
+
+Suppose we have a set of indices~$N$, and subsets $\kw{Ind}=2^N$.
+We also have a set~$P$ of processors. Our first major concept then is that
+of \indexterm{distribution}: an assignment from processors to subsets
+of the indexset:
+%
+\DataType{Distr}{distributions of data over the processing elements}
+         {\kw{Distr}\equiv \kw{Proc} \rightarrow \kw{Ind}}
+
+We concern outselves with the data parallel application of a function:
+%
+\DataType{Func}{functions with a single output}
+  {\kw{Func} \equiv  \kw{Real}^k\rightarrow \kw{Real}}
+
+The signature function is a description of what indices of the input are needed
+to compute an index of the output:
+%
+\DataType{Signature}{Signature of data parallel functions}
+         {\kw{Signature}\equiv N\rightarrow \kw{Ind}}
+
+A distributed array is an array plus a distribution on it:
+\DataType{DistrArray}{distributed arrays}
+    {\kw{DistrArray} \equiv \kw{Array}\circ\kw{Distr} = \kw{Proc}\rightarrow 2^{\kw{Real}}}
+
+We can now define a `kernel' as a function applied between
+distributed objects:
+%
+\DataType{Kernel}{Data parallel functions between distributed arrays}
+    {\kw{Kernel}\equiv\kw{Func}\times \kw{DistrArray}\times \kw{DistrArray}.}
+
+An important result is that the beta distribution,
+our generalization of the concept of `halo',
+is formally constructable in this model:
+%
+\Function{\beta}{the $\beta$ distribution of a kernel}
+    {K=\langle f,x,y\rangle\quad\hbox{then}\quad
+    \beta(K) = \sigma_f\bigl( \gamma(K) \bigr)}
+%
+where $\sigma_f$ is the `signature function' of the data parallel function.
+
+We get to specific execution concept by defining a task,
+as a kernel, executed on a specific processor:
+%
+\DataType
+    {Task}
+    {A kernel executed on a specific processor}
+    {\kw{Task}\equiv\kw{Kernel}\times\kw{Proc}}
+
+We can now define, but will not do so here,
+concepts such as messages, or the dependency graph of tasks.
+
+\begin{remark}
+ Data parallel functions of more one distributed input can be accomodated
+ by having a signature function per input object.
+\end{remark}

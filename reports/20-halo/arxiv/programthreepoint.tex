@@ -1,0 +1,77 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% programthreepoint.tex : IMP programming based on threepoint example
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\label{sec:define-signature}
+
+In our motivating example we showed how the concept of
+`$\beta$-distribution' arises, and the role it plays combining
+properties of the data distributions and of the algorithm's data dependencies.
+This distribution generalizes concepts such as the `halo region'
+in distributed stencil calculations, but its applicability extends to
+all of (scientific) parallel computing.
+%
+For instance, for collectives we can define a $\beta$-distribution,
+which is seen to equal the $\gamma$-distribution.
+
+It remains to be argued that the $\beta$ distribution can actually
+be used as the basis for a software system.
+To show this, we associate with the function~$f$
+that we are computing an expression of the algorithm
+(not the parallel!) data dependencies,
+called the `signature function',
+denoted~$\sigma_f$. For instance for the computation
+of $y_i=f(x_i,x_{i-1},x_{i+1})$, the signature function is
+\[ \sigma_f(i)=\{i,i-1,i+1\}. \]
+With this, we state 
+(without proof; for which see section~\ref{sec:beta-theorem} and~\cite{IMP-01})
+that
+\[ \beta=\sigma_f(\gamma). \]
+If follows, if the programmer can specify the data dependencies of
+the algorithm, a~compiler/runtime system can derive the $\beta$ distribution,
+and from it, task dependencies and messages for parallel execution.
+
+Specifying the signature function is quite feasible, but the precise
+implementation depends on the context. For instance, for regular applications
+we can adopt a syntax similar to stencil compilers such as
+the Pochoir compiler~\cite{Tang:2011:pochoir}. For sparse matrix
+applications the signature function is isomorphic to the adjacency
+graph; for collective operations, $\beta=\gamma$ often holds; et cetera.
+
+\endinput
+This example and discussion show that the \ac{IMP} model can make some claims
+to expressiveness in dealing with algorithms in multiple types 
+of parallelism.
+We also need to argue
+that this model can be programmed. For this we need to define some notations,
+which we will do below in detail. In this notational framework, 
+if $x$~is a distributed object, and $d$~its $\alpha$-distribution,
+by $x(d)$ we will mean `$x$~distributed with~$d$'. Furthermore, we
+will introduce transformations on distributions, so that 
+for instance $d\gg1$ 
+means `$d$~right-shifted by~1'. With this, we can write the
+three-point kernel as
+\begin{equation}
+y(d) \leftarrow f\bigl( x(d),x(d\ll1),x(d\gg1) \bigr).
+\label{eq:threepoint-distro}
+\end{equation}
+This states that vector~$y$ with distribution~$d$ can be computed
+from~$x$, if $x$~is given on the distributions $d,d\gg1,d\ll1$.
+The resulting dataflow can then be derived by a compiler-like
+component.
+
+\begin{implementation}
+Below we will develop a \ac{DSL} to express algorithm descriptions
+such as~\eqref{eq:threepoint-distro}
+in languages
+such as C/C++ or Fortran.
+\end{implementation}

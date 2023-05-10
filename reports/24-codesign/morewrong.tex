@@ -1,0 +1,177 @@
+\subsection{The Power Cost of ``Vertical'' Data Motion}
+\label{sec:power-problem}
+
+In section~\ref{sec:bw-problem} we saw that using individual cache misses 
+to generate adequate memory concurrency carries a heavy penalty -- as many
+as \textbf{7 out of 8 cores are being ``wasted''}, using most of the power 
+consumed by the system and unable to contribute to other computational tasks.  
+
+Power measurements using the Intel ``RAPL'' (Running Average Power 
+Limit~\cite{Intel_SWDevManV3}) show a consumption of 100 Watts when running the 
+STREAM benchmark, with 72 Watts consumed by the 8 cores, 17 Watts by the 
+``uncore'' (L3 cache, memory controller, QPI interconnect, IO controller, and
+other management logic), and 11 Watts used by the DRAM.   An architecture
+capable of specifying adequate concurrency using a single core could power down
+seven of the eight cores, for a savings of up to 56 Watts (56\% of the total power
+consumption).
+
+Once the un-needed cores can be powered down, other power consumption
+issues can be addressed.  The next largest consumer of power is the ``uncore'', at 17 Watts
+(39\% of the remaining 44 Watts).   We can identify several mechanisms
+that are not needed in the improved architecture and which can be disabled or removed -- 
+detailed analysis of these opportunities is part of the proposed research.   These un-needed
+mechanisms include cache coherence, large memory reorder buffers, and hardware
+prefetch engines.
+
+\begin{comment}
+% notes for the proposed research section:
+These un-needed mechanisms include the chip-to-chip
+cache coherence traffic over the QPI links (which is not actually needed, since 
+none of the data being accessed is shared), large reorder buffers in the memory
+controllers (required to attempt to recover the simple memory access patterns
+that were obfuscated when the code was split up to run across multiple cores), 
+hardware prefetch engines (required only because the software had no means 
+of requesting the desired data transfers).
+\end{comment}
+
+After the ``uncore'', the next largest remaining consumer of power is the DRAM.
+The measured efficiency of 39 GB/s for 11 Watts is about 26 mW/Gbs (or 26 pJ/bit),
+which is good level of efficiency for this technology.  With improved scheduling, we 
+will demonstrate that the 
+\textbf{DRAM utilization can be increased} from the observed 76\% 
+to well over 95\% with a modest improvement in efficiency.
+
+\subsection{Power cost of instruction handling}
+\label{sec:instruction-cost}
+
+Finally, the single core needed to perform the arithmetic does not
+require the 9 Watts measured in the Xeon E5-2680 system.  As much as
+\textbf{half of the power used by the core is expended by the scheduler and
+instruction retry mechanisms}~\cite{Chen:power-debugging}.  These would
+not be needed by a core exploiting programmed data motion for which
+unpredictable memory delays are much less frequently on the critical
+path.  Power consumption could also be reduced by reducing the
+frequency of the remaining core until its cache bandwidth and compute
+capability are no higher than what is needed to process the incoming
+data.  Simpler cores such as the ARM Cortex-A9 could be augmented with
+double-precision floating-point hardware to deliver arithmetic rate
+required by the available bandwidth in a budget of 1-2 Watts.
+
+
+\begin{quotation}
+  Between more efficient data transfer and in-order calculation, power
+  savings of 80\%-90\% should be attainable. We will argue below how hardware
+  with redesigned semantics and a new programming model facilitate this.
+\end{quotation}
+
+\subsection{``Horizontal'' Data Motion -- Synchronization and Communication}
+\label{sec:morewrong}
+
+Parallel programs must include some type of communication and some type of 
+synchronization, yet these are not present as basic concepts in current processor
+architectures.  Although communication and synchronization can be implemented
+as side effects of ordered memory references, such an approach is necessarily
+inefficient and extremely difficult to optimize in hardware.
+
+\heading{Communication} Historically, cache coherence protocols have
+been optimized to maximize exploitation of spatial and temporal
+locality for a single thread of execution.  They do this reasonably
+effectively by keeping recently used data ``close'' to the processor.
+Cache coherence protocols allow operation of shared memory systems by
+serializing access to modified cache lines, and by providing a set of
+ordering rules that make it possible to write code that reliably
+conveys data with controllable ordering between processes.
+
+The \textit{ability} to communicate via shared memory does not mean
+that it is an \textit{efficient} means of communication.  The
+properties desired for optimizing communication are almost the inverse
+of those desired for exploiting spatial and temporal locality.
+Instead of keeping data ``close'', a protocol for communication should
+``push'' data from the producer to the consumer as quickly as
+possible.  Instead of serializing access to modified cache lines and
+requiring multiple coherence transactions to ``hand off'' data from a
+producer to one or more consumers, a protocol for communication should
+support ``single-hop'' messages, broadcasts, and higher-level
+constructs such as FIFOs.  These are either not possible, or incur
+high development and validation costs, if they are layered on top of
+memory operations, rather than being included as an independent set of
+functions by the architecture.
+
+\heading{Synchronization} Synchronization is another fundamental
+concept in any model of parallel programming, that is not included as
+a first-class concept in current processor architectures.  Although
+implementable via side-effects of ordered memory references on
+standard systems, synchronization via shared memory is intrinsically
+inefficient and suffers from poor scalability.  The resulting
+overheads of several thousand cycles to several tens of thousands of
+cycles have contributed to the failure of previous programming models
+based on fine-grained parallelism.  The existence of extremely
+efficient synchronization mechanisms in hardware (with O(1) cycle
+latency) makes it clear that this is an issue of architecture, not of
+physics, and is therefore a critical topic that we will address.  (We
+should note that such concepts were proposed decades ago,
+e.g,~\cite{Dally:1992:MDP}, but seem to have been dropped along the
+way.)
+
+
+\begin{comment}
+On the other hand, extremely fine-grained synchronization mechanisms
+exists as part of the processor, for instance to handle 
+out-of-order scheduling of instructions. Work by Dally~\cite{Dally:1992:MDP}
+showed that processors can be built that offer synchronization primitives
+on user level with a single-digit cycle overhead.
+
+(We note that NVidia GPUs are based on lightweight threads. However, these
+are of a homogeneous, almost SIMD, nature. The also don't feature the 
+dataflow dependencies between single threads that we argue for and that 
+our programming model generates. Thus, we argue for adapting CPU design,
+rather than adopting GPU features.)
+\end{comment}
+
+\begin{comment}
+  \heading{Some Hidden Costs of Cache Coherence}
+  %The above signaled fiction of an architecture realizing
+  %a single instruction stream necessitates complicated
+  %coherence mechanisms. This convenience to the programmer
+  %comes at a cost: a substantial part of memory latency 
+  %is attributable to the need for snooping the other caches.
+
+  A general principle in computer architecture is that implementations should be optimized 
+  based on the common case and only deal with the unusual case when it happens.   
+  Cache coherence is perhaps the most notable exception to this guideline.  Even though
+  the overwhelming majority of memory references are to addresses that are not shared
+  across processes, architectures provide no means for software to tell hardware that 
+  snooping is not required.  As a consequence, the address of every last-level cache miss
+  is broadcast to all other last-level caches in the system to ensure that no modified copies
+  of the corresponding cache line exist elsewhere in the system.  This mechanism is clearly
+  required for shared-memory communication to work, and is just as clearly not needed
+  when data is not shared.  (Process migration is a special case that can easily be handled
+  by selective cache flushing.)  
+\end{comment}
+
+This mandatory coherence incurs costs in several dimensions.  In
+addition to power and complexity, \textbf{mandatory coherence
+  increases memory latency} and thereby increases the amount of
+concurrency required to fill the memory pipeline.  As an example, the
+Xeon E5-2680 processors used in the previous examples have a local
+memory latency of 79 ns when running at their maximum speed of 3.1 GHz
+in their dual-socket configuration.  The latency would be about 20\%
+lower in a single-socket configuration, and could be reduced another
+15\% if memory accesses did not have to check the caches before going
+to memory.  The combined effect would reduce the concurrency required
+to fill the memory pipeline by almost 1/3.  As an illustration that a
+large core count, single socket, design is not the solution, the Intel
+Xeon Phi SE10P with 61 cores on a single chip has a local memory
+latency of 275 ns, largely due to the complex multi-level protocol
+required to maintain coherence for the 61 caches.
+
+\begin{comment}
+  We propose to provide alternate mechanisms for both vertical and horizontal data motion
+  that will eliminate most applications of traditional cache coherence.  Whether this is 
+  done by extending memory semantics or providing completely independent mechanisms
+  is a topic to be researched.
+\end{comment}
+
+%On the other hand, we advocate for mechanisms
+%\emph{control coherence} addressable in user space
+%for the support of lightweight threads.

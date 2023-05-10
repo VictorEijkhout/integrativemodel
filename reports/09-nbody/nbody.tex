@@ -1,0 +1,61 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-8
+%%%%
+%%%% nbody.tex : master file for IMP-09
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-09}
+
+\usepackage{geometry,fancyhdr,multirow,wrapfig,verbatim}
+
+\input setup
+
+\title[IMP nbody]{Tree codes in the Integrative Model}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Many practical algorithms have tree-structured calculations.
+In this note we look in particular at N-body algorithms
+such as the Barnes-Hut octtree method.
+Such calculations have many aspects that are tricky to program
+in parallel. We show how the Integrative Model for Parallelism (IMP)
+makes their specification more transparent.
+\end{abstract}
+
+\section{Background}
+
+\subsection{Barnes-Hut}
+
+\input bhshared
+
+\subsection{Fast Multipole}
+
+See the analysis in~\cite{Yokota:fmm-complexity} for communication
+complexity, which takes into account redundant storage of higher tree levels.
+
+\section{Algebraic framework}
+\input bhframework
+
+\section{Implementation}
+
+Initially, we consider the tree-structured computation of~$g$.
+
+\input regulartree
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

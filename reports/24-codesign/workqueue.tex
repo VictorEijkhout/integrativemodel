@@ -1,0 +1,25 @@
+\begin{wrapfigure}{r}{10cm}
+  \includegraphics[scale=.4]{graphics/fifo}
+  \caption{Plot of processor utilization as function of cycles of work per
+    descriptor for different work queue latencies}
+  \label{fig:fifo}
+\end{wrapfigure}
+In section~\ref{sec:issue-thread} we argued that  current
+processors cannot efficiently support fine-grained work distribution, 
+but there is growing interest in increasing the use of fine-grained 
+threading.  Compilers are more likely to generate tasks of some
+dozens of cycles than of thousands of cycles. Also naturally
+multi-threaded applications are likely to generate many small tasks,
+for instance a few hundred cycles in the leaf nodes of an \ac{FMM}
+simulation; our programming model is eminently able to 
+generate such tasks.
+
+We made a brief simulation of the utilization of a processor
+dispatching work items from a FIFO-based workqueue. We assume a 60ns
+latency for a hardware based design, and 2000~/ 20,000 cycles for
+uncontested~/ contested software implementation. We let the FIFO store
+cacheline sized work descriptors, and we plot efficiency as a function
+of the number of cycles of work per descriptor.
+From figure~\ref{fig:fifo} it is clear that for the anticipated task size
+a hardware-based mechanism is a necessity. Such hardware mechanisms are already part
+of the processor design, however, they are not accessible to the user.

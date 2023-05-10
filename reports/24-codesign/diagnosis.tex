@@ -1,0 +1,140 @@
+We argue that current hardware architecture is not well matched
+to the current technology in several important ways.   Many of the
+problems fall into the categories of controlling ``vertical'' data motion 
+through the memory hierarchy and controlling ``horizontal'' data motion
+associated with communication between processes.
+
+In the next sections we present examples of some of the ways in which
+current architectures do not provide an adequate base to deal with the
+performance and power issues associated with vertical data motion
+(sections~\ref{sec:bw-problem} and~\ref{sec:power-problem}) and
+horizontal data motion (section~\ref{sec:morewrong}).  This is not
+intended to be a comprehensive review, but as an illustration of why
+we have concluded that these problems are architectural, rather than
+being shortcomings of specific implementations.
+
+\subsection{Analysis of ``vertical'' data motion}%Latency, Bandwidth, and Concurrency}
+\label{sec:bw-problem}
+
+Over the past two decades, the ``cost'' of data motion (in terms of
+execution time) has steadily risen in relation to the ``cost'' of
+arithmetic.  The historical data provided by the STREAM benchmark
+results database~\cite{STREAM} documents this clearly for the case of
+long vector operations, with current systems capable of performing
+30-60 floating-point operations in the time required to transfer one
+64-bit word from memory.  When considering latency, the ratios are
+much worse, with current cores able to perform 500-1000 floating-point
+operations in the time required for a non-prefetched access to main
+memory.  Despite these huge performance ratios, data transfers through
+the memory hierarchy have still not been made visible or explicitly
+controllable in current architectures.
+
+We can review the consequences in more detail by considering a specific processor.  Here
+we use values for the `Intel Xeon E5-2680 processor' from the TACC Stampede supercomputer.
+This is an 8-core, dual-socket processor based on Intel's ``Sandy Bridge'' processor core.
+Each Sandy Bridge core typically runs at 3.1 GHz (the maximum ``Turbo'' mode frequency
+supported by this model) and can execute up to 8 double-precision floating-point 
+arithmetic operations per clock cycle (one 4-element-wide addition and one 4-element-wide 
+multiplication) for a peak of 24.8 GFlops per core.
+
+If we assume a DAXPY kernel ($x_i = x_i + s \times y_i$), each iteration performs 
+two 8-byte reads and one 8-byte write, or 24 Bytes for 2 FP operations.  
+Therefore a single core would require almost 300 GBytes per second of load plus store 
+traffic to fully utilize the arithmetic units (for this kernel).   
+
+At the DRAM level, each processor chip has 4 DDR3/1600 DRAM channels, 
+providing an aggregate of 51.2 GByte/s of peak memory bandwidth.    
+For the DAXPY kernel, this peak bandwidth of 51.2 GB/s would support 4.266 GFLOPS 
+-- only 17\% of the peak performance of one core, and only 2\% of the peak performance of the
+eight cores.
+
+In an ideal world, one would be able to use one core to run DAXPY at full speed while 
+the other cores rest in a low-power state or work on other computational tasks.  
+Unfortunately one core cannot generate enough
+concurrent cache transactions to fill the memory pipeline.   At a nominal (idle) load latency of
+79 ns and a bandwidth of 51.2 GB/s, basic queuing theory dictates that $79\times 51.2 = 4044.8$ 
+bytes of traffic be ``in flight'' at all times.  This corresponds to 64 cache lines -- but a single 
+core can only directly support 10 outstanding L1 cache misses\cite{IntelSWOptGuide}.  
+Therefore at least 7 of the 8 cores must be used to generate enough L1 cache misses
+to tolerate the memory latency.  A more detailed analysis includes the effect of the 
+L2 hardware prefetch engines, the difference in buffer occupancy between loads and stores,
+and the increase in buffer occupancy due to contention in the memory system, but extensive
+experimentation has shown that these factors mostly cancel out and that the maximum 
+bandwidth achievable (about 76\% of peak) requires the use of 6-8 cores per chip, even 
+though only one core is needed to perform the arithmetic.   
+
+We argue that this is not necessary, and that including data motion as a primary
+architectural feature would allow a single core to request the full bandwidth available
+to the chip (as well as the full bandwidth available on the chip-to-chip and IO links).
+
+
+\begin{comment}
+Power measurements show a consumption of 100 Watts when running this benchmark,
+with 72 Watts consumed by the 8 cores, 17 Watts by the L3 cache, memory controller, and 
+QPI interconnect, and 11 Watts used by the DRAM.  
+\end{comment}
+
+\begin{comment}
+(The peak bandwidth from L1 cache is approximately 100 GByte/s read and 50 GB/s 
+for writes, limiting either DAXPY or DDOT performance for L1-contained data to 
+50\% of peak -- higher utilization requires reuse of data in registers.)
+\end{comment}
+
+%(Therefore peak performance is only attainable if at least half of the data is
+%reused from the processor registers and not loaded from cache.)
+
+%Realistically we have now established that \textbf{one core can absorb
+%  150GByte/s of bandwidth}. Let us now estimate how much of this
+%bandwidth can be provided from memory. We are assuming here that the
+%operations are dominated by `Stream'-type of kernels~\cite{STREAM}
+%that have little resue, as is the case with many of the sparse matrix
+%operations common in fluid dynamics. If we additionally assume
+%\ac{FMA} type operations with one operand staying in register, our
+%\textbf{core can work at realistic peak performance, using 50Gbyte/s of
+%  bandwidth}. (This is optimistic for CFD applications.)
+
+
+%The ratio of the peak arithmetic performance to the available bandwidth defines
+%the ``balance'' of the system.   When using a single core the ratio is 24.8 GFLOPS of
+%compute capability for 6.4 GWords/sec of memory bandwidth (assuming 8 Byte words),
+%or just under 4 FP operations per Word of memory traffic.   If this were actually usable 
+%it would represent a very high-bandwidth configuration, requiring relatively few
+%arithmetic operations per word of memory traffic to be limited by the peak arithmetic
+%rate.   
+
+
+
+%Thus, the number of 50Gb/s appears 
+%again, but it is important to note that \textbf{one core can absorb the total
+%available bandwidth} available to an 8-core socket, meaning that 
+%\textbf{7 of the 8 cores are wasted} in stream-type kernels.
+
+\begin{comment}
+However, these cores that do not contribute to the computation
+are actually necessary in another sense.
+The bandwidth coming into a core is limited by a number of factors,
+among which the 10 available `\acfp{LFB}. This means that,
+pessimistically, the concurrency of incoming data is limited to 10 buffers
+times 64byte. With a measured latency (on an idle system!) of 79~ns,
+we can invoke Little's Law to estimate that \textbf{the bandwidth
+that a core can request through cache misses is 8.1Gb/s}.
+
+
+In other words, \textbf{at least 6 cores are needed to generate the
+cache misses that request the bandwdith} of 50GB/s. In practice even doing this 
+takes considerable knowledge of the hardware.
+\end{comment}
+
+\begin{quotation}
+We conclude that the current data transfer mechanism is ill-suited
+to both energy-efficient performance and effective utilization of the 
+processing resources. 
+Our proposed solutions will involve architecturally visible
+mechanisms to specify data motion (with significantly higher-level 
+semantics than the existing transparent mechanisms),  and
+abandoning transparent caches (and their implicit `pull' mechanism) as the 
+primary mechanism for data transfer in favour of managed local storage and a push mode. 
+Of course, to exploit this we need a new programming model that makes
+data motion explicit.
+\end{quotation}
+

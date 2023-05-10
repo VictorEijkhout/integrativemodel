@@ -1,0 +1,421 @@
+\begin{comment}
+  Our research program is driven by the following guidelines:
+  \begin{itemize}
+  \item Current hardware is inefficient in achieving its current level
+    of performance; simple scaling to future needs does not appear possible.
+  \item We will focus on simplified hardware that is intrinsically matched to the
+    capabilities of the implementation technology: this will increase performance by decreasing 
+    overhead, make the hardware more power-efficient, and leave future development as open 
+    as possible. 
+  \item This hardware will expose high-level data motion and synchronization mechanisms to user space.
+  \item Exploiting these mechanisms will require a programming model with more
+    refined semantics; these semantics will also be able to address the 
+    overdecomposition and dataflow problems that threading brings with it.
+  \end{itemize}
+\end{comment}
+
+We propose the following research activities as the focus of our
+software/hardware co-design.
+
+%------------------------------------------------------------------------------------------------
+\subsection{Explicit Control of Data Motion through the Memory Hierarchy}
+\label{sec:propose-data-motion}
+
+The key enabling technology for improving hardware utilization and
+power efficiency is to provide explicit control for data motion
+through the memory hierarchy.  I.e., rather than making a sequence of
+individual requests for the physically addressed cache lines
+containing data in various virtually addressed data structures, a
+processor should be able to convey a description of the entirety of
+its data needs for a phase of execution to other processing elements.
+These ``other processing elements'' may include (potentially
+heterogeneous) general-purpose processors, (potentially heterogeneous)
+specialized processors, memory controllers, IO controllers,
+communications controllers, and power management hardware.
+
+In addition to its direct benefits, providing explicit control of
+``vertical'' data motion opens up opportunities to architect more
+efficient mechanisms to exploit locality than traditional transparent
+caches.
+
+
+
+\bparagraph{Research Topic 1: } Through analysis and simulation we
+will investigate the costs and benefits of enabling a processor to
+convey additional semantic information about memory transfers to
+caches, memory controllers, and other processor cores.  For
+bandwidth-limited codes, the goal is to fully utilize memory bandwidth
+while activating as few computational resources as possible.  Full
+memory bandwidth utilization requires both exposing enough concurrency
+to tolerate latency and providing the memory controller with enough
+information about future access patterns so that it can schedule
+effectively.  Exposing concurrency is simple if the access patterns
+are known in advance.  DRAM scheduling is a bigger challenge, as it is
+well known that DRAM scheduling often degrades as the scheduling
+window is widened.  The research challenge is to design an
+\textbf{architecture that enables information to be conveyed}
+from the application and the
+compiler to the memory controller, and a \textbf{programming model
+to generate this information}.
+%in a form that is
+%both compact and allows effective scheduling.
+
+\bparagraph{Research Topic 2: } For compute-limited codes, the goal of
+explicitly managed data transfer is to minimize loss of compute cycles
+due to unexpectedly delayed data (e.g., cache misses), and to minimize
+latency in cases where it is physically unavoidable -- i.e., when the
+algorithm is unable to compute an address until immediately before it
+is needed.  Thus the proposed system will be evaluated for absolute
+latency as well as for throughput.
+
+\bparagraph{Research Topic 3: } It is often the case that a finely
+tuned system lacks robustness.  We will evaluate the ability of the
+high-level semantic interface and co-adapted memory scheduler to
+tolerate unexpected requests (e.g., RDMA requests from remote
+processors) of various sizes and priorities.
+
+
+%------------------------------------------------------------------------------------------------
+\subsection{Coherence}
+\label{sec:proposed-coherence}
+
+Cache coherence is a fundamental attribute of current systems, and proposals
+to remove cache coherence -- even in carefully proscribed circumstances -- are
+typically met with considerable resistance.   Therefore an important requirement
+of this research project is to document the costs of cache coherence as accurately
+as possible.
+
+\bparagraph{Research Topic 4: }
+We will continue our studies of the impact of cache coherence on main memory 
+latency and use the results to evaluate the impact of this added latency on 
+performance and power consumption of high-bandwidth application kernels.
+
+\bparagraph{Research Topic 5: }
+Through detailed analysis of fundamental algorithms and selected HPC codes of 
+importance to the TACC user base, we will investigate the programmatic 
+need for cache coherence, and how the IMP model can circumvent this.  
+% VLE this sounds prone to misunderstandings.
+%% (We note that most HPC codes capable of large-scale parallelism already use
+%% MPI for parallelization, so cache coherence is not directly relevant to the user code.
+%% The use of cache coherence in the implementation of in-node MPI will be covered
+%% in work items later in this list.)
+
+%------------------------------------------------------------------------------------------------
+\subsection{Explicitly Managed Local Memory}
+\label{sec:propose-rdma}
+
+Explicit control of data motion and explicit control of cache coherence can
+alleviate some of the power and performance limitations of current architectures, 
+but explicitly managed local memory is expected to provide significantly better
+controllability and significantly lower power.
+
+\bparagraph{Research Topic 6: }
+Using available simulators (such as CACTI~\cite{CACTI-D_2008}), we will 
+evaluate the differences in latency, throughput, and power consumption for
+explicitly managed local memories in comparison to caches.   
+
+\bparagraph{Research Topic 7: }  
+We will study the extent to which the input/output dependence functionality of IMP can be used to 
+specify and control data motion through an explicitly managed memory hierarchy
+and evaluate its expressiveness for common algorithms used in HPC.
+
+\begin{comment} %-----------------
+As we argued above, the transparency of caches is becoming a hindrance
+more than a help.  Here we argue that, for many purposes,
+\textbf{caches can be replaced by fast local memory} that is
+explicitly managed. There are precedents for this: the TI DSP chip has
+local memory that can arbitrary be partitioned into cache memory and
+managed local store~\cite[pp~98--99]{TI_TMS320_DSP}; the Cell
+processor (part of the Roadrunner supercomputer, the first machine to
+break the Petaflop barrier) required explicit data transfers to/from
+the local memories of the compute-intensive processing elements.
+
+Two arguments against local memory are a perceived speed difference,
+and loss of easy programmability. The two examples given argue that
+there is no intrinsic speed difference. The programmability question
+is more subtle.  While the Roadrunner was very hard to program, this
+was could be attributed to integration aspects rather than the local store of the
+Cell. 
+
+That said, `managed caches' require more programming. This is where
+our programming model comes in. Below, we will indicate how
+the \ac{IMP} model can effectively support local memory.
+
+Specific Research:
+\begin{itemize}
+\item Traditional caches contain elaborate mechanisms for maintain
+  coherency, both between cache levels and between the coherent caches
+  of multiple cores.  This suggests that local memory can be simpler
+  in design and lower in power.  We will investigate this matter by
+  writing \textbf{simulators} to substantiate our contention that
+  \textbf{local memory can be as fast, and less power-intensive} than
+  traditional caches.
+
+  We will engage in analysis through systematic reasoning and
+  simulation of the reduction in latency when cache snooping is not
+  needed.  We will come up with reasonable estimates of the reduction
+  in off-chip signaling energy expended in snoop and response traffic.
+
+\item In tandem with this we will explore the matter of
+  programmability of local memory.  We will explore algorithms in the
+  literature to formulate them in terms of local memory. (We will for
+  instance look at the Mantevo `mini-apps'~\cite{Mantevo:report} and
+  the Swim shallow-water code.)  Thus we will arive at an \textbf{API
+    and cost analysis for exploiting local storage}.
+
+  Note that this API will remain internal, since the user programs IMP
+  in global terms using distributions: data motion exists as explicit
+  concepts but on a level derived from the user expression of the
+  algorithm. Thus, data motion will actually be driven by dynamic cost
+  modeling.
+
+\item We will explore intrinsic algorithmic properties in relation to
+  caches and local memory. For instance, 
+  certain Lattice Boltzman code work on dozens of arrays at the same
+  time~\cite{Rosales:LBMgpu}, leading to almost guaranteed cache
+  conflicts. These may perform far better with local memory than with caches.
+  On the other hand, there may be classes of algorithms where
+  local memory would be difficult to exploit, such as algorithms
+  that "scatter" data in ways that are only known at runtime.
+%% , for
+%%   which tricks are known that make traditional caching fairly
+%%   effective, but for which there are no known fast algorithms to
+%%   separate the re-usable portion of the input set from the portion of
+%%   the input set that must be brought in from outside.
+\end{itemize}
+\end{comment}
+ 
+ 
+%------------------------------------------------------------------------------------------------
+\begin{comment}
+\subsection{DRAM efficiency}
+\label{sec:propose-dram}
+
+In section~\ref{sec:diagnosis} we argued that power consumption and
+latency of DRAM can be lowered considerably.
+
+We assert that \textbf{designing DRAM controller semantics}
+that allows a processor to make ``higher-level'' memory requests will
+allow the memory controller to schedule much more efficiently.
+Examples include block requests, strided requests, multiple block
+requests, or multiple strided requests.  The specific mechanisms and
+their relative costs and benefits will be explicit research topics.
+
+In a prime example of co-design, we will investigate how 
+\textbf{the IMP model can generate semantic requests},
+and how a DRAM controller can efficiently schedule based on
+these. We will explore this through both
+simulation and analysis.
+\end{comment}
+
+%------------------------------------------------------------------------------------------------
+\subsection{Synchronization}
+\label{sec:proposed-sync}
+
+We observed in section~\ref{sec:morewrong} that user space
+synchronization is very expensive, but that fast synchronization
+mechanisms are embedded in the hardware of every CPU. 
+There is no physical reason that this performance can not be made
+available in user space, as was shown over 20 years 
+ago~\cite{Dally:1992:MDP}.
+
+The current architectural insistence on transparent caching and 
+side-effect-free memory access has blocked efforts to revisit these
+approaches.  We are willing to break these assumptions, which 
+will open up opportunities for approaches that are more than 
+incremental.  Hardware-based FIFOs,  hardware barriers,
+loads with full/empty  (or valid/invalid) bits, user-level interrupts, 
+and hardware work queues may all play a role.  We will focus on 
+relatively high-level mechanisms that can be implemented 
+efficiently in hardware and which directly support programs 
+based on specification of data dependencies.
+
+\bparagraph{Research Topic 8: }  
+We will review and analyze the semantic requirements for synchronization
+in the context of fine-grain parallel programs, evaluate the mechanisms
+listed above for their applicability to different algorithms,
+and research the generation of such semantics in the \ac{IMP} model.
+
+\begin{comment}
+Probably the most interesting question regarding synchronization is
+what the demands of a dataflow mechanism are. Recall that we propose
+abandoning the `on-demand' memory transfer, replacing it with a `push'
+model.  This means that we need a notification mechanism for
+availability of inputs.  The Charm++ system~\cite{Kale:controlling}
+has shown a possible API, but closing the \textbf{gap between software
+  expression and hardware implementation} will be one of our research
+directions.  The need for such efficient synchronization will be
+especially acute if we consider dataflow between lightweight threads,
+resulting from \ac{IMP} overdecomposition of a problem.
+
+\heading{Other synchronization primitives}
+
+We already argued for fast FIFOs, which serve massive light\-weight
+threading.  We will investigate the desirability and implementability
+of other mechanisms, and their generation from the \ac{IMP} model. In
+particular we will consider the \textbf{software exploitation and
+  hardware implementation} of barriers, collective operations, and
+multicast and subset communicators.
+
+\begin{comment}
+  \begin{itemize}
+  \item Barriers, both global and local, naturally arise on OpenMP and
+    other thread models, so fast hardware support could be desirable.
+  \item Collective operators like reductions and broadcasts are fairly
+    common -- do they need to be separately handled in hardware?  Are
+    they even the right ideas conceptually once we leave the bulk
+    synchronous model behind?
+  \item We can also investigate multicast and subset communicators,
+    which can benefit multi-level algorithms.  The question of how to
+    bridge between finite hardware resources and potentially very large
+    software footprints needs addressing.
+  \end{itemize}
+\end{comment}
+
+%--------------------
+\begin{comment}
+  \subsection{Software vs hardware capabilities}
+
+  In tandem with the above described research into redesigned hardware,
+  we will develop the \ac{IMP} programming model to be able to exploit
+  this new hardware design.
+
+  The basis for our \textbf{data dependency} capabilities is the fact that
+  the IMP model knows when data is produced, when it is needed,
+  and how producer and consumer (or sender and receiver in a distributed
+  context) relate. Thus, we will explore how to formulate semantically
+  meaningful memory requests that include information on the structure
+  of the data and its intended bandwidth and latency. Our research question
+  is to \textbf{find the balance between analysis in software and 
+    in the DRAM controller hardware}. Current designs have this balance
+  fully on the DRAM controller, with obvious resulting problems.
+
+  The \ac{IMP} model can also exploit \textbf{synchronization}
+  primitives. The basic capability here is the fact that parallel kernels
+  in IMP are based on a virtual concept of process or task. 
+  Thus it is in a better position to explore the tradeoff between
+  increased performance through load balancing of finer task decomposition,
+  and its concommitent increased overhead.
+  In current practice, the overhead consideration means that problems
+  are decomposed to the largest possible grain size, corresponding to 
+  for instance cluster nodes or hardware threads. (NVidia GPU devices
+  have extremely lower overhead associated with overdecomposition,
+  so they are in fact able to exploit this balance.
+
+  In a joint exploration of software and hardware, we will develop
+  the \textbf{theory of expressing synchronization needs, and
+    efficient hardware capable of supporting it}.
+  We note that this is no pipe dream: work by Dally~\cite{Dally:1992:MDP}
+  showed that synchronization with user space semantics can be realized
+  with extremely low overhead.
+\end{comment}
+%------------------------
+
+\subsection{Cost model}
+
+One critical long-term goal of this project is to enable the development
+of hardware and software that supports accurate cost modeling.
+Having an accurate cost model for a parallel code makes it possible to 
+have software layers that engage in optimization, for instance through
+reordering memory requests, task scheduling and migration, 
+or redundantly duplicating tasks. The two factors standing in the way of this
+are hardware and software, and we aim to address both.
+
+Current hardware behaves unpredictably, making a~priori cost estimates
+of operations hard to impossible to make. User level software expresses communication 
+insufficiently as independent entities, 
+Our research will lead to \textbf{hardware with analyzable semantics}
+and, as a result, software will be capable of doing
+analytic optimization, rather than heuristic or empiric.
+
+We will investigate what aspects of \textbf{cost can be efficiently modeled
+and dynamically scheduled}. This will rely on the hardware simulations
+that we will develop in this project, as well as development in the 
+IMP model.
+
+\endinput
+%---------------------------------------------------------------------------------------------
+\subsection{Power consumption}
+
+Our ideas will lead to a reduction in power consumption in several ways.
+\begin{itemize}
+\item The snooping that cores do to maintain cache coherence leads to
+  latency (see our analysis of the Intel~MIC in section~\ref{sec:hw})
+  but it also takes considerable power. We reduce this by relying as
+  much as possible on managed fast local memory.
+\item A great deal of power is lost due to lack of management of DRAM
+  pages. Since our model knows about data being communicated, we can
+  optimize the loads from DRAM. Up to a factor of~5 in power savings
+  is attainable here.
+\item Managed local store leads to a lower demand for concurrency,
+  leading to simpler processor design, which may also lower power
+  demand.
+\end{itemize}
+We will analyze these aspects both through analytical reasoning and simulation.
+
+\textbf{Research into Enhanced Processor/Memory Data Motion Semantics\ }
+%
+Once the transparent cache has been removed as the interface to
+memory, cache lines are no longer the only granularity at which data
+can be moved around the system.  The elimination of caches also opens
+up the consistency/ordering model considerably.  Using local memory,
+we can reorder DRAM accesses on a much larger scale for efficiency.
+It seems likely that significant advantages could accrue from
+expanding the semantics of the processor to memory controller
+interface to allow the processor to make higher-level requests.
+   
+For efficiency, we clearly want to be able to request larger blocks
+(to exploit open page mode).
+   
+\begin{itemize}
+\item We will investigate through simulation the complicated trade-offs in the facility for block requests: increased efficiency is likely going to be offset by a higher chance of incorrect reordering of memory requests.
+
+
+\begin{comment} %--------------------
+    How much more benefit can be obtained by sending larger requests, such
+    as a group of block accesses?  For example, the processor might tell
+    the memory controller that it only needs one contiguous data stream,
+    or it might tell the memory controller that it will need seven
+    contiguous data streams, with streams 0..5 being consumed at the same
+    rate and stream 6 being consumed at 1/2 the rate of the others (e.g.,
+    perhaps it is composed of 32-bit array indices rather than 64-bit data
+    items).
+\end{comment} %-----------------
+\item We need to consider the targeted complexity level of DRAM
+  semantics, for instance, whether to support contiguous and strided
+  requests. An interesting question is whether to support indirection
+  in the memory controller. Increased efficiency is likely to come at
+  greater design costs and operating power budget.
+\begin{comment}
+    A more complex example might include a combination of
+    contiguous and strided references, or a combination of
+    contiguous and indirect references.
+  \item Do we need the memory controller to be able to perform
+    indirection?  One could imagine the memory controller
+    prefetching the indirect index vector ahead of the other data
+    in order to determine the indirectly accessed data addresses in
+    advance.
+\end{comment}
+\item On a software level we need to investigate how much our model
+  can make request unordered memory requests; correspondingly we need
+  to investigate how much of the ordering optimization problem can be
+  performed in hardware.
+\begin{comment}
+  \item Does it make sense to assume that we can exploit knowing
+    these addresses in advance in order to improve DRAM scheduling
+    (both performance and power consumption)?
+  \item How hard is the optimization problem going to be?  Are we
+    going to be stuck with more ugly heuristics?  (Almost certainly
+    the answer is yes, since optimal scheduling is probably an
+    NP-complete problem?)
+  \item Once we get a handle on the optimization of a single set of
+    requests, is there any hope of optimizing a combination of
+    requests -- some from the "local" processor plus additional
+    one-sided communications requests from other processing entities?
+  \item In the context of traditional multicore chips, can we
+    estimate how much power could be saved if one core could use
+    these expanded semantics to run bandwidth-limited codes using a
+    single core and powering down the rest?  
+\end{comment}
+\end{itemize}
+

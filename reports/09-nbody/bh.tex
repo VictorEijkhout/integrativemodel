@@ -1,0 +1,339 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+There are several aspects to N-body calculations that are
+computationally interesting. Here we only consider the force
+\begin{longstory}
+calculation; the load balancing aspect will be considered in
+section~\ref{sec:load}.
+\end{longstory}
+\begin{shortstory}
+calculation.
+\end{shortstory}
+
+\subsection{All-pairs methods}
+\label{sec:bh15}
+
+\SetBaseLevel 2
+\input bh15
+\SetBaseLevel 0
+
+\subsection{Methods with cutoff, algorithm forumulation}
+\input bhshared
+
+\subsection{Towards the IMP implementation of Katzenelson}
+\input bhframework
+
+\subsubsection{Implementation; regular case}
+\input regulartree
+
+\subsubsection{Implementation; irregular case}
+
+Let's simplify to 1-D. The input data is distributed as 
+\[ u\equiv p\mapsto\{p\} \]
+As in section~\ref{sec:drop-distro}, let
+\[ S = \{p\colon \hbox{$p$ even}\} \]
+and
+\[ v=Su \]
+Now the $g$ evaluation looks something like
+\[ y(v) = x(v)+x(v\gg 1) \]
+or in general $Gx$.
+
+The input for the next level is distributed as $u'=u\downarrow S$
+and the input is given by
+\[ x'(u') = y\downarrow S(u\downarrow S). \]
+
+\subsection{LRSX formulation}
+
+\subsubsection{Kernel implementation}
+
+We can model the above formulation straightforwardly in terms of
+\ac{IMP} kernels: the $g$ computation is
+\begin{equation}
+ E^{(g)}=E^\tau\cup E^\gamma,\quad
+\begin{cases}
+  E^\tau = \{ \tau^\ell_{ij} \} \\ 
+  E^\gamma = \{ \gamma^\ell_i \} \\
+\end{cases}
+,
+\left\{\begin{array}{ll@{{}={}}l}
+  \forall_i\forall_{j\in C(i)}\colon 
+  & \tau^\ell_{ij}&\hbox{` $t^\ell_{ij}=g^{\ell+1}_j$ '}\\
+  \forall_i\colon
+  & \gamma^\ell_i &\hbox{` $g^\ell_i=\oplus_{j\in C(i)}t^\ell_{ij}$ '}
+\end{array}\right.
+\label{eq:bh-g-kernel}
+\end{equation}
+The $t^\ell_{ij}$ quantities are introduced so that their assignment
+can model data communication: as in the matrix-vector example above,
+the $g^\ell_i$ reduction computation can then be made fully local.
+
+Similarly, the $f$ computation is:
+\[ E^{(f)}=E^\rho\cup E^\sigma\cup E^\phi,\quad
+\begin{cases}
+  E^\rho = \{ \rho^\ell_i \} \\
+  E^\sigma = \{ \sigma^\ell_{ij} \} \\
+  E^\phi = \{ \phi^\ell_i \} \\
+\end{cases}
+,
+\left\{\begin{array}{ll@{{}={}}l}
+  \forall_i\colon
+  & \rho^\ell_i & \hbox{` $r^\ell_i = f^{\ell-1}_{p(i)}$ '} \\
+  \forall_i\forall_{j\in I_\ell(i)}\colon
+  & \sigma^\ell_{ij} & \hbox{` $s^\ell_{ij} = g^\ell_j$ '} \\
+  \forall_i\colon
+  & \phi^\ell_i & \hbox{` 
+          $f^\ell_i = r^\ell_i + \sum_{j\in I_\ell(i)} s^\ell_{ij}$ '} \\
+\end{array}\right.
+\]
+Using the \indexterm{inspector-executor} paradigm, where setup is done 
+in an inspection phase outside the computational loop, we 
+determine which elements need to communicate, in particular the
+$I_\ell(i)$ sets, and use these to evaluate forces repeatedly.
+
+However, in the above implementation $f^\ell_*$ can only be started
+when $f^{\ell-1}_*$ is finished, while the $s^\ell_*$ quantities are
+already available.
+With a simple transformation we can
+derive a better algorithm: we replace the $f$ calculation by
+\[ 
+\begin{cases}
+  f^\ell_i = r_i^{\ell-1} + h^\ell_i\\
+  h^\ell_i = \sum_{j\in I_\ell(i)} g^\ell_j
+\end{cases}
+\]
+Now the $h^\ell_i$ quantities can be computed once
+the $g$ quantities on their level have been constructed, so the $f$
+and $g$ computations are now interleaved. It is not clear what place
+this transformation, which is essentially the introduction of an extra
+temporary, has in a programming system based on our model.
+
+Other transformations of the algorithm are possible. For instance, in
+the statement
+\[ \forall_i\forall_{j\in I_\ell(i)}\colon
+  s^\ell_{ij} = g^\ell_j
+\] 
+we recognize a broadcast of $g^\ell_j$ to all nodes $i$ such that
+$j\in I_\ell(i)$. We can reformulate it as such by exchanging the quantifiers:
+\[ \forall_j \forall_{i\in J_\ell(j)}\colon 
+  s^\ell_{ij} = g^\ell_j
+\] 
+where
+\[ J_\ell(i) = \{ j\colon j\in I_\ell(i) \}. \]
+\begin{impquestion}
+  Can we make this visible in the distribution formulation?
+\end{impquestion}
+
+
+\subsubsection{Distribution implementation}
+\label{sec:bh-kernel}
+
+The above kernel implementation of the N-body framework can directly
+be implemented in message passing terms. However, we would like to
+take a more global look, and for this we use distributions.
+
+The above formalism can easily be described in terms of distributions.
+We introduce two sets of kernels, one for the computation
+of~$f^\ell\equiv f(\ell,\cdot)$, and one for~$g^\ell_i\equiv g(\ell,\cdot)$:
+\ifdef\IEEEtransversionmajor
+{%
+\[ 
+\begin{array}{rll}
+\forall_\ell\colon&
+G^{(\ell)} = \left\langle \In=g^{\ell+1},\Out=g^\ell,\right.&\\
+&\qquad E=\{\hbox{`$g^\ell_m\leftarrow
+        \sum_{n\in C^\ell_m}g^{\ell+1}_n$'}\}_{m\in N^{(\ell)}}
+        \bigr\rangle\\
+\forall_\ell\colon&
+F^{(\ell)} = \left\langle \In=f^{\ell-1}\cup g^\ell,\Out=f^\ell,\right.&\\
+&\qquad E=\{\hbox{`$f^\ell_m\leftarrow
+        f^{\ell-1}_m+\sum_{n\in S^\ell_m}g^\ell_n$'}\}_{m\in N^{(\ell)}}
+        \bigr\rangle\\
+\end{array}
+\]
+}{%
+\[
+\begin{array}{@{\forall_\ell\colon{}}l@{{}={}}l}
+G^{(\ell)}&\kernel{ \In=g^{\ell+1},\Out=g^\ell,E=
+    \{\hbox{`$g^\ell_m\leftarrow
+        \sum_{n\in C^\ell_m}g^{\ell+1}_n$'}\}_{m\in N^{(\ell)}}}\\
+F^{(\ell)}&\kernel{ \In=f^{\ell-1}\cup g^\ell,\Out=f^\ell,E=
+    \{\hbox{`$f^\ell_m\leftarrow
+        f^{\ell-1}_m+\sum_{n\in S^\ell_m}g^\ell_n$'}\}_{m\in N^{(\ell)}}}\\
+\end{array}
+\]
+}%
+Interpreting the kernels as operators we code the global view:
+\[ \vbox{\hsize=5in
+\begin{tabbing}
+for \=$\ell=L-1,L-2,\ldots,2,1,0$:\\
+\> $g^{\ell+1} \leftarrow G^{(\ell)}\bigl( g^\ell \bigr)$\\
+$f^0\leftarrow g^0$\\
+for \=$\ell=1,2,\ldots,L$:\\
+\> $f^\ell \leftarrow F^{(\ell)}\bigl( f^{\ell+1}\cup g^\ell \bigr)$\\
+\end{tabbing}
+}
+\]
+Next we design the data distributions. First of all, we define sparse
+operators $C^\ell,S^\ell$ from the sets in \eqref{eq:BH-f},\eqref{eq:BH-g}
+as in section~\ref{sec:sparse-distro}. Then,
+we call $\alpha^\gamma_\ell$ the $\alpha$-distribution of~$g^\ell$,
+and $\beta^\gamma_\ell$ the $\beta$-distribution. The
+$\beta$-distribution is then derivable as
+$\beta^\gamma_\ell=C^\ell\alpha^\gamma_\ell$, and similar statements
+hold for the computation of the~$f^\ell$.
+
+The $g^\ell$ calculation then becomes in full, separating communication
+and local communication as in our normal form (section~\ref{sec:normalform}):
+\[ \vbox{\hsize=5in
+\begin{tabbing}
+for \=$\ell=0,1,2,\ldots,L-1$:\\
+\> $\{ \hbox{Predicate: $g^\ell$ distributed as $\alpha^\gamma_\ell$} \}$\\
+\> Gather \=$g$ data locally: \\
+\>\> $\tilde g^\ell=T(\alpha^\gamma_\ell,\beta^\gamma_\ell)\,g^\ell$\\
+\> Local computation:\\
+\>\> $g^{\ell+1}=\tilde G^{(\ell)}\bigl( \tilde g^\ell \bigr)$\\
+\end{tabbing}
+}
+\]
+(See section~\ref{localcode} for a discussion of how to derive the local node code.)
+The $f^\ell$ computation can be described analogously.
+
+Some observations.
+\begin{itemize}
+\item We note here that the programmer only writes the global code,
+  the local `node code' where needed, and designs the data
+  distributions. All communication and task sequencing are derived by
+  the system.
+\item The construction of $T(\alpha^\gamma_\ell,\beta^\gamma_\ell)$ is
+  invariant as long as no load rebalancing happens, so can be moved
+  outside the force loop in a case of the \indexterm{inspector-executor}
+  paradigm.
+\item As a further bonus, the use of $g^\ell$ in the computation
+  of~$f^\ell$ can be recognized as an opportunity for asynchronous
+  communication and computation: data can be communicated
+  as-soon-as-possible, rather than just-in-time.
+
+  This is tricky since it requires reasoning over multiple kernels, even
+  parametrized ones.
+\item The formal treatment of the algorithm raises the hope of an
+  implementation that is analyzable wrt cost, efficiency, load
+  balance.
+\end{itemize}
+
+\endinput
+
+\def\sk{^{(k)}}
+\def\sK{^{(K)}}
+\def\skp{^{(k+1)}}
+
+Formally, we consider our domain to have $K$ refinement level, with on
+level $k$ elements $e\sk_\ell$ for $\ell=0,\ldots,\beta^k-1$, where
+$\beta=2,4,8$ for $1,2,3$-dimensional problems respectively. For each
+element $e\sk_\ell$ on the bottom level we compute a center of mass
+$m\sk_\ell$ from the particles contained in it; on levels
+$k=1,\ldots,K-1$ we compute a center of mass from the elements
+contained in it:
+\[ m\sk_\ell = f(m\skp_0,\ldots,m\skp_{\beta-1}). \]
+This can be implemented in our programming model using a pipeline with
+a finite running time of~$K$ stages.
+
+To determine the traffic pattern for the force calculation stage, we
+define for each element~$e\sK_\ell$ on the bottom, and each level
+$k<K$, a ring of elements
+\[ \rho(\ell,k) \mathrel{:=} \left\{\vcenter{\hsize=3.5in \noindent
+   the ring around element $\ell$ on the bottom level of elements
+   on level $k$ that satisfy the diameter condition.}\right\}
+\]
+We can then evalute the forces on element $e\sK_\ell$ (or its
+constituent particles) by a scatter operation:
+\[ f_\ell = f( \{ m^{(1)}_i\}_{i\in\rho(\ell,1)},\ldots,
+        \{ m^{(K-1)}_i\}_{i\in\rho(\ell,K-1)}).
+\]
+
+So far, implementing the algorithm is a straightforward application of
+our scatter and pipeline concepts. However, there are a number of
+practical aspects that make this algorithm interesting. None of these
+aspects are treated formally in our model, but they should be
+reflected in a software package based on our ideas.
+
+First of all, with a nonuniform distribution of particles we have to
+balance the computational load of our algorithm. 
+As particles move, not only do center of masses get updated, but
+particles may move into a neighbouring partition, thereby upsetting
+the load balance. Thus, occasional load rebalancing will be
+necessary. It may be necessary to use a space-filling curve for
+assignment of elements to processors, so that load rebalancing does
+not disturb the locality of the parallel realization.
+
+Furthermore, we can get load unbalance from particles vacating an
+element and therefore the element's process running out of work, or
+conversely particles entering an element and its process becoming
+overburdened. To solve this, we need to adopt a notion of virtual
+process, and oversubscribe the actual processors. Again, this may
+require load redistribution.
+
+Another reason we need virtual processors is that we need processes
+associated with elements that are not on the bottom level, for
+instance as the source for the gather stage described above. Hoever,
+the bottom level elements have more work associated with them, so a
+one-to-one assignment of the elements on all levels to processors
+would give an unbalanced load.
+
+While our framework does not formalize the above considerations of
+load assignment, balancing, and redistribution, we note that
+expressing the algorithm in our framework leads to a task graph. Thus,
+we can use a graph partitioning algorithm to handle the load
+assignment.
+
+\endinput
+
+
+In view of the proposed programming model, we separate the data and
+the traffic map:
+\begin{verbatim}
+parallel over all particles p:
+  /* 1: construct traffic map */
+  cell-list = all cells
+  influence-list = {}
+  sequential over c in cell-list:
+    if c is far away,
+      add c to influence-list
+    otherwise
+      open c and add children cells to cell-list
+  /* 2: do traffic */
+  parallel over all cells in influence-list
+    get center of mass and charge to local 
+  /* 3: operate on local copies of remote data */
+  parallel over all local copies of cell data in influence-list:
+    incorporate forces
+\end{verbatim}
+Note 1. If we associate cells with (virtual) processors, step 1 can be
+done entirely locally, since it requires each processor to have
+redundantly a list of all centers of masses and sizes of the cells,
+which is $O(P)$, which we allow. This list needs to be updated after
+particle move, involving an allgather.
+
+Note 2. In step 3 again we have on-processor the exact same code that we were
+globalizing, so the programmer still thinks he is writing traditional
+code, it now just works on local arrays rather than global distributed
+ones.
+
+The second step in this story still tastes like shared memory, which
+does not exist. So we transform that:
+\begin{verbatim}
+  /* 2 build traffic map */
+  /* 2a: invert the particle->influence-list map */
+  make a map that maps each cell to the particles it influences
+  /* 2b: move data */
+  broadcast local cell data to all particles that need it
+\end{verbatim}
+

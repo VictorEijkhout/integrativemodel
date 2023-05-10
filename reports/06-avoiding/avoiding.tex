@@ -1,0 +1,132 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%%
+%%%% copyright Victor Eijkhout 2014-8
+%%%% (eijkhout@tacc.utexas.edu)
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\label{sec:avoid-framework}
+
+In the third subfigure of figure~\ref{fig:LBs} we showed the
+traditional strategy of communication a larger halo than would be
+strictly
+necessary~\cite{Douglas:caching-multigrid,Eijkhout:poly-smooth,OpJo:improved-ssor}.
+With this, and some redundant computation, it is possible to remove a
+synchronization point from the computation.
+
+However, this is not guaranteed to overlap communication and
+computation; also, it is possible to avoid some of the redundant work.
+We will now formalize this `communication avoiding'
+strategy~\cite{Demmel2008IEEE:avoiding}.
+
+Let $L_{k,p}$ be a collection of local computations. We assume that it
+is a well-formed collection in the sense of
+definition~\ref{def:localcomp}. We will now split $k$ in three
+substeps, $k_1,k_2,k_3$, giving us a splitting that is well-formed,
+and that has overlap of computation and communication.
+
+\begin{figure}[ht]
+  \includegraphics[scale=.4]{L123}
+  \caption{Subdivision of a local computation for minimizing communication and redundant computation.}
+  \label{fig:avoid}
+\end{figure}
+
+\heading{Subset 0: inherited from previous level}
+
+In step~$k$ we can assume that data from a previous step is
+available. This can be either a initial condition, or an actually
+computed step. We define $L^{(0)}_{k,p}$ as the data that is available
+on process~$p$ in step~$k$ before any computation takes place in step~$k$:
+\[
+    L^{(0)}_{k,p} \equiv L_{k-1,p}
+\]
+
+\heading{Subset 4: all locally computed tasks}
+
+Starting with $L^{(0)}_{k,p}$, some tasks in $L_{k,p}$ can be computed without
+needed data from processors $q\not=p$. We term this $L^{(4)}_{k,p}$,
+but note that this set is an auxiliary in our story; it is not
+computed as such.
+\[
+    L^{(4)}_{k,p} \equiv
+    \bigl\{ t\colon \pred(t)\in \{ L^{(0)}_{k,p} \cup L^{(4)}_{k,p} \} 
+    \bigr\}
+\]
+(This definition is implicit, but well-formed; it is a stand-in for a
+more complicated explicit one. We hope the reader bears with us.)
+
+\heading{Subset 5: all predecessors of local tasks}
+
+Next we define $L^{(5)}_{k,p}$ as all tasks in $L_k$
+that are computed anywhere to construct the local result~$L_{k,p}$:
+\[
+    L^{(5)}_{k,p} \equiv
+    L_{k,p} \bigcup \bigl( \pred(L_{k,p})\cup L_k \bigr)
+\]
+Loosely, this contains all local tasks and the remote ones in the
+extended halo. Again, this set is an auxiliary, used to defined the
+following actually computed steps.
+
+\heading{Subset 1: locally computed tasks, to be used remotely}
+
+With the local tasks $L^{(4)}_{k,\star}$ and the needed tasks
+$L^{(5)}_{k,\star}$, we now define $L^{(1)}_{k,p}$ as the locally
+computed tasks on~$p$ that are needed for a $q\not=p$:
+\[
+    L^{(1)}_{k,p}\equiv
+    L^{(4)}_{k,p} \cup \bigcup_{q\not=p} L^{(5)}_{k,q}
+    - L^{(0)}_{k,p}
+\]
+These are the tasks computed first. For each $q\not=p$, a subset of
+these elements will be sent to process~$q$, in a communication step
+that overlaps the computation of the next subset.
+
+\heading{Subset 2: locally computed tasks, only used locally}
+
+While elements of $L^{(1)}_{k,p}$ are being sent, we can do a local
+computation of the remainder of~$L^{(4)}_{k,p}$:
+\[
+    L^{(2)}_{k,p} \equiv L^{(4)}_{k,p} - L^{(1)}_{k,p}
+\]
+
+\heading{Subset 3: halo elements and their successors}
+
+Having received remote elements $L^{(1)}_{k,q}$ from neighbouring
+processors~$q\not=p$, we can construct the remaining elements
+of~$L^{(5)}_{k,p}$ that are needed for~$L_{k,p}$:
+\[
+    L^{(3)}_{k,p} \equiv
+    L^{(5)}_{k,p} - L^{(4)}_{k,p} - \bigcup_{q\not=p} L^{(1)}_{k,q}
+\]
+
+We omit definition of the precise elements of~$L^{(1)}_{k,\star}$ that
+are transported; we merely note that this set is considerably smaller
+than $L^{(1)}_{k,\star}$ itself.
+
+\begin{theorem}
+  The splitting $L_{k_1,p},L_{k_2,p},L_{k_3,p}$ is well-formed and has overlap
+  of communication $L_{k_1}\rightarrow L_{k_3}$ with the computation of $L_{k_2}$.
+  Neither $L_{k_1}$ nor $L_{k_2}$ have synchronization points, so the whole algorithm
+  has overlap.
+\end{theorem}
+
+However, note that $L_{k_1,p}\cup L_{k_2,p}\cup L_{k_3,p}$ is most
+likely larger than~$L_{k,p}$,
+corresponding to redundant calculation.
+
+%\textbf{Write out predecessor relations with proof}
+
+\begin{figure}[ht]
+  \includegraphics[scale=.4]{L123456}
+  \caption{Communicated sets in the communication avoiding scheme}
+  \label{fig:avoid-comm}
+\end{figure}
+
+In figure~\ref{fig:avoid-comm} we indicate in red the part of
+$L^{(0)}$ that is sent, and the part of~$L^{(3)}$ that is received.

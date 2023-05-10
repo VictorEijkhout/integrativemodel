@@ -1,0 +1,227 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-7
+%%%%
+%%%% execution.tex : include file about task execution
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\Level 1 {Tasks}
+\label{sec:taskdef}
+
+So far we have considered a single kernel and the distribution
+transformations it needs. To implement a full algorithm we 
+typically need multiple kernels. The multiple distribution
+transformations then turn into a graph of task dependencies.
+%
+\DataType{Task}{computation of the part of a kernel on a specific processor}
+    {\kw{Task}\equiv \kw{Kernel}\times P}
+%
+A formal definition of an algorithm would require too much
+notation, so let's consider a simple case.
+Let $n>0$, and let, for~$i<n$, $K_i\in\kw{Kernel}$ and,
+for~$i\leq n$, $x_i\in\kw{DistrArray}$ such that
+\[ \forall_{i<n}\colon x_{i+1}=f_ix_i \]
+For each~$i$ we name the distributions of input and output
+\[ \alpha_i=\kw{distr}(x_i),\qquad \gamma_i=\kw{distr}(x_{i+1}) \]
+and $\sigma_f$ is the signature function of~$K_f$. We define $\beta_i=\sigma_f\gamma_i$,
+and we obtain the transformation $T_i=T(\alpha_i,\beta_i)$,
+defined as \ref{define-transformation!}.
+
+Now we define a graph of tasks where each node has a number
+\begin{equation}
+\langle i,p\rangle\qquad\hbox{where}\qquad i\leq n,p\in P
+\end{equation}
+and edges are defined as
+\[ \bigl\langle \langle i,q\rangle,\langle i+1,p\rangle \bigr\rangle 
+   \qquad\hbox{iff}\qquad
+   q\in T_i(p).
+\]
+In algorithms with a more complicated composition of kernels
+we replace the `$i$' kernel numbering by a more abstract
+partial ordering.
+
+In this partial ordering we reserve the notation $t_1<t_2$ for 
+tasks that have a direct predecessor relation; for the transitive
+relation we write $t_1\mathrel{<^+}t_2$. For a task~$t$, the set
+of immediate predecessors is denoted $\pred(t)$.
+
+\Level 1 {Task assignment to processors}
+\label{sec:taskproc}
+
+We formally define a processor as a subset of the task graph.
+
+\begin{definition}
+  \label{def:processors}
+  Let $T$ be the task graph (which is partially ordered; see section~\ref{sec:taskdef}),
+  then we define the set of \emph{processors}\index{processor, formal definition}
+  $p\mapsto C_p$ as a covering of~$T$:
+  \[ T = \cup_p C_p. \]
+\end{definition}
+Processors do not need to be disjoint: by assigning a task to more than one processor
+we can introduce resilience or reduce synchronization; see below.
+
+In the overall task graph we identify two subsets:
+\[
+\begin{cases}
+  T_0\colon&\hbox{initial tasks, having no predecessor}\\
+  T_\infty\colon&\hbox{final tasks, having no successor}
+\end{cases}
+\]
+
+\Level 1 {Definition of synchronization}
+
+Once we have a task graph we have to worry about how to execute it.
+In this section we give a rigorous definition of synchronization between processors
+as it is induced by the task graph, and we will analyze execution behaviour
+of the processors in terms of synchronization.
+
+The following definition of a synchronization point
+makes immediate sense in the context of message passing:
+
+%snippet synchrodef1
+\begin{definition}
+  We define a task $t\in T$ to be a \indexterm{synchronization point} if
+  it has an immediate predecessor on another processor:
+  \[ t\in C_p \wedge \exists_{t'<t}\colon  t'\in C_{p'}
+     \quad\hbox{where $p\not=p'$}. \]
+\end{definition}
+%snippet end
+A synchronization point in MPI corresponds to a process that sends a message; in a shared memory task
+graph it corresponds to a child task.
+
+The base of a subset~$L$ consists of the set of tasks with synchronization points.
+
+%snippet synchrodef2
+\begin{definition}
+  Given a set of tasks $L\subset T$, we define its base~$B_L$ as
+  those predecessors that are not in level~$L$:
+  \[ B_L = \pred(L) - L. \]
+\end{definition}
+If $\{L_{k,p}\}_{k,p}$ is a two-parameter covering of~$L$,
+we similarly define $B_{k,p}$ as the base, for as far as it is local to~$p$:
+\[ B_{k,p} = B_{L_k} \cap C_p. \]
+%B\{ t\in L_{k,p}\colon \pred(t)\not\subset L_{k,p} \}. \]
+Thus, $B_{L_k}$ are all elements that are ready to be used in
+level~$L_k$, having been computed in levels $L_{k-1},L_{k-2},\ldots$.
+If we take processor elements into account, $B_{L_k}$ falls apart in the
+elements $B_{k,p}$ that are available immediately to processor~$p$,
+and the remainder $B_k-B_{k,p}$ which need to be sent to process~$p$.
+%snippet end
+
+
+%snippet synchrodef3
+\begin{definition}
+  \label{def:localcomp}
+  We call a two-parameter covering $\{L_{k,p}\}_{k,p}$ of~$T$ 
+  a set of \emph{local computations} if
+  \begin{enumerate}
+  \item the $p$ index corresponds to the division in processors,
+    again, not necessarily disjoint:
+    \[ C_p \supset \cup_k L_{k,p}.  \]
+  \item\label{it:sync-previous} the synchronization points synchronize
+    only with previous levels:
+    \begin{equation}
+      B_{k,p}\subset \bigcup_{\ell<k} L_{\ell}
+      \label{eq:Lpred}
+    \end{equation}
+  \end{enumerate}
+\end{definition}
+%snippet end
+
+\begin{lemma}
+  For a local computations covering, the $k$ index corresponds to the
+  partial ordering on tasks: the sets $L_k=\cup_p L_{k,p}$ satisfy
+  \[ t\in L_k \wedge t'<t \Rightarrow t'\in \bigcup_{\ell\leq k} L_\ell. \]
+\end{lemma}
+
+Tasks inside an $L_{k,p}$ need not be partially ordered.
+
+\begin{theorem}
+  For a given $k$, all $L_{k,p}$ can be executed independently.
+\end{theorem}
+\begin{proof}
+  All predecessors that are in a different processor are also
+  in a previous level: by condition~\ref{it:sync-previous}
+  if $t\in L_{k,p}$,
+  \[ t'<^+ t\Rightarrow
+  \begin{cases}
+    \hbox{case $t\not\in B_{k,p}$}&\hbox{so $t\in L_{k,p}$}\\
+    \hbox{case $t\in B_{k,p}$ and $t'\in C_p$}
+    &\hbox{so $t\in L_{k',p}$ with $k'<k$}\\
+    \hbox{case $t\in B_{k,p}$ and $t'\not\in C_p$}
+    &\hbox{so $t\in L_{k',p'}$ with $k'<k$ and $p'\not=p$}\\
+  \end{cases}
+  \]
+\end{proof}
+
+We illustrate this in figure~\ref{fig:LBs}.
+\begin{figure}
+  \hbox{%
+    (a): \includegraphics[scale=.05]{LB1}
+    (b): \includegraphics[scale=.05]{LB2}
+    (c): \includegraphics[scale=.05]{LB3}
+  }
+  \caption{Three cases of L/B relations}
+  \label{fig:LBs}
+\end{figure}
+Case (a) is the normal single step grid update, much like our 
+motivating example.
+Case (b) shows that for a second update we would need a point
+on the same $k$-level, so this is not a well-formed local computation
+by the above definition.
+Case (c) shows how this is solved by transferring a larger halo,
+and computing one point redundantly.
+
+\Level 1 {Execution and synchronization}
+
+At this point we should say something about synchronization.
+The easiest way to visualize execution of local computations (in the above
+definition) is to imagine a global synchronization point after each level~$L_k$.
+This reduces our model to \ac{BSP}~\cite{Valiant:1990:BSP}. However, this is overly restrictive.
+Tasks in $L_{k,p}$ can start execution when their synchronization points in~$L_{k-1},L_{k-2},\ldots$
+have executed. This means that local computations in different $k$-levels can be
+active simultaneously.
+
+In fact, if $\pred\bigl(B_{k,p}\bigr)$ has elements in $L_{k',p'}$, it is quite
+possible for $L_{k',p'}$ not to have finished execution when $L_{k,p}$ starts;
+see figure~\ref{fig:asyncL}.
+\begin{figure}[t]
+  \includegraphics[scale=.1]{async}
+  \caption{Overlapping execution of partially ordered local computations}
+  \label{fig:asyncL}
+\end{figure}
+Conversely, tasks in $L_{k,p}-B_{k,p}$ can execute before all of $B_{k,p}$
+finishes. Thus, we arrive at a conception of a local computation that produces
+streaming output and accepts streaming input during execution. This is a first 
+interpretation of the concept of overlapping communication and computation.
+We will further derive this in \emph{IMP-06}.
+
+We can also give a sufficient condition for overlap of communication and computation.
+\begin{theorem}
+  If we have the more restrictive condition (compared to equation~\eqref{eq:Lpred})
+  \[ \pred(B_{k,p})-C_p\subset L_{k-2}\cup \cdots \]
+  for all $k,p$, the communication can be overlapped with computation.
+\end{theorem}
+\begin{proof}
+  All sends for level $k$ can be initiated at level $k-2$, so they can overlap
+  with the computation of level~$k-1$.
+\end{proof}
+
+We can now define the \indexterm{granularity} of a computation:
+\begin{definition}
+  The granularity of a computation $L_{k,p}$ is
+  \[ g = \min_{k,p} |L_{k,p}|. \]
+\end{definition}
+
+The granularity of a computation is the guaranteed minimum time
+between synchronizations.  (In regular computations one could also
+define granularity as the ratio between computation time and
+communication time.)  If a computation has overlap of communication
+and computation it is the amount of latency that can be hidden.
+

@@ -1,0 +1,81 @@
+In this section we outline how implementational concepts in an \ac{IMP}-based
+programming system follow from a formal theory.
+
+We start by defining \textbf{distributions} formally as
+the parallel assignment of an index set $N=\{0,\ldots,N-1\}$ 
+over a processor set $P=\{0,\ldots,P-1\}$. (Note that this
+is the reverse of how distributions are normally considered.)
+The formula
+\begin{equation}
+  u\colon P\rightarrow 2^N.
+\end{equation}
+states that each processor~$p$ is coupled to a subset $u(p)\subset N$.
+
+We use this to define \textbf{distributed objects}: the expression $x(u)$
+denotes an assignment, not necessarily disjoint,
+from processors to subsets of the elements of~$x$
+(again in contravention of ordinary usage):
+\[ x(u)\equiv p\mapsto x[u(p)] = \{x_i\colon i\in u(p)\}. \]
+
+Distributions can be declared extensionally,
+for instance `the cyclic distribution of
+$N$ elements over $P$ processors', but can also be defined
+through \textbf{operations on existing distributions}.
+If 
+$f$ is a function $\mathbb{N}\rightarrow \mathbb{N}$
+and $u$ a distribution we can define $f(u)$ as
+\[ f(u)\equiv p\mapsto \{ f(i)\colon i\in p(u) \}. \]
+With this, the assignment $y(u)\leftarrow x(u+1)$ 
+describes a leftshift operation, or in a less ambiguous notation:
+$y(u)\leftarrow x(u\gg1)$ 
+
+The threepoint kernel above can now be notated as
+\[ y(u) = F(x(u),x(u\ll1),x(u\gg1)) \]
+which has the formal meaning that processor~$p$ executes:
+\[ \forall_{i\in u(p)}\colon y_i=F(x(i),x(i-1),x(i+1)). \]
+The elements of~$x$ that processor~$p$ needs access to can 
+be described with the distribution $u\cup\penalty0 u\ll1 \cup\penalty0 u\gg1$.
+
+Now we call the original $u$ distribution the `$\alpha$-distribution';
+it describes how an object is \emph{stored}, and this is the traditional concept
+of distribution. The distribution $u\cup\penalty0 u\ll1 \cup\penalty0 u\gg1$ is
+called the `$\beta$-distribution', and it describes how the object 
+is \emph{used} in a parallel kernel; this is new for as far as we know.
+
+With these two distributions associated with a kernel
+we can now define the data dependencies and movements
+through the \textbf{transformation between distributions} $\alpha\inv\beta$:
+if $q\in \alpha\inv\beta(p)$
+then processor~$p$ depends on processor~$q$.
+This formal transformation makes it possible to identify 
+various concepts and perform formal analysis on them.
+
+In message passing, data dependencies correspond to actual messages.
+With tasks on shared
+memory the $\beta$-distribution
+describes what input-producing tasks a kernel-task is dependent on. In
+this case, the transformation from $\alpha$ to $\beta$-distribution
+gives rise to a \emph{dataflow} formulation of the
+algorithm, and from this we can find a \ac{DAG} of tasks.
+
+There are various ways in which our mode differs from earlier work,
+such as the following.
+\begin{itemize}
+\item In the \ac{IMP} model, kernels,distributions, and
+  transformations between distributions are all first-class
+  objects. This makes it possible to perform formal analysis during
+  compiler or setup time. As a result, we can guarantee message
+  aggregation and optimal data transfer scheduling. This feature is
+  missing from parallel programming languages, and is only present
+  in such systems as PETSc~\cite{GrSm:petsc} and Trilinos~\cite{Trilinos}.
+\item The \ac{DAG} of our dataflow formulation is derived from global
+  concepts, not explicit programmed.
+\item Our concept of distributions is more general than that used in
+  UPC, HPF, et cetera. The concept of $\beta$-distribution is new, as
+  far as we know, yet crucial for producing efficient parallel code
+  from a global formulation.
+\item Our derived notion of data dependencies is general: the software
+  prototype above shows that the abstract concepts can be interpreted
+  as MPI messages or as task dependencies. Algorithms expressed in
+  \ac{IMP} do not specify a~priori how they will be executed.
+\end{itemize}

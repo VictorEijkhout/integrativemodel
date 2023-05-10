@@ -1,0 +1,46 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% setup.tex : packages and macros for the report series
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{comment}
+
+\usepackage{amsmath,amssymb,graphicx,mdframed,multicol,pslatex,algorithm2e,verbatim,wrapfig}
+
+\includecomment{series}
+\excludecomment{notseries}
+\includecomment{book}
+
+\input acdxmacros
+\input impmacros
+\input inex
+
+\includecomment{lrsx}
+\includecomment{mvpexample}
+\includecomment{bh}
+\includecomment{programming}
+\includecomment{partialdist}
+\includecomment{dataflow}
+
+\usepackage{outliner}
+\OutlineLevelStart0{\section{#1}}
+\OutlineLevelStart1{\subsection{#1}}
+\OutlineLevelStart2{\subsubsection{#1}}
+
+\newenvironment{note}{\begin{quotation}Note.}{\end{quotation}}
+
+\def\n{\bgroup\tt\catcode`\_=12 \let\next=}
+\def\I{{\cal I}}\def\P{{\cal P}}\def\g{^{(g)}}
+\def\bp#1{\mathord{\downarrow_{#1}}}
+\def\Bp#1{\mathord{\downarrow\downarrow_{#1}}}
+
+\def\construction{ \\ {\small Unpublished preliminary report. Do not
+disseminate.}}

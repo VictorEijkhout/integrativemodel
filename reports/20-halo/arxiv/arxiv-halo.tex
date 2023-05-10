@@ -1,0 +1,105 @@
+\documentclass[11pt,fleqn]{article}
+
+\input setup
+
+\title{A mathematical formalization of data parallel operations}
+\author{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  We give a mathematical formalization of `generalized data parallel'
+  operations, a concept that covers such common scientific kernels as
+  matrix-vector multiplication, multi-grid coarsening, load
+  distribution, and many more.
+  We show that from a compact specification such computational aspects
+  as MPI messages or task dependencies can be automatically derived.
+\end{abstract}
+
+\acresetall
+
+\section{Introduction}
+
+In this paper we give a rigorous formalization of several scientific
+computing concept that are commonly used, but rarely defined;
+specifically distributions,
+data parallel operations, and `halo regions'.
+%
+Taken together, these concepts allow a minimal specification of an
+algorithm by the programmer to be translated into the communication
+and synchronization constructs that are usually explicitly programmed.
+
+Looking at it another way, we note that communication and
+synchronization in a parallel code stem from both algorithm and data
+distribution properties. The contribution of this work is then that we
+have found a separation of concerns that allows the programmer to
+specify them separately, while the resulting communication and
+synchronization is derived formally and therefore automatically.
+
+We start with a motivating example in
+section~\ref{sec:threepoint-example}, followed by a formal derivation
+in section~\ref{sec:formal}. We conclude by discussing the
+practical ramifications of our work.
+
+\section{Motivating example}
+\label{sec:threepoint-example}
+\input threepoint
+\subsection{Programming the model}
+\input programthreepoint
+
+\section{Formal definition}
+\label{sec:formal}
+\input distributionmath
+
+\section{Practical importance of this theory}
+
+The above discussion considered operations that can be described as
+`generalized data parallel'. From such operations one can construct
+many scientific algorithms. For instance, in a multigrid method a
+red-black smoother is data parallel, as are the restriction and
+prolongation operators.
+
+In the \ac{IMP} model these are termed `kernels', and each kernel
+gives rise to one layer of task dependencies; see
+section~\ref{sec:3pt-dag}.
+Taking together the dependencies for the single kernels
+then gives us a complete task graph for a parallel execution;
+the edges in this graph can be interpreted as MPI messages
+or strict dependencies in a \ac{DAG} execution model.
+
+Demonstration software along these lines has been built, showing
+performance comparable to hand-coded software; see~\cite{IMP-19}.
+
+\section{Summary}
+
+In this paper we have given a rigorous mathematical definition of data
+distributions and the signature function of a data parallel
+operation. Our notion of data distribution differs from the usual
+interpretation in that we map processors to data, rather than
+reverse. The signature function appears implicitly in the literature, for
+instance in stencil languages, but our explicit formalization seems
+new.
+
+These two concepts effect a separation of concerns in the description
+of a parallel algorithm:
+the data distribution is an expression of the parallel aspects of,
+while the signature function is strictly a description of the
+algorithm. The surprising result is that these two give rise to a
+concept we define as the `$\beta$-distribution'; it can be derived
+from data distribution and signature function, and it contains enough
+information to derive the communication~/ synchronization aspects of
+the parallel algorithm.
+
+Demonstrating the feasibility of programming along these lines, we
+mention our \acf{IMP} system, which implements these ideas, and is
+able to perform competitively with traditionally coded parallel applications.
+
+\input ack
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

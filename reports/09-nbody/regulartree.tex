@@ -1,0 +1,103 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+Let's look at a full binary tree.
+
+\subsection{Per-level treatment}
+
+As long as we have more points (actually, blocks, but for now let's
+do the simple case) than processors, the gather is easy.
+Here we picture the gather to the level where the number of points
+equals the number of processors. This gives
+\[ 
+\begin{cases}
+  \gamma\equiv p\mapsto\{p\}\\
+  \alpha\equiv p\mapsto\{2p,2p+1\}
+\end{cases}
+\]
+The communication here is completely processor-contained,
+and so \[ \beta=\alpha. \]
+Picture:\par\nobreak
+%
+\includegraphics[scale=.08]{nbody-4-8}
+
+As soon as the number of points is less than~$P$, the situation
+gets more tricky. We could use a subset of processors, but let's 
+store data redundantly. (For MPI that's not a bad idea, for OMP tasks
+we will have to explore reducing the number of processing elements
+on the higher levels.)
+Here's the picture:
+
+\includegraphics[scale=.08]{nbody-4-4dup}
+
+We now have a slight problem that for the most populous levels
+we can simply use a disjoint block distribution, whereas for the top levels
+we need an entirely different mechanism for the redundant distribution,
+for instance specifying the map $p\mapsto u(p)$ explicitly. That's inelegant.
+
+\subsection{General treatment}
+
+The way out is to have further operators on distributions. For instance, the
+sequence of $\gamma$ distributions is given as 
+\[ \gamma^{(k-1)}=\gamma^{(k)}/2. \]
+Somewhat remarkably, this formula gives the right distribution, both
+on disjointly and redundantly blocked levels. 
+Mathematically, we describe this by saying that we have a fixed
+number~$P$ of processors, and levels 
+\[ N=P2^k,P2^{k-1},\ldots,P,P/2,\ldots,1 \]
+where the level $N=P$ is the crossover between disjoint and redundant distributions.
+On each level, the distribution is
+\[ p\mapsto
+   \left[ \lceil p*(N/P)\rceil,\ldots,\lceil (p+1)*(N/P)-1 \rceil \right]
+\]
+For the top level with $N=1$ this gives $p\mapsto[0]$, meaning that
+each processor gets the root of the tree.
+
+On each level, the $\beta$ distribution is then given
+as an explicit function \[ \sigma(i)=\{2i,2i+1\}. \]
+
+Looking at a picture is instructive. We consider the case $N=16,P=8$, meaning that we 
+start with two points per processor initially.
+
+\includegraphics[scale=.12]{nbody-8421}
+
+We note the following:
+\begin{itemize}
+\item At the finest levels, the summing is purely local; from the
+  $N=P$ level up we have communication.
+\item The first time we have communication it is uniquely defined, on higher levels
+  there are actually multiple ways to satisfy the data dependencies.
+
+  The current implementation tries to satisfy data dependencies first
+  locally, then cycling through the other processors. This has the
+  effect we see in the $N=4\rightarrow N=2$ transition, where two
+  processors contain the same data, but all requests are satisfied by
+  just one. This scheme can be advantageous, implemented as a
+  multicast, or disadvantageous because of increased latency.
+\end{itemize}
+
+\subsection{Software realization}
+
+The following shows how close the DSL implementation hews to the
+mathematical definition. First of all, the distributions are derived
+by subsequent divisions:
+%
+\verbatimsnippet{dividedistributions}
+
+The indirect functions of the kernel are then given by
+an explicit function pointer:
+%
+\verbatimsnippet{dividekernels}
+
+The most interesting part is the down tree.
+%
+\verbatimsnippet{sidewaysdownkernel}

@@ -1,0 +1,151 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% gridupdate.tex : include file for IMP-06
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+In \ac{PDE} methods, a repeated sequence of sparse matrix-vector products
+is a regular occurrence.
+Typically, the sparse matrix can best be viewed as an operator
+on a grid of unknowns, where a new value is some combination of values
+of neighbouring unknowns.
+In a parallel context this means that in order to evaluate the matrix-vector
+product $y\leftarrow Ax$ on a processor, that processor needs to obtain the $x$-values
+of its \indexterm{ghost region}. Under reasonable assumptions on the partitioning
+of the domain over the processors, the number of messages involved will be fairly
+small:
+in a \ac{FEM} or \ac{FDM} context,
+the number of messages is $O(1)$ as~$h\downarrow\nobreak 0$.
+
+Since there is little data reuse, and in the sparse case not even 
+spatial locality, it is normally concluded that the sparse
+product is largely a \emph{bandwidth-bound algorithm}. 
+Looking at just a
+single product there is not much we can do about that. 
+However, 
+if a number of such products is performed in a row, for instance as the steps
+in a time-dependent process, there may be rearrangements
+of the operations that lessen the bandwidth demands, typically by lessening the
+latency cost.
+
+Consider as a simple example
+\begin{equation}
+\forall_i\colon x^{(n+1)}_i = f\bigl( x^{(n)}_i, x^{(n)}_{i-1}, x^{(n)}_{i+1} \bigr)
+\label{eq:3p-average}
+\end{equation}
+and let's assume that the set $\{x^{(n)}_i\}_i$ is too large to fit 
+in cache.
+This is a model for, for instance, the explicit scheme for the heat
+equation in one space dimension.
+In the ordinary computation, where we first compute all~$x^{(n+1)}_i$, 
+then all~$x^{(n+2)}_i$, the intermediate values at level~$n+1$
+will be flushed from the cache
+after they were generated, and then brought back into cache as input for the
+level $n+2$ quantities.
+
+However,
+if we compute not one, but two iterations, the intermediate values
+may stay in cache.
+Consider $x^{(n+2)}_0$: it requires $x^{(n+1)}_0,x^{(n+1)}_1$,
+which in turn require $x^{(n)}_0,\ldots,x^{(n)}_2$.
+
+Now suppose that we are not interested in the intermediate results, but
+only the final iteration. Figure~\ref{fig:grid-update-overlap} shows
+a simple example.
+\begin{figure}[ht]
+\includegraphics[scale=.1]{grid-update-overlap}
+\caption{Computation of blocks of grid points over multiple iterations}
+\label{fig:grid-update-overlap}
+\end{figure}
+The first processor computes 4~points on level $n+2$. For this it needs 5~points
+from level $n+1$, and these need to be computed too, from 6~points on level~$n$.
+We see that a processor apparently needs to collect a \indexterm{ghost region}
+of width two, as opposed to just one for the regular single step update.
+One of the points computed by the first processor is $x^{(n+2)}_3$,
+which needs $x^{(n+1)}_4$. This point is also needed for the computation
+of $x^{(n+2)}_4$, which belongs to the second processor.
+
+The easiest solution is to let this sort of point on the intermediate
+level \emph{redundantly computed}\index{redundant computation}, in 
+the computation of both blocks where it is needed, on two different processors.
+
+\begin{itemize}
+\item First of all, as we motivated above, doing this 
+on a single processor increases locality: if all points in a coloured block
+(see the figure) fit in cache, we get reuse of the intermediate points.
+\item Secondly, if we consider this as a scheme for distributed memory computation,
+it reduces message traffic. Normally, for every update step the processors
+need to exchange their boundary data. If we accept some redundant duplication
+of work, we can now eliminate the data exchange for the intermediate levels.
+The decrease in communication will typically outweigh the increase in work.
+\end{itemize}
+
+\Level 1 {Analysis}
+
+Let's analyze the algorithm we have just sketched.  As in
+equation~\eqref{eq:3p-average} we limit ourselves to a 1D set of
+points and a function of three points. The parameters describing the
+problem are these:
+\begin{itemize}
+\item $N$ is the number of points to be updated, and $M$~denotes the
+  number of update steps. Thus, we perform $MN$ function evaluations.
+\item $\alpha,\beta,\gamma$ are the usual parameters describing
+  latency, transmission time of a single point, and time for an
+  operation (here taken to be an $f$ evaluation).
+\item $b$ is the number of steps we block together.
+\end{itemize}
+Each halo communication consists of $b$ points, and we do this $\sqrt
+N/b$ many times.  The work performed consists of the $MN/p$ local
+updates, plus the redundant work because of the halo. The latter term
+consists of $b^2/2$ operations, performed both on the left and right
+side of the processor domain.
+
+Adding all these terms together, we find a cost of
+\[ \frac Mb\alpha+M\beta+\left(\frac {MN}p+Mb\right)\gamma. \]
+We observe that the overhead of $\alpha M/b+\gamma Mb$ is independent of~$p$,
+Note that  the optimal value of~$b$ only depends on
+  the architectural parameters $\alpha,\beta,\gamma$ but not on the
+  problem parameters.
+
+\Level 1 {Communication and work minimizing strategy}
+
+We can make this algorithm more efficient by overlapping the
+communication and computation. As illustrated in
+figure~\ref{fig:grid-update-local}, each processor start by
+communicating its halo, and overlapping this communication with the
+part of the communication that can be done locally. The values that
+depend on the halo will then be computed last.
+
+\begin{figure}[ht]
+\includegraphics[scale=.1]{grid-update-local}
+\caption{Computation of blocks of grid points over multiple iterations}
+\label{fig:grid-update-local}
+\end{figure}
+
+If the number of points per processor is large enough, the amount of
+communication is low relative to the computation, and you could take
+$b$ fairly large. However, these grid updates are mostly used in
+iterative methods such as the \indexac{CG} method, and in that case
+considerations of roundoff prevent you from taking $b$ too
+large\cite{ChGe:sstep}.
+
+A further refinement of the above algorithm is possible.
+Figure~\ref{fig:grid-update-minimal} illustrates that it is possible
+to use a halo region that uses different points from different time steps.
+\begin{figure}[ht]
+\includegraphics[scale=.1]{grid-update-minimal}
+\caption{Computation of blocks of grid points over multiple iterations}
+\label{fig:grid-update-minimal}
+\end{figure}
+This algorithm (see~\cite{Demmel2008IEEE:avoiding}) cuts down on the amount
+of redundant computation. However, now the halo values that are communicated
+first need to be computed, so this requires splitting the local communication
+into two phases.
+

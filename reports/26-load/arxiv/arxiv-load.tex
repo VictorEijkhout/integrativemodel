@@ -1,0 +1,318 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout 2019
+%%%% (eijkhout@tacc.utexas.edu)
+%%%%
+%%%% load.tex : load balancing in IMP
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn]{article}
+
+\input setup
+
+\def\bparagraph#1{\paragraph*{\textbf{#1}}}
+
+\title{User Level Load Balancing in the Integrated Model for Parallelism}
+\author{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing
+    Center, The University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  We describe how the Integrative Model for Parallelism makes it
+  possible to implement load balancing in user spaces. IMP has
+  distributions as first class, dynamically created objects, so that
+  it becomes possible to create new distributions based on dynamic
+  conditions such as load. Load balancing can then be interpreted as a
+  copy operation between a distributed object, and the same object on
+  a new distribution.
+
+  By way of demonstration, we implement the `diffusion' algorithm for
+  load balancing and show improvement of runtime on a synthetic problem.
+\end{abstract}
+
+\acresetall
+
+\section{Introduction}
+
+Load balancing is the act of, at runtime, changing the assignment of
+work to processing elements. In a shared memory context, this is
+easily done by dynamic assignment of tasks. However, 
+in a distributed memory context the distribution work is tightly bound
+to the distribution data. While an even distribution of data is often
+feasible, this may not always result in an even distribution of
+work. For instance, if the local work involves integration of stiff
+\acp{ODE}, the relation between data and work can be hard to predict, and
+in fact dynamically involving. Thus, runtime adjustments of the
+assignment of data to processors may be needed.
+
+Implementing load balancing is difficult since it relies on many low
+level assumptions on how the problem is structured. Consider the case
+of \acp{PDE}. In the usual implementation, each process stores a
+sparse matrix corresponding to the equations on the local domain. Load
+distribution then implies moving rows from one processor to
+another. Typical sparse matrix data structures do not allow such
+dynamic restriction and extension. The next problem is that such
+changes to the matrix may alter the communication structure.
+
+For purposes of this discussion we are abstracting away from these
+matters and only consider dynamic updates to the partitioning of the
+domain of definition of the \ac{PDE}. We then assume that based on
+this new partitioning the local coefficient matrices can easily be
+reconstructed. We also assume that the communication structure is not
+changed by the redistribution.
+
+\subsection{The Integrative Model for Parallelism}
+
+The \acf{IMP} is a new development in parallel programming, based on a
+mathematical formalization of data distributions. The theory is
+descsribed in detail in~\cite{Eijkhout:mathematical2016arxiv}. Here we
+give a brief outline.
+
+The basic concept of \ac{IMP} is that of distributions, which describe
+the correspondence between data an processing elements.
+Formally, if we have a set~$P$ of processes and a set~$N$ of indices
+into an object, then a distribution is a mapping:
+\begin{equation}
+  u\colon P\rightarrow 2^N.
+\end{equation}
+That is, $u(p)$~is the set of indices owned by process~$p$.
+Objects are
+then constructed using these distributions.
+
+\ac{IMP} distributions are more general than the traditional
+definition of distributions.
+For instance, replicated data such as an inner product
+can be modeled by
+\begin{equation}
+  \forall_p\colon p\mapsto\{0\}
+\end{equation}
+which states that every process claims ownership to index zero.
+This is a valid modeling of the result of an all-reduce,
+such as is typically used in inner product calculation.
+%
+(However, in this report distributions will typically be disjoint,
+such as is the case for vectors in Finite Elements and other applications.)
+
+Next, distributions can be transformed. If we have a mapping
+\[ \sigma\colon N\rightarrow N \]
+(trivially extended to a mapping from $2^N$ on itself),
+we can define a transformed distribution as:
+\begin{equation}
+  \sigma(u)\colon p\mapsto \sigma(u(p)).
+\end{equation}
+
+An important corollary is now that communications can be formally derived.
+Suppose we have an object~$x$ with a distribution~$\alpha$
+which we wish to transform to an object~$y$ with distribution~$\beta$.
+We define a dependency relation $p\ll q$ between tasks as
+\[ p\ll q \equiv \alpha(p)\cap \beta(q)\not=\emptyset \]
+The reason we call this a dependency relation is that,
+in order to effect the transformation, task~$q$ needs to transfer data
+to task~$p$.
+
+Elsewhere we have argued that concept covers such transformations
+such as MPI collectives, the `halo' communication of stencil computations,
+multigrid prolongation~/ restriction. Here we explain that load balancing
+is also covered under this concept of transformation, since it
+corresponds to copying data between one distribution and another.
+
+The aspect that concerns us
+here is that distributions are dynamically created objects, defined in
+user space. We argue that this makes it possible to implement
+load distribution, under the above assumptions: based on measured
+runtimes we can decide to adjust the data assignment in such a way to
+more load away from overloaded processes. This means that a new
+distribution is created based on the dynamic evaluation of local runtimes.
+
+\begin{quotation}
+  The redistribution of a \ac{PDE} domain of definition can be
+  formulated as a copy operation between an object (such as \ac{PDE}
+  coefficients) on two different distributions: the current one, and a
+  dynamically constructed one that purportedly gives a more equitable
+  assignment of load to processors.
+\end{quotation}
+
+\subsection{Outline}
+
+The rest of this paper is devoted to a presentation how a common load
+balancing algorithm can easily be implemented in \ac{IMP}. We will
+show tests on a synthetic benchmark example, showing that this scheme
+is able to track a moving peak in workload, and redistribute data
+accordingly.
+
+\section{Diffusion load balancing}
+
+We use the
+\emph{diffusion}\index{load!balancing!by diffusion}
+model of load balancing~\cite{Cybenko:1989:balancing,HuBlake:diffusion1999}:
+\begin{itemize}
+\item processes are connected through a graph structure, and
+\item in each balancing step they can only move load to their
+  immediate neighbours.
+\end{itemize}
+
+This is easiest modeled through a directed graph. Let $\ell_i$ be the
+load on process~$i$, and $\tau^{(j)}_i$ the transfer of load on an edge
+$j\rightarrow i$. Then
+\[ \ell_i \leftarrow \ell_i
+    + \sum_{j\rightarrow i} \tau^{(j)}_i
+    - \sum_{i\rightarrow j} \tau^{(i)}_j
+\]
+Although we just used a $i,j$ number of edges, in practice
+we put a linear numbering the edges. We then get a system
+\[ AT=\bar L \]
+where
+\begin{itemize}
+\item $A$ is a matrix of size $|N|\times|E|$ describing what edges
+  connect in/out of a node, with elements values equal to $\pm1$ depending;
+\item $T$ is the vector of transfers, of size~$|E|$; and
+\item $\bar L$ is the load deviation vector, indicating for each node
+  how far over/under the average load they are.
+\end{itemize}
+
+In the case of a linear processor array this matrix is
+under-determined, with fewer edges than processors, but in most cases the
+system will be over-determined, with more edges than processes.
+Consequently, we solve
+%
+\[ T= (A^tA)\inv A^t\bar L \qquad\hbox{or}\qquad T=A^t(AA^t)\inv \bar L. \]
+%
+Since $A^tA$ and $AA^t$ are positive indefinite, we could solve these systems
+approximately by relaxation, needing only local knowledge.
+
+\section{Implementation}
+
+In this section we sketch the implementation of the distribution
+transforming mechanism. A~precise explanation would require including
+the full reference manual of the \ac{IMP} library~\cite{IMPcode-repo},
+so we hope the reader will indulge us and use their imagination for
+terms that are left undefined. We use a top-down presentation.
+
+The \n{distribution} class has a method \n{operate} that yields a new
+distribution. Thus:
+\begin{verbatim}
+block = block->operate(diffuse);
+\end{verbatim}
+The \n{diffuse} operator is a so-called
+\n{distribution_sigma_operator}, which is a derived class of a more
+basic operator type.
+\begin{verbatim}
+auto diffuse =
+    distribution_sigma_operator
+    ( [stats_vector,adjacency,trace,mytid]
+      (shared_ptr<distribution> d) -> shared_ptr<distribution>  {
+      return transform_by_diffusion(d,stats_vector,adjacency);  }
+    );
+\end{verbatim}
+The only function that is completely written in user terms is
+\n{transform_by_diffusion}, which is about 60 lines long, but most of
+those are concerned with extracting information from the original
+distribution, and constructing the new distribution from transformed
+data.
+
+\begin{itemize}
+\item Unpack original distribution.
+\begin{verbatim}
+/*
+ * Input:
+ *     shared_ptr<distribution> unbalance : original distribution
+ * Output:
+ *     vector<index_int> partition_points 
+ */
+auto partition_points = unbalance->partitioning_points();
+\end{verbatim}
+
+\item Solve for the load move amounts
+\begin{verbatim}
+/*
+ * Input:
+ *     vector<double> times : runtimes per processor
+ * Output:
+ *     VectorXd loadmove    : amount of data to be moved
+ * Method:
+ *     use Eigen3 library to solve normal equations.
+ */
+VectorXd
+  imbalance = VectorXd::Constant(nsegments,-avg_time),
+  loadmove;
+for (int it=0; it<ntimes; it++)
+  imbalance[it] += times[it];
+
+auto normal_matrix = adjacency * adjacency.transpose();
+auto ata_fact = normal_matrix.ldlt();
+auto balance_solve = ata_fact.solve( imbalance );
+loadmove = adjacency.transpose() * balance_solve;
+\end{verbatim}
+
+\item Calculate new partitioning points and return distribution. This
+  depends on the type of allowable distribution. One-dimensional code
+  looks like:
+\begin{verbatim}
+/*
+ * Input:
+ *     new vector of local domain sizes
+ * Output:
+ *     new distribution
+*/
+parallel_structure shifted(decomp);
+shifted.create_from_local_sizes(localsizes);
+return unbalance->new_distribution_from_structure(shifted);
+\end{verbatim}
+\end{itemize}
+
+\section{Example}
+
+We test an synthetic benchmark based on
+\begin{itemize}
+\item a two-dimensional mesh, distributed over a two-dimensional
+  processor grid, with
+\item work per grid point that is modeled by a time-dependent bell curve
+  \[ w(x,t) = 1+e^{-(x-s(t))^2} \quad \hbox{where $s(t)=tN/T$.} \]
+\end{itemize}
+
+This model is encountered in practice with, for instance, weather
+codes where the adaptive local time integration is strongly
+location-dependent.  Our benchmark does not perform actual work: each
+processor evaluates the total amount of work for its subdomain and
+sleeps for a proportional amount of time.
+
+After each time step we evaluate the total time per processors, and
+perform a `diffusion load balancing'
+step~\cite{Cybenko:1989:balancing,HuBlake:diffusion1999}. While this,
+strictly speaking, optimizes for the previous time step, not the next,
+if the load changes slow enough this will still give a performance
+improvement.
+
+Indeed, we see up to 20 percent improvement in runtime.
+
+\begin{tabular}{|r|r|r|r|}
+  \hline
+  Procs:&64&320&672\\
+  Balanced runtime:&63&192&856\\
+  Unbalanced:&72&266&935\\
+  \hline
+\end{tabular}
+
+\section{Discussion}
+
+In this report we have shown how the \ac{IMP} programming model makes
+it possible to have dynamically changing data distributions, in
+particular where the changes are dictated by application demands. We
+have given a proof of concept of this by realizing a dynamic load
+balancing scheme completely in user space, not relying on any system
+software support. Our tests show that the overhead of recomputing
+distributions and recreating data does not negate the performance
+enhancement of the improved distributions.
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

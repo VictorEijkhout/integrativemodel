@@ -1,0 +1,50 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% amr.tex : master file for report IMP-21
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-21}
+
+\input setup
+
+\title{Adaptive mesh refinement}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  AMR stuff
+\end{abstract}
+
+\acresetall
+
+\section{Story}
+
+\section{Implementation}
+
+We use partial distributions a lot.
+
+One. We set the same mask on the beta as on the output. Does that
+sasve any purpose?
+%
+\verbatimsnippet{ensurebeta}
+
+Two. The beta mask is unrelated to the input masks. For instance,
+in a broadcast the input has a mask, but the output and beta not.
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

@@ -1,0 +1,78 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% resil.tex : master file for IMP-08
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{taccreport}
+
+\taccreportnumber{IMP-08}
+
+\usepackage{geometry,fancyhdr,multirow,wrapfig}
+
+\input setup
+
+\title[IMP resilience]{Resilience in the Integrative Model}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+As supercomputers grow to the exascale, resilience 
+--~the ability of a computation to withstand hardware failure~--
+is becoming a serious issue.
+We outline a solution based on redundant computation.
+\end{abstract}
+
+\section{Sketch}
+
+Hardware can fail in multiple ways, from messages arriving out of order, via memory corruption
+through cosmic rays, to processors dying. Here we consider the simple, and most disastrous,
+case of a  processor completely dropping out of the computation. We assume that the failure
+develops in the middle of a computation, rather than during communication. This assumption is warranted
+if the network fabric or the communication library has some guarantee that a message is delivered
+in total or not at all.
+
+We reason through our solution in the following steps.
+\begin{enumerate}
+\item Our solution is to duplicate all computation. This carries an obvious factor two overhead cost,
+  which we will assume is justifiable.
+\item Firstly we note that redundant computation is easily modeled
+  in \ac{IMP} through the use of non-disjoint distributions. 
+\item Redundant computation also
+  brings with it a new complication: every message in the system is also duplicated.
+  This means that a receiving process now has two possibilities to fulfill its outstanding receive
+  request. \ac{IMP} can accomodate this without further modifications by using tagged sends; 
+  see~\cite{IMP-07}.
+\item If every task is redundantly executed twice, every message is duplicated, but there will be
+  two receivers. 
+  \begin{quotation}
+    Uh Oh. How do you pair them up? Wildcard receives are easy. Wildcard sends not.
+  \end{quotation}
+\item The flip side of the tagged send notion is that a process can now have an unmatched outstanding send,
+  since the receive operation for the data it is sending may have been satisfied by the duplicate message.
+  This is certainly the case if a processor has dropped out.
+\end{enumerate}
+
+\section{Failure detection}
+
+The concept of \indexterm{containment domain} was proposed in~\cite{Chung:2012:CDS}. This
+requires several user actions, including writing a test function to
+decide whether the code in the containment domain has
+failed. In~\cite{IMP-04} we showed how the IMP model has the
+possibility of detecting failed tasks automatically.
+
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

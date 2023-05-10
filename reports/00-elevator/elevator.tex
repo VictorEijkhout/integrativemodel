@@ -1,0 +1,82 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% elevator.tex : master file for report IMP-00
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-00}
+
+\usepackage{geometry,fancyhdr,verbatim,wrapfig}
+
+\input setup
+
+\title{The IMP Elevator Pitch}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  A one-page statement of `why IMP'.
+\end{abstract}
+
+\section*{}
+
+Parallel programming is hard and getting harder. On future (exascale,
+manycore) architectures, most likely some combination of distributed
+and shared memory programming will be needed. Some people maintain that
+current tools can and will suffice, and that programmability can be
+managed, for instance, by using \acp{DSL}. We argue that there is
+opportunity for a new, general, parallel programming system.
+
+Let's take a step back. Many scientific applications do not use
+the full generality of our parallel programming systems. Typical
+operations, such as in linear algebra, graph operations, finite
+elements, can be formulated as a sequential program of operations on
+distributed data. A~system that allows for expression of such
+`sequential semantics', without spelling out the coordination of
+parallel processes underneath, would clearly be a Good Thing.
+
+Now, such programming systems have been tried, see for instance
+\ac{HPF}, but they have largely failed because the system software can
+not be smart enough in deriving messages and task dependencies and such.
+%
+The \acf{IMP} is built on a new theoretical formalism that lets the
+programmer specify the necessesary minimum to let the system generate
+an efficient execution. And this minimum is far less than what is
+currently required in MPI or various \ac{DAG} models. What's more, it
+is an expression that is independent of the target mode of
+parallelism, so the same source code works for MPI and DAG models and
+hybrid modes.
+
+We claim at least that \ac{IMP} allows for easier
+programmability with essentially identical execution efficiency.
+However, \ac{IMP} has the potential for going beyond that.
+\begin{enumerate}
+\item IMP uses the `inspector-executor' paradigm, where first a task
+  graph is built, which is subsequently executed. This means that the
+  inspector can already re-arrange tasks, for instance to hide
+  latency.
+\item Since task can be migrated and duplicated, more sophisticated
+  `communication avoiding' strategies can be realized with minimal
+  hints from the programmer.
+\item Load balancing and resilience through task replication can also
+  be realized.
+\end{enumerate}
+
+We have built a demonstration prototype that shows that identical IMP
+source code can be translated to efficient execution in MPI and OpenMP
+task-based implementation layers. Other execution models can most
+likely also be supported, implying that IMP is `future-proof'.
+
+\end{document}

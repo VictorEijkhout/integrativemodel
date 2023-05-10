@@ -1,0 +1,339 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% lulesh.tex : master file for report IMP-22
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-22}
+
+\input setup
+
+\acrodef{LLNL}{Lawrence Livermore National Laboratory}
+\acrodef{LULESH}{Livermore Unstructured Lagrangian Explicit Shock Hydrodynamics}
+
+\title[LULESH in IMP]{Implementing LULESH in IMP}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  We describe the implementation of the LULESH proxy-app in the
+  Integrative Model.
+\end{abstract}
+
+\acresetall
+
+\section{Introduction}
+
+`\acf{LULESH}'~\cite{LULESH:spec}
+(\url{https://codesign.llnl.gov/lulesh.php}) is a proxy-app that models a number
+of aspects of computationally important application at \acf{LLNL}.
+
+\subsection{What are the interesting bits in Lulesh?}
+
+Since I don't have time to make a full reimplementation of Lulesh,
+I~focus on what I find the interesting bits.
+
+From the specification document:
+\begin{quote}
+  Many operations in the code involve loops over the nodes or elements
+  of the domain. In production hydro codes, the collection of
+  variables referenced in a single element calculation must be passed
+  through many levels of function calls. Thus as good software
+  engineering practice, it is common to gather those variables into a
+  set of local data structures. We follow this practice in the
+  reference code; computational blocks use the local data structures
+  rather than the domain-level data. When the operations are complete,
+  we scatter the data from the local arrays back to the arrays on the domain.
+\end{quote}
+
+You can see this in action in code such as:
+\begin{verbatim}
+// get nodal coordinates from global arrays and copy into local arrays.
+for( Index_t lnode=0 ; lnode<8 ; ++lnode )
+{
+  Index_t gnode = elemNodes[lnode];
+  x_local[lnode] = mesh.x(gnode);
+  y_local[lnode] = mesh.y(gnode);
+  z_local[lnode] = mesh.z(gnode);
+}
+\end{verbatim}
+which gathers the eight nodes of an element into a local array.
+
+This operation is interesting in parallel because the distribution of
+the nodes and and elements necessarily can not be conforming.  Thus I
+focus on the communication that is needed to support this gathering
+--~and its reverse scattering~-- and completely ignore the numerics.
+
+\subsection{Regular versus irregular computation}
+
+In this report I will focus on regular 2D and 3D meshes. This makes it
+easy to convey the ease of programming with \ac{IMP}. However,
+irregular finite element meshes are possible too. For this we note
+that the above global-to-local copy code describes one row out of the
+adjacency matrix of this operation. This means that we accomodate this
+by constructing an explicit $\beta$-distribution through its adjacency
+matrix.
+
+In some cases the index array in the original code
+corresponds to a \emph{column} of the adjacency matrix. For this we
+need to have an auxiliary function for describing the
+$\beta$-distribution through its adjoint. This is currently not
+implemented yet.
+
+\subsection{Outline}
+
+In this report we describe the following transfer operations, which
+stand for, or include, the transfers happening in an actual Lulesh
+implementation:
+\begin{enumerate}
+\item\label{e:l2f} Distribute element quantities to locally stored node.
+\item\label{f:l2g} Sum (or otherwise combine) these local node quantities to global.
+\item\label{f:g2l} Distribute global nodes back to elements, or:
+\item\label{e:f2l} Update local node information from global, and
+  gather local node information to element quantities.
+\end{enumerate}
+
+%% Element quantities and local node quantities are stored locally.
+%% We have a choice regarding the storage of global quantities:
+%% \begin{itemize}
+%% \item If we store them exclusively, step~\ref{f:l2g} involves less
+%%   communication, and step~\ref{f:g-comp} has half the work;
+%%   step~\ref{f:g2l} involves communication.
+%% \item If we store them redundantly on both elements that share a node,
+%%   step~\ref{f:l2g} involves more communication,
+%%   and step~\ref{f:g-comp} has more work; on the
+%%   other hand, step~\ref{f:g2l} then becomes purely local.
+%% \end{itemize}
+
+\section{Transfer operations}
+
+The \ac{IMP} model effects a separation of concerns between
+communication/synchronization of tasks and the task-local code.
+%
+In this report,
+we describe the various transfer between distributed quantities in the
+case of a regular two-dimensional mesh. We will simplify the actual
+computations to simple replication or summation.
+
+For the communication, in the \ac{IMP} model it is enough to describe
+the algorithm-determined dependencies of output data on input
+data. (Note: this is not the same as indicating messages or other
+explicit communication mechanisms.) This will be the bulk of the
+discussion; the task-local code will be largely identical to the
+sequential code, as we will show.
+
+We refer to \cite{IMP-01} for the general theory of \ac{IMP}.
+
+\pagebreak
+\subsection{Element to local node}
+%
+\begin{figure}[h]
+  \includegraphics[scale=.12]{localnode_2d}
+  \caption{Element to local node broadcast, 2D case}
+  \label{fig:lulesh2d_localnode}
+\end{figure}
+%
+Operation~\ref{e:l2f}, distributing element information to the local
+copy of the node, is depicted in figure~\ref{fig:lulesh2d_localnode}.
+The signature function describes the dependence of a (globally
+numbered) local node on the element number:
+\[ \sigma(i,j,k,\ldots) = \{ i/2,j/2,k/2,\ldots \}. \]
+
+This is implemented by the signature function code:
+%
+\verbatimsnippet{lulesheverydivby2}
+%
+We note that this operation is likely to be local, but we do not
+indicate so either way.
+
+\pagebreak
+The local code then operates only on input and output data that is
+avaible to a traditionally executed sequential program:
+%
+\verbatimsnippet{bcaste2ln}
+
+\pagebreak
+\subsection{Local node to global}
+%
+\begin{figure}[h]
+  \includegraphics[scale=.1]{localglobalnode_2d}
+  \caption{Correspondence between local and global node numbering}
+  \label{fig:localglobal2d}
+\end{figure}
+%
+The mapping between local and global nodes (operation~\ref{f:l2g}; see
+figure~\ref{fig:localglobal2d})
+is not trivially parallel, involving data transfer between processors
+since the two quantities can not be conformally partitioned.
+
+The signature function, describing the dependence of a global node
+number on the local node numbers that constitute it,
+maps
+\[ g\mapsto \bigl( 2g-
+{\small \begin{pmatrix}
+  1\\ 1\\ \vdots\\ 1
+\end{pmatrix}}
+,2g \bigr). \]
+
+The signature code weeds out the negative numbers, and
+truncates beyond the far edge of the domain.
+%
+\verbatimsnippet{luleshng2nl}
+
+\vfill\pagebreak
+
+The enclosing structure that we truncate against is passed in through
+a closure:
+%
+\verbatimsnippet{n2t4lastelement}
+
+The function does a simple averaging:
+%
+\verbatimsnippet{l2gfunction}
+
+\pagebreak
+\subsection{Global node to local}
+%
+In reverse, to distribute global nodes back to local copies, we need a
+signature function that describes the dependency of a local node on
+its global counterpart.
+%
+\begin{figure}[ht]
+  \includegraphics[scale=.1]{localglobalnode_2d}
+  \caption{Correspondence between local and global node numbering}
+  \label{fig:globallocal2d}
+\end{figure}
+%
+Referring to figure~\ref{fig:globallocal2d} we get this as follows:
+\[ g(\ell) = \bigl( \ell,\ldots,\ell+
+   {\scriptstyle \begin{pmatrix} 1\\ \vdots\\ 1 \end{pmatrix}}
+   \bigr)/2
+\]
+with the obvious signature function
+%
+\verbatimsnippet{lulesh_global_node_to_local}
+%
+There are no edge cases.
+
+\pagebreak
+After the communication has been done, the local code implementation
+of this function can actually be fairly simple. Here is the 2D case:
+%
+\verbatimsnippet{function_global_to_local}
+
+\pagebreak
+\subsection{Element from global node}
+
+Figure~\ref{fig:globalnode_2d} depicts the relation between global
+nodes and elements in two dimensions.
+
+\begin{figure}[ht]
+  \includegraphics[scale=.13]{globalnode_2d}
+  \caption{Element and global node numbering, 2D case}
+  \label{fig:globalnode_2d}
+\end{figure}
+
+We see that
+\[ \sigma(e) = \bigl[e,\ldots,e+{\scriptscriptstyle
+    \begin{pmatrix}
+      1\\ \vdots\\ 1
+    \end{pmatrix}
+    }\bigr]
+\]
+
+\pagebreak
+\subsection{Element from local node}
+%
+\begin{figure}[ht]
+  \includegraphics[scale=.1]{localglobalnode_2d}
+  \caption{Correspondence between local and global node numbering}
+  \label{fig:local2element}
+\end{figure}
+%
+Operation~\ref{e:f2l} uses the inverse mapping
+\[ e\mapsto \bigl[ 2*e,\ldots,2*e+
+   {\scriptstyle \begin{pmatrix} 1\\ \vdots\\ 1 \end{pmatrix}}
+   \bigr]
+\]
+
+The signature function that implements this:
+\verbatimsnippet{luleshsigl2e}
+
+and the local execution:
+\verbatimsnippet{lugatherl2e}
+
+\pagebreak
+\subsection{Discussion}
+
+We conclude that, in the Cartesian case, all data transfers in Lulesh
+have a signature that is easily
+given through a function recipe. Functionalitywise this means our
+problem is solved. Performancewise, we expect no difference between
+this an a regular MPI implementation.
+
+\subsubsection{Even easier description?}
+ 
+It is worth investigating if operations on distributions should be
+implemented: `multiply' for step~\ref{e:f2l}, `inversion' for
+step~\ref{e:l2f}, and 'composition' for step~\ref{f:l2g}.
+
+\subsubsection{Multiple materials}
+
+A domain can host multiple materials; typically a material lives only
+on a subset of elements, though individual elements can have more than
+one material. We realize this by putting a mask on the element
+distribution.
+
+\subsubsection{Performance}
+
+Sometimes the best setup is architecture
+dependent~\cite{IPDPS13:LULESH}. This seems mostly to be a matter of
+the amount of overdecoposition in threading. We can easily accomodate
+this.
+
+\begin{comment}
+  
+  Use of Liszt~\cite{DeVito:2011:Liszt} scales like MPI, but a good factor
+  lower~\cite{IPDPS13:LULESH} (see slides).
+
+  \section{Design}
+
+  On variables are bundled per element in the reference code so that
+  they can easier be passed through call trees. Should we use the $k$ parameter?
+
+\section{Discussion}
+
+\subsection{OpenMP}
+
+Quoting from~\cite{IPDPS13:LULESH}:
+\begin{quote}
+  There are two places in LULESH where multiple threads can write data
+  to the same node simultaneously. The resulting race conditions occur
+  in the stress and hourglass routines where values are calculated on
+  a per element basis and written to the nodes. To remove the race
+  condition, all eight values computed for each node are placed in a
+  temporary array as they are calculated and then a second loop sums
+  the values to the nodes.
+\end{quote}
+That sort of thing is done automatically in IMP: the eight values from
+the elements wind up in the beta object, and the summing to the nodes
+happens in the local function.
+
+\end{comment}
+
+\bibliography{vle,imp}
+\bibliographystyle{plain}
+
+\end{document}

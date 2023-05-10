@@ -1,0 +1,53 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Let's revisit the example of a one-dimensional \indexterm{heat
+  equation} that we started this story with. (This will also stand
+for a single sparse matrix-vector product.)
+%
+\begin{figure}[ht]
+  \includegraphics[scale=.12]{div-avoid-spmvp}
+  \caption{Split computation of the sparse matrix-vector product, in
+    our communication avoiding framework.}
+  \label{fig:avoidmvp}
+\end{figure}
+%
+In figure~\ref{fig:avoidmvp} we overlay one step of a heat equation
+on the previous definition of a communication avoiding scheme.
+However, since we need to block kernels to be able to derive the
+$k_{1,2,3}$ regions, we do the following:
+\begin{enumerate}
+\item We introduce a first kernel which establishes the beta
+  distribution of the heat update~/ matrix vector product. In IMP
+  terms this is a copy operation between $\alpha_{\mathrm{spmvp}}$ and
+  $\beta_{\mathrm{spmvp}}$.
+\item We let the actual heat update~/ matrix-vector product go between
+  $\beta_{\mathrm{spmvp}}$ as input distribution and
+  $\gamma_{\mathrm{spmvp}}$ as output. This is a local operation!
+\end{enumerate}
+Now we have two blocked kernels and we can analyze a communication
+avoiding scheme as described above.
+We find that:
+\begin{enumerate}
+\item $k_1$ are the points that need to be sent as halo
+  data. Computing these is of course trivial: we already have them.
+\item Next we send off our $k_1$ elements, and post a receive for the
+  ones from neighbour processors.
+\item Then we compute $k_2$, the local part of the update/product.
+\item After receiving the remote $k_1$ sets we can compute the missing
+  parts of the update/product.
+\end{enumerate}
+
+Of course, this analysis is easy to do in the abstract. In code it
+would require that each point of the vector-to-be-updated is a single
+task. Alternatively, we need a code splitting mechanism that is
+outside of the scope of our work for now. We briefly address this
+question in~\cite{IMP-16}.

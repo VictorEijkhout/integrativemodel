@@ -1,0 +1,25 @@
+Coherent caches provide an environment in which it is possible to write
+programs that communicate across independent threads, but this should
+not be confused with an environment that supports communication.
+Communication can be made to happen correctly via properly ordered 
+sequences of loads and stores, but the communication is indirect, not 
+explicit, and cannot be differentiated from local memory traffic uninvolved
+with communication.  Since it is not possible to identify which memory references
+are associated with communication and which are not, the hardware must implement
+a very conservative policy which is not close to optimal for either completely 
+independent memory references or for communications-related references.
+For example, the hardware can only allow memory references to go a little bit
+out of order, so that if a delayed memory reference needs to be ordered, sufficient
+information is available to "back up" and ensure that the references appear to 
+have happened in order.  For true communication, the hardware does not know 
+that stores into shared buffers are intended for a remote process, so they remain
+in the producer's cache until requested.  Complex, multi-buffered implementations
+of "data" items protected by "flag" items (in separate cache lines), are required to 
+prevent excessive cache-to-cache transfers when data items are updated.
+Implementation of these operations is difficult and prone to subtle errors -- often 
+not discovered until the code is run on a system with a slightly different ordering
+model.  In the best cases these communication and synchronization operations
+are inefficient on cache-coherent hardware, requiring multiple serialized coherence 
+operations.  Generic implementations (focusing on correctness and portability, rather 
+than performance), can easily be one to two orders of magnitude slower than a 
+hardware implementation designed for the communication semantics required.

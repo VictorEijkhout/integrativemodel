@@ -1,0 +1,78 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% taskgraph.tex : include file about task graphs
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+There are some practical matters to observe regarding execution of the task graph.
+On shared memory, things are simple: there is one scheduler, and
+  it can see the entire graph.
+In distributed memory, on the other hand, each address space has a partial task graph,
+which needs to be executed in such a way that the global task graph
+is respected. In this section we focus on this distributed case.
+
+With message passing, any direct dependence between tasks corresponds
+to a message. In the simplest realization we would, on each address space:
+\begin{itemize}
+\item activate all tasks for that address space,
+\item all tasks gather incoming messages,
+\item when all messages for a task are satisfied, the
+  task performs its local execution, and sends outgoing messages.
+\end{itemize}
+The problem with this approach is the necesary context switching between
+tasks, not to mention that this switching needs to be driven by the
+arrival of messages. Thus we would need a supervisor process of sorts.
+
+To illustrate the basic problem, figure~\ref{fig:depend-msg} (left)
+shows two tasks $t,t'$
+on the same processor that are dependent $t\mathbin{<_m}t'$
+through messages in the global graph,
+but have no local message dependency.
+\begin{figure}[ht]
+  \leavevmode
+  \includegraphics[scale=.07]{depend-msg}
+  \kern1in
+  \includegraphics[scale=.07]{depend-ind}
+  \caption{Two tasks $t,t'$ without local dependencies, connected with
+    a message dependency $t\mathbin{<_m}t'$ (left), or truly
+    independent in the global task graph (right)}
+  \label{fig:depend-msg}
+\end{figure}
+In the absence of an explicit scheduler, say in a single-threaded context,
+we want to invoke $t$~and~$t'$ in an order $t\mathbin{<_x}t'$ such that
+\[ t\mathbin{<_m}t' \Rightarrow t\mathbin{<_x}t' \]
+
+\begin{definition}
+  We define the execution ordering as
+  \[ t\in k \wedge t'\in k' \wedge t,t'\in C_p \Rightarrow
+  t\mathbin{<_x}t'\equiv k<k'
+  \]
+\end{definition}
+\begin{definition}
+  Kernel ordering follows message ordering
+  \[ t\in k \wedge t'\in k' \wedge t,t'\in C_p \colon
+  t\mathbin{<_m}t'\Rightarrow k<k'
+  \]
+\end{definition}
+
+\begin{corollary}
+  Then
+ given two tasks on the same processor $t,t'\in C_p$,
+and the execute order $t\mathbin{<_x}t'$ and kernel ordering $k<k'$ as above,
+  \[ t\mathbin{<_m}t'\Rightarrow t\mathbin{<_x}t' \]
+\end{corollary}
+
+Figure~\ref{fig:depend-msg} (right) illustrates that this is an overspecification:
+tasks with no local ordering can sometimes be truly unordered.
+
+We see this mechanism implemented as follows. With a task id implemented
+as $\langle\mathrm{step},\mathrm{domain}\rangle$, we realize a dependency
+of task $k,p$ on $k',p'$ by installing a dependence on $k',p$.
+\verbatimsnippet{mpi-depend}

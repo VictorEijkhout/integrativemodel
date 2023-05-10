@@ -1,0 +1,136 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-7
+%%%%
+%%%% bigdata.tex : master file for report IMP-27
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-27}
+
+\input setup
+
+\def\bparagraph#1{\paragraph*{\textbf{#1}}}
+
+\title[Data analytics]{Data Analytics in IMP}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing
+    Center, The University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  Data analytics in IMP
+\end{abstract}
+
+\acresetall
+
+\section{Apache Spark}
+
+Spark is a big data tool that can be described in IMP.
+The basic object is an RDD: Resilient Distributed Dataset, which is
+analogous to an IMP object.
+
+What is a Seq? What is a Block?
+
+In this report we describe how IMP can cover the expressive
+functionality of Spark. We will not go into fault tolerance and such.
+
+\begin{description}
+\item[Map] Apply a function to an RDD, giving a new one. We realize
+  this by applying the function and letting $\gamma=\alpha$.
+\item[FlatMap] Apply a function to return a Seq. We expand the
+  distribution accordingly.
+\item[MapPartitions] Run a function separately on each block of the partition.
+\item[MapPartitionsWithIndex] Run a function separately on each block
+  of the partition, and include the index of the partition block.
+\item[Filter] Select the elements for which a specified function is
+  true. To first order we model this by locally contracting the input
+  distribution to the `true' elements.
+\item[Union] Combine two datasets. The resulting distribution is
+  obvious.
+\item[!! Intersection !!] Very tricky! This needs an Allgather or
+  so. Better: bucket brigade.
+\item[!! Distinct !!] Keep distinct elements. This is global too,
+  probably through a bucket brigade of comparisons. Which copy do we
+  keep? Lowest location? That may lead to unbalance.
+\item[!! GroupByKey !!] Questions: how do we relate the number of keys and
+  number of locales? There must be a concept of affinity, but is that
+  otherwise visible?
+\item[ReduceByKey] Similar.
+\item[SortByKey] This is basically sorting. No interaction with
+  affinity that we don't already know.
+\item[Join] Take $\langle K,V\rangle$ and $\langle K,W\rangle$
+  datasets and return $\langle K,(V,W)\rangle$. Just locally blow up:
+  affinity of $(V,W)$ is affinity of~$V$. This can of course require
+  load balancing.
+\end{description}
+
+\section{Clustering algorithms}
+
+See~\cite{IMP-12}.
+
+\section{Minebench}
+
+\index{MineBench}
+
+Data mining benchmark~\cite{MineBench-homepage,MineBench2006}; see table~\ref{tab:minebench}.
+
+The codes as given are OpenMP only.
+
+\begin{table}[ht]
+  \begin{tabular}{|l|l|l|}
+    \hline
+    Application&Category&Description\\
+    \hline
+    ScalParC&  Classification&
+        Decision tree classification\\
+    Naive Bayesian&  Classification&
+        Simple statistical classifier\\
+    K-means&  Clustering&
+        Mean-based data partitioning method\\
+    Fuzzy K-means&  Clustering&
+        Fuzzy logic-based data partitioning method\\
+    HOP&  Clustering&
+        Density-based grouping method\\
+    BIRCH&  Clustering&
+        Hierarchical Clustering method\\
+    Eclat&  ARM&
+        Vertical database, Lattice transversal techniques used\\
+    Apriori&  ARM&
+        Horizontal database, level-wise mining based on Apriori property\\
+    Utility&  ARM&
+        Utility-based association rule mining\\
+    SNP&  Classification&
+        Hill-climbing search method for DNA dependency extraction\\
+    GeneNet&  Structure Learning&
+        Gene relationship extraction using microarray-based method\\
+    SEMPHY&  Structure Learning&
+        Gene sequencing using phylogenetic tree-based method\\
+    Rsearch&  Classification&
+        RNA sequence search using stochastic Context-Free Grammars\\
+    SVM-RFE&  Classification&
+        Gene expression classifier using recursive feature elimination\\
+    PLSA&  Optimization&
+        DNA sequence alignment using Smith-Waterman optimization method\\
+    \hline
+  \end{tabular}
+  \caption{Minebench codes}
+  \label{tab:minebench}
+\end{table}
+
+\begin{description}
+\item[K-means] See our report \cite{IMP-12}.
+\item[PLSA] For Smith-Waterman, see~\HPSCref{sec:smithwaterman}.
+\end{description}
+\bibliography{vle,imp}
+\bibliographystyle{plain}
+
+\end{document}

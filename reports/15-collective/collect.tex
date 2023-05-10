@@ -1,0 +1,83 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% collect.tex : master file for report IMP-015
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-15}
+
+\usepackage{geometry,fancyhdr,wrapfig}
+
+\input setup
+
+\title[Collectives in IMP]{Collectives in the Integrative Model for Parallelism}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+abstract
+\end{abstract}
+
+\section{Discussion}
+
+Collectives are an example of an operation that falls entirely in our $\alpha,\beta,\gamma$
+framework, but for which the $\beta$-distribution is nothing like a traditional `halo region'.
+
+There is a whole science of collectives~\cite{Chan2007Collective} which is largely outside
+our purview. The IMP model describes the semantics of collectives in the sense of giving
+their input/output specification; the implementation is left to a different level of discussion.
+However, we can make the following remarks:
+\begin{itemize}
+\item Since the user code calls a collective kernel, we can put an
+  optimized implementation under this.  However, collectives induce a
+  synchronization point, which is outside of the IMP's analysis of
+  dependencies.  Therefore, the following might be attractive.
+\item We can treat a collective as a general operation, and just let it generate
+  all the individual tasks and dependencies. This may be attractive in the context
+  of highly asynchronous applications. This is the strategy taken in the examples below.
+\item Under the strict definition of the IMP model, assigning a data
+  index to more than one process means that these processes have
+  duplicate copies, redundantly calculated.  This means that IMP
+  reduction-type collectives on shared address spaces behave
+  differently from the naive interpretation where only a single result
+  is computed.  To achieve this effect we would need a processor mask
+  on the replicated-scalar distribution.
+\end{itemize}
+
+\section{Local stages}
+
+A collective working on a distributed array starts with doing a local
+reduction. Since we assume in the rest of this report (and in our
+implementations) that we have only a single value per process, we get
+the local reduction out of the way here.
+
+\begin{itemize}
+\item We assume that the input distribution is disjoint.
+\item The resulting distribution has a single index per process.
+\item Rather than specifying a signature function, we indicate that
+  no communication is needed, by stating that $\beta=\alpha$.
+\item We then execute a local function on the input data.
+\end{itemize}
+For instance, for a norm kernel this local stage looks like:
+\verbatimsnippet{normlocal}
+
+\section{Implementations}
+
+\input collective
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

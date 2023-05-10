@@ -1,0 +1,66 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% dense.tex : master file for report IMP-25
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-25}
+
+\input setup
+
+\def\bparagraph#1{\paragraph*{\textbf{#1}}}
+
+\title[Dense linear algebra]{Dense Linear Algebra in IMP}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing
+    Center, The University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  \input abstract
+\end{abstract}
+
+\acresetall
+
+\section{Tools for Cartesian parallelism}
+
+The initial \ac{IMP} theory was described in terms of linearized
+indices. While it is possible to treat matrices and higher dimensional
+objects that way, doing so becomes increasingly forced. Hence we have
+implemented tools for multi-dimensional parallelism.
+
+We have the following classes:
+\begin{itemize}
+\item \n{processor_coordinate}: a multi-dimensional processor
+  number. The number of dimensions is a user input.
+  \verbatimsnippet{pcoorddim}
+\item \n{decomposition}: a Cartesian decomposition of the
+  computational domains and their assignment to the processors.
+  \verbatimsnippet{decompfromcoord}
+\item \n{multi_indexstruct}: for now we assign to each processor a
+  structure that is the product of a \n{indexstruct} in each
+  dimension.
+\item \n{parallel_structure}: description of the \n{multi_indexstruct}
+  objects of all processors.
+\end{itemize}
+
+\section{Parallel transpose}
+
+Rather than describing the signature function of the operation,
+we construct the beta distribution explicitly from the alph:
+\verbatimsnippet{transdist}
+
+\bibliography{vle,jdm,morebib}
+\bibliographystyle{plain}
+
+\end{document}

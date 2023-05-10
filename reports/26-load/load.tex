@@ -1,0 +1,138 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout 2014-8
+%%%% (eijkhout@tacc.utexas.edu)
+%%%%
+%%%% load.tex : master file for report IMP-26
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-26}
+
+\input setup
+
+\def\bparagraph#1{\paragraph*{\textbf{#1}}}
+
+\title[Load balancing]{Load Balancing in IMP}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing
+    Center, The University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+ Discussion of load balancing.
+\end{abstract}
+
+\acresetall
+
+\section{Theory}
+
+We use the
+\emph{diffusion}\index{load!balancing!by diffusion}
+model of load balancing~\cite{Cybenko:1989:balancing,HuBlake:diffusion1999}:
+\begin{itemize}
+\item processes are connected through a graph structure, and
+\item in each balancing step they can only move load to their
+  immediate neighbours.
+\end{itemize}
+
+This is easiest modeled through a directed graph. Let $\ell_i$ be the
+load on process~$i$, and $\tau^{(j)}_i$ the transfer of load on an edge
+$j\rightarrow i$. Then
+\[ \ell_i \leftarrow \ell_i
+    + \sum_{j\rightarrow i} \tau^{(j)}_i
+    - \sum_{i\rightarrow j} \tau^{(i)}_j
+\]
+Although we just used a $i,j$ number of edges, in practice
+we put a linear numbering the edges. We then get a system
+\[ AT=\bar L \]
+where
+\begin{itemize}
+\item $A$ is a matrix of size $|N|\times|E|$ describing what edges
+  connect in/out of a node, with elements values equal to $\pm1$ depending;
+\item $T$ is the vector of transfers, of size~$|E|$; and
+\item $\bar L$ is the load deviation vector, indicating for each node
+  how far over/under the average load they are.
+\end{itemize}
+
+In the case of a linear processor array this matrix is
+under-determined, with fewer edges than processors, but in most cases the
+system will be over-determined, with more edges than processes.
+Consequently, we solve
+%
+\[ T= (A^tA)\inv A^t\bar L \qquad\hbox{or} T=A^t(AA^t)\inv \bar L. \]
+%
+Since $A^tA$ and $AA^t$ are positive indefinite, we could solve the
+approximately by relaxation, needing only local knowledge.
+
+\section{Implementation}
+
+Our basic tool is the \n{distribution_sigma_operator}.
+Most operators take a \n{multi_indexstruct} and transform it to a new
+one; this operator can take the whole distribution into consideration,
+which allows us to do things like averaging.
+
+\verbatimsnippet{transform_average}
+
+Unfortunately, this being integer calculation, we lose a couple of
+elements, and so we have another operator that stretches a
+distribution to a preset size.
+
+\verbatimsnippet{apply_average}
+
+\section{Example}
+
+We test an synthetic benchmark based on
+\begin{itemize}
+\item a two-dimensional mesh, distributed over a two-dimensional
+  processor grid, with
+\item work per grid point that is modeled by a time-dependent bell curve
+  \[ w(x,t) = 1+e^{-(x-s(t))^2} \quad \hbox{where $s(t)=tN/T$.} \]
+\end{itemize}
+
+This model is encountered in practice with, for instance, weather
+codes where the adaptive local time integration is strongly
+location-dependent.  Our benchmark does not perform actual work: each
+processor evaluates the total amount of work for its subdomain and
+sleeps for a proportional amount of time.
+
+After each time step we evaluate the total time per processors, and
+perform a `diffusion load balancing'
+step~\cite{Cybenko:1989:balancing,HuBlake:diffusion1999}. While this,
+strictly speaking, optimizes for the previous time step, not the next,
+if the load changes slow enough this will still give a performance
+improvement.
+
+Indeed, we see up to 20 percent improvement in runtime.
+
+\begin{tabular}{|r|r|r|r|}
+  \hline
+  Procs:&64&320&672\\
+  Balanced runtime:&63&192&856\\
+  Unbalanced:&72&266&935\\
+  \hline
+\end{tabular}
+
+\section{Discussion}
+
+In this report we have shown how the \ac{IMP} programming model makes
+it possible to have dynamically changing data distributions, in
+particular where the changes are dictated by application demands. We
+have given a proof of concept of this by realizing a dynamic load
+balancing scheme completely in user space, not relying on any system
+software support. Our tests show that the overhead of recomputing
+distributions and recreating data does not negate the performance
+enhancement of the improved distributions.
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

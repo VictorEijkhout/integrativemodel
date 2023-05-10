@@ -1,0 +1,84 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% proc.tex : master file for report IMP-05
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-05}
+
+\usepackage{geometry,fancyhdr,multirow,wrapfig}
+
+\input setup
+
+\title[IMP processors]{Processors in the Integrative Model}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The IMP model has tasks as the basic units of execution, rather
+than processors or processes.
+Here we define a process or processor as a collection of tasks,
+and we derive some properties of this concept.
+\end{abstract}
+
+\section{Motivation}
+
+The \acf{IMP} is based on an execution model in terms
+of a dataflow graph\footnote{To be precise, this graph is formally
+derived from a description in terms of distributions; see \emph{IMP-01}.}
+of tasks, rather than more permanent
+notions such as process or processor. This leaves us
+with flexibility in how to assign these tasks to actual
+physical processors. 
+Here we define processors or processes as 
+--~not necessarily disjoint~-- subsets of the task graph,
+and we derive properties of these processors from
+the synchronization mechanisms in \emph{IMP-04}.
+
+\section{Processors and synchronization}
+\input execution
+
+\section{Task graphs}
+\input taskgraph
+
+\subsection{Clocks}
+
+In distributed processing the question of how to define
+a clock often comes up. First formalized by Lamport~\cite{lamport:clock},
+a (locally defined) clock is any scalar function $C(\cdot)$
+on the events on a process such that `if $a$~causes~$b$, then $C(a)<C(b)$'.
+The definition of `causing' is the transitive closure of the
+following relations:
+\begin{itemize}
+\item if $a$ and $b$ are events on the same process,
+  and $a$ happens before~$b$, then $a$~is said to cause~$b$;
+\item if $a$ is a sending event and $b$~receives a message
+  send by~$a$, then $a$~is also said to cause~$b$.
+\end{itemize}
+
+In our model it is easy to define a clock satisfying this consistency
+criterium. If we identify events with tasks, then an event/task
+is uniquely described by a step-domain pair. For the clock,
+both locally and globally, we use the step counter.
+Both clauses of the causality definition imply that $s(a)<s(b)$,
+which is the correct clock ordering.
+
+\section{Task migration}
+\input migration
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

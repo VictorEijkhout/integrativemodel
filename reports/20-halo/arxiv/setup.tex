@@ -1,0 +1,20 @@
+\usepackage{comment}
+
+\usepackage{amsmath,amssymb,graphicx,mdframed,pslatex,algorithm2e,verbatim,wrapfig}
+
+%% \includecomment{series}
+%% \excludecomment{notseries}
+\includecomment{book}
+
+\newcommand\impref[1]{\cite{IMP-#1}}
+
+\input acdxmacros
+\input impmacros
+
+\newenvironment{note}{\begin{quotation}Note.}{\end{quotation}}
+
+\def\n{\bgroup\tt\catcode`\_=12 \let\next=}
+\def\I{{\cal I}}\def\P{{\cal P}}\def\g{^{(g)}}
+\def\bp#1{\mathord{\downarrow_{#1}}}
+\def\Bp#1{\mathord{\downarrow\downarrow_{#1}}}
+

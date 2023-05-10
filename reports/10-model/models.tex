@@ -1,0 +1,295 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% models.tex : master file for report IMP-10
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-10}
+
+\usepackage{geometry,fancyhdr,wrapfig}
+
+\input setup
+
+\title[Parallelism models]{Thoughts on models for parallelism}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+In this note we discuss the difference between programming model
+and execution model, dwelling on conflicting demands on them.
+We use that to argue that the Integrative Model for Parallelism
+hits the best of both worlds, using a simple programming model
+that is translated to a sophisticated execution model.
+\end{abstract}
+
+\section{On models}
+
+We start by disentangling the concepts of execution model and
+programming model underlying the activity of (parallel) programming.
+
+\subsection{Execution model}
+
+With every architecture comes an execution model: a abstract description
+of how execution proceeds on that architecture. Typically,
+an execution model is close to how the actual hardware functions,
+and in current hardware that is mostly the Von Neumann model
+of a sequence of instructions that operate on memory addresses. 
+This Von Neumann model is practically the only model in existence;
+1980s experiments with dataflow hardware have not been followed up.
+
+\subsubsection{The user-visible and the internal execution model}
+
+We note that superscalar processors with out-of-order execution
+do not actually conform to this model, making it truly a \emph{model}.
+In fact, on a level inaccessible to the user, processors have considerable dataflow
+machinery built in. Therefore, the Von Neumann model is in a way a programming model
+as described below, with dataflow as the execution model on the deepest level.
+
+\subsubsection{Parallel execution models}
+
+In MPI parallel applications, the execution model is close to
+\acf{CSP}~\cite{Hoare:csp}: a~collection of sequential processes that
+exchange messages and change their workings accordingly.
+
+Most shared memory systems have an execution model that can be described
+with \indexterm{sequential consistency}: the programming is executed in parallel
+with semantics identical to a sequential execution.
+
+\subsection{Programming model}
+
+On the other end of the spectrum a programmer expresses an algorithm
+in terms of a programming model: an abstract vocabulary that serves
+to express algorithms, but that does not necessarily correspond
+closely to the execution model of the hardware. Most imperative programming
+languages have a programming model that is close to the Von Neumann model,
+and are therefore in close correspondence to the execution model.
+The 1980s hope that imperative language could be compiled to dataflow
+shows that the programming model can be very different from an execution model.
+
+Much of the work on dataflow on a task level again conflates the 
+programming model and the execution model. It is assumed that there is a software
+layer that can handle task dependencies and schedule tasks accordingly, 
+and the programmer is given a vocabulary to express these tasks and their
+dependencies, most notably in some graphical programming systems where
+task dependencies were explicitly denoted as arcs connecting dependent tasks.
+
+\subsection{Parallelism and models}
+
+The context of parallel programming offers more examples of the difference between
+a programming model and an execution model. For instance, the execution model
+for distributed memory computing is that of two-sided messaging.
+Since this is also quite cumbersome to program, the history of large-scale computing
+is full of attempts to layer a programming model on top of it that hides the ugly
+reality beneath a more expressive vocabulary. While the MPI library 
+in its original form is very close 
+to the execution model, one-sided models (now part of MPI) are one step 
+removed, active messages take another step away, and PGAS approaches try to make
+distributed memory look global to the programmer. The latter programming model
+is by far the easiest to write, unfortunately it is also the hardest to compile
+and execute efficiently.
+
+\subsection{Performance/cost model}
+
+A good programming model needs a performance model or cost model
+to estimate performance as a function of input and platform parameters.
+The performance model is approximate but essential: without it
+the programmer has no insight into a program's likely performance.
+
+Refer to Gropp article in CISE
+
+Mention LogP
+
+\section{Sequential vs parallel semantics}
+
+Scientific computing, and more recent data-centric computing,
+is often characterized by a form of data parallelism:
+activities that admit of a unified description,
+such as finding a cosine similarity between two vectors
+or doing a Finite Element grid update,
+but that are executed spread out over many computing elements,
+not necessarily tightly coupled,
+such as SIMD lines, threads, cores, processors, et cetera.
+%
+Various attempts have been made in the last few decades to 
+design programming systems that allow such unified
+descriptions (we call this `sequential semantics') of parallel activities.
+%
+The conceptual attraction to such an
+approach is eloquently formulated in~\cite{Nikhil93anoverview}:
+\begin{quotation}
+  [A]n HPF program may be understood (and debugged) using sequential
+  semantics, a deterministic world that we are comfortable with. Once
+  again, as in traditional programming, the programmer works with a
+  single address space, treating an array as a single, monolithic
+  object, regardless of how it may be distributed across the memories
+  of a parallel machine. 
+  The programmer does specify data
+  distributions, but these are at a very high level and only have the
+  status of hints to the compiler, which is responsible for the actual
+  data distribution[.]
+\end{quotation}
+
+A very similar concept is also argued in~\cite{Pinho-pobjcxx}
+from a point of Object-Oriented design: all coordination that is
+not implementing an algorithmic concern needs to be encapsulated
+in a parallel object.
+
+This sort of parallelism is considerably easier to deal with than
+concurrency:
+\begin{quotation}
+    [H]umans are quickly overwhelmed by concurrency and find it much more
+    difficult to reason about concurrent than sequential code. Even
+    careful people miss possible interleavings among even simple
+    collections of partially ordered operations. (Sutter and Larus
+    2005)
+\end{quotation}
+
+\subsection{Parallel semantics}
+
+On the other hand, there is considerable theory and practice
+based on a model of parallelism
+that considers the execution on individual processing elements
+as a task by itself, rather than part of macro task,
+and then describes the interaction.
+The reality of computer architecture argues strongly for the 
+merits of this second approach, since it explicitly
+accounts for the locality of data to processing elements.
+In current computer architectures the cost of data motion
+is not to be neglected, so such a system that 
+explicitly handles locality is a guarantee for high performance.
+(Prime evidence here is of course the MPI library, which is the only
+way to get million-way parallelism with high efficiency,
+and which requires the user to spell out all data movement
+explicitly.)
+
+However, explicit management of locality is a large burden
+on the programmer, so there have been many forays into 
+systems with sequential semantics that manage locality
+for the programmer.
+
+\subsection{Things that are not sequential semantics}
+
+\begin{itemize}
+\item Sequential consistency. This says that the execution of a
+  program should give an indentical result in pallel as if it were
+  done sequentially. However, this is based on multiple threads making their
+  way through the source, not a single.
+\item SPMD (Single Program Multiple Data). Here the same program gets executed
+  by more than one processor. The difference is that each program has a notion
+  of identity, and of there being other processes: there is no global description.
+\item BSP (Bulk Synchronous Processing)~\cite{Valiant:1990:BSP} uses supersteps
+  separated by barriers. First of all, BSP is SPMD in nature, secondly, BSP
+  is also an execution model, since the barriers exist in the execution.
+  This is in fact \emph{of necessity} so, since the one-sided communication
+  misses the acknowledgement signal that would allow asynchronous execution.
+\item PGAS (Partitioned Global Address Space). This is actually somewhat close.
+  However, it is a form of instruction parallelism, in that different instructions
+  are done by different processors.
+\end{itemize}
+
+\subsection{Strength of the sequential semantics model}
+
+Our model, aiming at a generalized form of data parallelism, is not as
+general as other parallel programming systems. Specifically, this
+means that certain task graphs can not result from an IMP code.
+
+Examples: X10~\cite{Charles:2005:X10} has the \indexterm{async-finish}
+mechanism~\cite{Lee:2010:X10-finish} where a number of independent
+threads have a joint finish. This is equivalent to our model. On the
+other hand, the \indexterm{future async-finish} model (see
+figure~\ref{fig:future-async})
+%
+\begin{figure}
+  \includegraphics[scale=.1]{future-async}
+  \caption{A task graph in the `future async-finish' model}
+  \label{fig:future-async}
+\end{figure}
+%
+can generate task graphs that can not be generated by \ac{IMP}.
+
+\section{Dataflow}
+
+\begin{figure}[ht]
+  \includegraphics[scale=.1]{nbody-kernels}
+  \caption{Relation between the kernels of an N-body algorithm}
+  \label{fig:nbody-flow}
+\end{figure}
+
+The Integrative Model for Parallelism (IMP) uses `kernels' to express algorithms.
+These are global description of operations, formulated in global coordinates and 
+obeying sequential semantics. We only specify data relations between
+kernels, not the exact sequence of execution, so this is a first
+example of \indextermbus{dataflow}{programming}. See for instance
+figure~\ref{fig:nbody-flow} for the kernel structure of an N-body algorithm.
+
+By analysis of the distributions of work and data, this global and sequential
+(and therefore synchronous looking) expression is translated to a dataflow
+formulation.
+We call this an \acf{IR}, because dataflow is not directly
+an execution model. As we have argued elsewhere, dataflow can be considered to be
+a programming model that unifies multiple execution models such as message passing 
+and task graphs. Since both of these are asynchronous (subject to user introduction
+of explicit synchronization of course), we have shown that the sequential semantics
+of the IMP programming model can correspond to an asynchronous execution model.
+
+The \indextermdef{dataflow} idea has been around for a while. For
+instance, Dennis~\cite{Dennis:1974:FirstVersion} gave a definition,
+and argued that it was functional in nature.
+
+Traditionally, dataflow uses \emph{tokens}\index{dataflow!tokens}
+which combine aspects of data and control. We use a different
+synchronization mechanism~\cite{IMP-04}.
+
+\section{More thoughts}
+
+I haven't figured this out yet: one reason that \ac{IMP} can make such
+claims is that it builds up a limited representation of the program
+in the program itself. Here are two concepts that may express this.
+
+\heading{Inspector-executor}
+
+One HPC system, predating MPI, is the ``Parti
+primitives''~\cite{Sussman92partiprimitives}. This package originated
+the \indexterm{inspector-executor} model, where the user would first
+declare a communication pattern to an inspector routine, which would
+then yield an object whose instantiation was the actual
+communication. This expresses the fact that, in \ac{HPC},
+communications are often repetitions of the same irregular pattern.
+The \indexterm{inspector-executor} model is currently available in the
+\n{VecScatter} object of the PETSc library~\cite{GrSm:petsc}, and the
+\n{map} objects of Trilinos~\cite{Trilinos}.
+
+\heading{Partial evaluation and multi-stage programming}
+
+Multi-stage programming~\cite{taha1999multi} builds up a representation of
+the program in the program, and has mechanisms to then execute it.
+\begin{quotation}
+  Having \texttt{Run} in the language is important if we want to use
+  code constructed using the other MetaML constructs, without going
+  outside the language.
+\end{quotation}
+
+From LtU:
+\begin{quotation}
+  I'm not sure I understand what phenomenon you're trying to describe,
+  but you might look into partial evaluation, adaptive optimization,
+  dynamic recompilation, super compilation, and staged programming for
+  some appropriate vocabulary.
+\end{quotation}
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

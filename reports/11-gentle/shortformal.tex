@@ -1,0 +1,147 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% shortformal.tex : include file for IMP-11
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We give a brief formal definition of the concepts
+behind \ac{IMP}. For a full definition see report IMP-03.
+
+\subsection{The basic concepts: data parallel functions}
+\label{sec:parallel-function}
+
+An array is an indexed set of real numbers:
+%
+\DataType{Array}{arrays of real numbers}{\kw{Array}\equiv\kw{Real}^N}
+
+Computation is modeled by the set~$\kw{Func}$ of functions~$f$ from multiple
+real inputs to a single real output:
+%
+\DataType{Func}{functions with a single output}
+  {\kw{Func} \equiv  \kw{Real}^k\rightarrow \kw{Real}}
+where $k$ is some integer.
+
+If we use such a function to compute each component of an output array,
+we need a different set of inputs for each output. We define
+subsets of indices:
+%
+\DataType{Ind}{sets of indices}{\kw{Ind} \equiv 2^N}
+
+The mapping from output indices to sets of input indices is done
+by a function, called the \indexterm{indirect function} that depends on the
+structure of the computation~$f$:
+%
+\[ I_f\colon N\rightarrow \kw{Ind}. \]
+
+For instance, in our motivational example, $y_i$~was computed
+from $x_{i-1},x_i,x_{i+1}$, making $I_f(i)=\{i-1,i,i+1\}$.
+
+%% Armed with the definition of~$I_f$,
+%% we can define the \indexterm{data parallel} application of~$f$:
+%% \[ \mapop f\colon \kw{Array}\rightarrow \kw{Array}
+%%   \qquad\hbox{is the mapping}\qquad
+%%   y=(\mapop f)(x) \equiv \forall_i\colon y_i = f \bigl( x( I_f(i) ) \bigr).\]
+
+\subsection{Data distribution}
+
+A distribution is a mapping from processors to subsets of indices:
+%
+\DataType{Distr}{distributions of data over the processing elements}
+    {\kw{Distr}\equiv P \rightarrow \kw{Ind}}
+%
+where $P=\{0,\ldots,P-1\}$ is the set of processors.
+
+We can now distribute arrays:
+%
+\DataType{DistrArray}{distributed arrays}
+    {\kw{DistrArray} \equiv \kw{Array}\circ\kw{Distr} = P\rightarrow 2^{\kw{Real}}}
+%
+This definition states that, given $x\in\kw{Array}$ and $u\in\kw{Distr}$,
+\[ x(u) \qquad\hbox{is the function}\qquad
+   x(u) \colon p\mapsto x\bigl(u(p)\bigr) = \{ x_i\colon i\in u(p) \}.
+\]
+
+Now, if we have a function
+\[ I_f \colon N\rightarrow \kw{Ind}, \]
+we can extend apply it to a distribution $d$, yielding a new distribution,
+by defining
+\[ I_f(d) \equiv p\mapsto \cup_{i\in d(p)} I_f(i). \]
+
+This brings us to an important point: if we have the function $I_f$
+that describes a data parallel function, and we have the distribution~$d$
+of the output vector, we can derive the distribution of the needed input data
+(the `halo region', in PDE-speak) as $I_f(d)$.
+
+We make the claim that it is possible to let a programmer
+specify $I_f$ with relative easy. This in turn implies that an \ac{IMP}
+system can derive the exact form of the needed input for a processor.
+
+Formally, if we consider a kernel $y\leftarrow f(x)$, we call
+the distribution of~$x$ the $\alpha$-distribution, the distribution
+of~$y$ the $\gamma$-distribution, and we derive the distribution
+of the halo regions as
+\[ \beta=I_f(\gamma). \]
+
+This formula is quite general, encompassing parallel operation
+such as dense matrix/vector operations, sparse operations, reductions,
+shuffles, and restrictions/interpolations.
+
+\subsection{Data dependencies}
+\label{sec:u-inv-v}
+
+With the above we characterized a data parallel kernel
+by distributions~$\alpha,\gamma$ and derived~$\beta$ from it.
+With these we can define processors dependencies.
+Let $p$ be a processor, then
+the processors~$q$ that contribute to~$\beta(p)$ are:
+%
+\Functionl{\kw{pred}}{predecessor set of a processor}
+{q\in \kw{pred}_{\alpha,\beta}(p) \equiv \alpha(q)\cap \beta(p)\not=\emptyset}
+{eq:u-inv-v}
+
+Note that these dependencies are formally derived from the $\alpha$-distribution
+of the input, and the $\beta$-distribution, which itself is derived
+from the indirect function~$I_f$ and the $\gamma$-distribution of the output.
+
+Between dependent processors there are data dependencies, mostly clearly
+expressed as messages in a distributed memory context:
+%
+\Function{\kw{message}_{\alpha,\beta}}
+    {message between two processors wrt two distributions}
+    {\kw{message}_{\alpha,\beta}(q,p)=\alpha(q)\cap \beta(p)}
+
+\subsection{Tasks and dataflow}
+\label{sec:dataflow}
+
+In the previous subsections we have seen how a single kernel,
+that is, a data-parallel operation between two distributed objects,
+leads to processor dependencies. If we call the execution of
+that kernel on a single processor a `task', we find
+dependencies between the tasks of this kernel and
+the tasks of the kernel that produced the input.
+
+For our motivating example:
+
+\includegraphics[scale=.12]{3pt-avg-DAG}
+
+These dependencies have different interpretations depending on the context:
+\begin{itemize}
+\item In a message passing context, $q$~will pass a message to~$p$,
+  and
+\item In a shared memory threading model, the task on~$q$ needs to
+  finish before the task on~$p$ can start.
+\end{itemize}
+By composing a number of kernels, that is, letting the output of one
+functions as the input of another, we find a a DAG of tasks.
+
+We have now reached the important result that our distribution
+formulation of parallel alorithms leads to an abstract dataflow
+version. This abstract version, expressed in tasks and task dependencies,
+can then be interpreted in a manner specific to the parallel platform.
+

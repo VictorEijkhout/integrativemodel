@@ -1,0 +1,137 @@
+%This proposal addresses the dual problem of redesigning hardware
+%to make an energy-efficient exaflop architecture attainable, and 
+%how to program such a machine in a systematic and productive way.
+
+This proposal addresses the integrated problem of revising the fundamental 
+assumptions of hardware architecture to address the increasing energy and performance costs of
+data motion and the increasing importance of communication and synchronization
+in parallel applications, while simultaneously developing a rigorously formulated programming model 
+that facilitates the development of correct programs and that is amenable to 
+automatic program transformations.
+
+Scientific computing has an undiminished appetite for high performance,
+currently aiming for exaflop performance around the year 2020.
+The hurdles to be overcome on that road concern both software and hardware:
+\begin{itemize}
+\item Software has no integrated way of dealing with the diversity of
+  current parallel computer designs, which consists of a mix of
+  distributed memory, shared memory, attached co-processors,
+  light-weight threads, SMT threads, et cetera. While all these
+  modes of parallelism are individually programmable, a unified solution
+  is both lacking and needed.
+\item Large-scale systems are increasingly power-hungry, to the point
+  that an extrapolation of current power budgets projects an
+  exascale machine at hundreds of megawatts. A~redesign is needed that
+  reduces the both cost and power demand by significant factors, while improving
+  scalability to allow increased overall performance.
+\end{itemize}
+
+Most of the traditional approaches to increase performance have reached
+plateaus.  For example, comparing the TOP500 lists of 1993 to 2003, we find that
+almost 80\% of the increase in aggregate performance came from increases in 
+processor (core)
+performance, while for the decade of 2003 to 2013 over 70\% of the increase in aggregate
+performance came from simply increasing the number of processor cores.
+The total number of cores represented by the systems on the TOP500 list has been increasing
+at almost 55\% per year for the last decade and there is little reason to believe that
+application scalability has been able to keep up with such rates.   At the same time,
+the increasing complexity of processors and the increasing disparity between processor
+and memory performance has reduced the extent to which user applications can exploit
+the peak performance improvements and increases in core count that are provided with
+new product generations.
+
+%Single-core clock speed has been approximately constant over the
+%last decade, and current general-purpose multicore designs
+%are also reaching scalability limits in both power and the overhead of
+%cache coherence.   
+
+
+
+We argue that the inability to exploit the reduced power consumption and 
+increased core count of HPC systems is due
+to a mismatch between architectural assumptions and technological realities:
+\textbf{Programming models continue to assume a ``flat-memory'' cache-coherent
+architecture with weakly interacting Von Neumann processors, and
+hardware continues to present this interface, but the actual implementations
+are increasingly unlike this idealized model}. Hence
+we need to rethink both hardware and programming: hardware needs to be
+endowed with a new set of semantics, and programming models need to
+allow expression of both data motion and data dependence, while supporting
+provably correct program transformations to map to the variety of target
+system configurations.
+
+As examples of this architectural mismatch, we note:  
+(1) Current hardware architectures do not provide visibility or control over
+data motion through the memory hierarchy -- even though memory latency
+is now 100 times more expensive (relative to computational rates) than it
+was two decades ago.  Data transfer is also becoming increasingly costly
+in energy use compared to computation~\cite{ITRS_Update_2012}.
+(2) Current hardware architectures provide no explicit mechanisms to
+support communication and synchronization operations.   
+Synchronization using shared memory is extraordinarily inefficient,
+with optimized implementations on idle systems requiring hundreds of cycles
+-- even between cores sharing a last-level cache on a single die.  Under
+more typical circumstances these values quickly rise into the thousands
+or tens of thousands of cycles.
+
+
+\begin{comment}
+As key examples: (1) in current hardware technology data movement 
+%(including communication and synchronization in parallel programming)
+has a higher cost in latency and energy than arithmetic computation 
+%(unless the data reuse from registers and innermost level of cache is
+% extraordinarily high) 
+and this imbalance is projected to increase over 
+time~\cite{ITRS_Update_2012}; and (2) current technologies are also lacking efficient user-accessible mechanisms
+for communication and synchronization.  These are routinely implemented
+with high efficiency in hardware, but architectures must make these mechanisms
+available to code.
+\end{comment}
+
+Optimization of these expensive operations will require both a programming 
+model that can specify data motion and inter-process communication, and 
+efficient hardware mechanisms (with exposed interfaces) to implement them. 
+
+
+%and an exposed set of hardware semantics that
+%allow the required data motion, communication, and synchronization
+%operations to be implemented efficiently.
+
+Our \acf{IMP} naturally expresses data dependencies,
+which can be interpreted as either data motion or task synchronization.
+In \cite{Eijkhout:hips2014} we argued how the \ac{IMP} model
+can be interpreted in terms of several existing programming systems.
+In particular, an algorithm described in our model can be 
+translated to any of these systems. Because of this we propose 
+to adopt and adapt the \ac{IMP} model to exploit
+data motion and synchronization primitives that redesigned hardware
+exposes to user space programming.
+\begin{quotation}
+  \noindent \textbf{We argue that hardware can be made more efficient
+    by making existing hardware functions visible and controllable.}  Exposing these
+    hardware primitives requires them to be programmable, so \textbf{we
+    propose to adapt the IMP software model to enable it to exploit
+    these primitives}.  This proposal argues that a joint software and
+  hardware angle of attack is needed; our research will be to
+  investigate the co-design of hardware capabilities and software
+  expression, and the trade-offs involved.
+\end{quotation}
+
+Most of our proposal will
+focus on the data motion aspects of the co-design of the
+user-level programming model and the 
+hardware architecture responsible, taking into
+account both data motion through a memory hierarchy and data 
+motion related to communication and synchronization across
+parallel tasks.  To a lesser extent we consider execution scheduling
+and threading issues.
+
+In this proposal we will study the redesign of software and hardware,
+leading to \textbf{prototype sofware, and hardware simulators},
+that evaluate the extent to which plausible
+modifications to existing architectures might provide the desired
+functionality and performance. We note that our goal is analysis leading to
+insight, rather than the production of complete new hardware 
+designs or complete software stacks.
+
+

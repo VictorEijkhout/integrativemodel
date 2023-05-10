@@ -1,0 +1,76 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% tag.tex : master file for report IMP-07
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-07}
+
+\usepackage{geometry,fancyhdr,multirow,wrapfig}
+
+\input setup
+
+\title[IMP messages]{Associative messsaging in the Integrative Model}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+IMP messages carry a higher semantic content than in other 
+parallel programming systems. Rather than being arbitrary data,
+they are identical data on the sender and receiver;
+the transfer is induced by the fact that two distributions
+assign different ownership to the data on sender and receiver.
+This note makes that notion precise, and it discusses practical 
+ramifications.
+\end{abstract}
+
+\section{Discussion}
+
+In systems such MPI, a message is an amount of data moved from sender to receiver.
+In the \acf{IMP}, a~message from processor~$q$ to~$p$ stems from two distributions
+$\alpha,\beta$ of the same object,
+such that $\alpha(q)\cap \beta(p)\not=\emptyset$. 
+In other words, a message describes an index set $\alpha(q)\cap \beta(p)$, 
+present on~$q$, and required on~$p$.
+
+If the data with the $\alpha$ distribution was produced by kernel~$k$, and
+the $\beta$ data is the input for a kernel~$k'$, then the message
+is uniquely identified by the task identifier~$\langle k,q\rangle$.
+Now we can assign the tasks $\langle k,q\rangle$ and $\langle k',p\rangle$
+to arbitrary MPI processes, and instead of them waiting for a message
+from an identified MPI process, they wait for a message from any processor,
+with the correct tag attached.
+
+This strategy has at least two interesting implications:
+\begin{enumerate}
+\item We can migrate tasks without any change to communication related data structures.
+  \begin{itemize}
+  \item Trivially, a sending process still knows where to send its messages; but
+  \item a receiving process need not know that the sender has moved, since it receives
+    by tag, not by sender.
+  \end{itemize}
+\item If we add the receiver to the tag,
+  this mechanism may make it easy to oversubscribe a processor with MPI tasks.
+  In effect, the processor will have a task manager that listens for arbitrary messages,
+  and activates the task for which a message has come in.
+\item There is even a possibility of introducing resilience this way: if we redundantly 
+  duplicate tasks, receiving tasks can have multiple ways of satisfying an outstanding receive request.
+  The request will be fulfilled based on its tag, not on who actually sends it.
+\end{enumerate}
+
+%% \bibliography{vle}
+%% \bibliographystyle{plain}
+
+\end{document}

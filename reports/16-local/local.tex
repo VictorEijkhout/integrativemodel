@@ -1,0 +1,323 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% local.tex : master file for report IMP-16
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-16}
+
+\usepackage{geometry,fancyhdr,wrapfig,verbatim}
+
+\input setup
+
+\title[IMP local code]{Processor-local code in the Integrative Model for Parallelism}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We discuss aspects of local operations in the Integrative Model for Parallelism.
+\end{abstract}
+
+\acresetall
+
+\section{Introduction}
+
+The abstract description of the IMP model is based on data parallel application of functions
+%
+\DataType{Func}{functions with a single output}
+  {\kw{Func} \equiv  \kw{Real}^k\rightarrow \kw{Real}}
+%
+Applying this to the computation of an array gives rise to the
+definition of a signature function:
+%
+\includesnippet{indfunction}
+%
+\includesnippet{3ptind}
+%
+Now, letting $\gamma$ be the output distribution, the local function
+application on processor~$p$ becomes
+\[ \forall_{i\in\gamma(p)}\colon y_i=f\bigl( x_{\sigma(\gamma(p))} \bigr) \]
+
+Here we see the first issue in generating the local code: the output
+index~$i$ may not correspond to local array index~$i$.
+\begin{itemize}
+\item In shared memory, a process would actually write the result
+  $y_i$ to array location~\n{y[i]}.
+\item In distributed memory, where each process has a local array,
+  $y_i$~would correspond to~\n{y[i-my_first]}, where \n{my_first}
+  describes the embedding of the local array in the global one.
+\item For multi-dimensional arrays this becomes more complicated, and
+  the global-to-local mapping from the previous item becomes a more
+  complicated function.
+\end{itemize}
+
+Mapping the input indices to array locations is even more tricky; see
+the example below. In summary we have:
+\begin{framed}
+  \textbf{The mapping problem}: given the data parallel application of
+  a function between distributed input and output vectors, how do we
+  transform the input and output indices to address only the
+  processor-local part of the arrays.
+\end{framed}
+
+After this mapping problem, we then have the traversal problem: above we only specified the
+execution with a `for-all' enumeration. The exact traversal of the output index set can have
+serious performance ramifications. Matters such as keeping intermediate results in register,
+and optimal use of cachelines become an issue here.
+
+\section{Uniform indexing}
+
+\begin{figure}[ht]
+  \includegraphics[scale=.13]{localindex}
+  \caption{Illustration of the various indexing concepts}
+  \label{fig:localindex}
+\end{figure}
+\begin{figure}[ht]
+  \includegraphics[scale=.13]{localindex-mpi}
+  \caption{Illustration of the various indexing concepts in MPI
+    distributed memory}
+  \label{fig:localindex-mpi}
+\end{figure}
+\begin{figure}[ht]
+  \includegraphics[scale=.13]{localindex-omp}
+  \caption{Illustration of the various indexing concepts in OpenMP
+    shared memory}
+  \label{fig:localindex-omp}
+\end{figure}
+
+We want to do all indexing in global numbering. In the sequential case
+that makes sense, and probably even in the shared memory
+case. However, as soon as we introduce distributed memory it becomes
+harder. We then have to compute a point $(i,j,k)$ in memory relative
+to (figure~\ref{fig:localindex}):
+\begin{itemize}
+\item The global domain: this is the domain of definition of the
+  operation, typically an interval $0\ldots N-1$ in each direction.
+\item Numa domain: this is the set of all indices that a process has
+  access to.
+\item Process domain: the set of all indices that a process owns and
+  where it computes the output.
+\end{itemize}
+
+Two limiting cases are immediately clear:
+\begin{itemize}
+\item In MPI distributed memory, there is only one process running on each
+  address space, so the numa domain and process domain coincide;
+  figure~\ref{fig:localindex-mpi}.
+\item In OpenMP shared memory the global domain and numa domain
+  coincide because there is only one address space; figure~\ref{fig:localindex-omp}.
+\end{itemize}
+
+Thus, the we use mode-independent macros for translating a global
+index to a local one in the numa space:
+%
+\verbatimsnippet{numa123index}
+
+These macros can be optimized away by any competent compiler.
+
+The above leads to the following definitions of memory offsets for an
+operation with an \n{invector} and an \n{outvector}:
+
+\verbatimsnippet{numaoffsets}
+
+See for instance a
+copy loop in two dimensions:
+
+\verbatimsnippet{copyloop2d}
+
+The distinction between the parallelism modes is achieved by an
+overloaded function. In MPI it is the processor structure of `this' process:
+
+\verbatimsnippet{mpinuma}
+
+For OpenMP it is the enclosing structure:
+
+\verbatimsnippet{ompnuma}
+
+\section{Message structures}
+
+Find the parts of an $\alpha$-distribution that make up a given \n{beta_block}:
+%
+\verbatimsnippet{analyzepatterndependence}
+
+where
+the beta block comes from a $\beta$-distribution:
+%
+\verbatimsnippet{msgsforbeta}
+
+For MPI, the message is relativized again the processor structure of
+the $\beta$-distribution:
+%
+\verbatimsnippet{mpivisibility}
+%
+For OpenMP it's the whole structure:
+%
+\verbatimsnippet{ompvisibility}
+
+The relativize methods are separately implemented for each type of \n{indexstruct}.
+%
+\verbatimsnippet{msgrelativize}
+
+Thus the \n{globalstruct} of a message is in global indexing, while
+the \n{localstruct} can be used for indexing in the actual array.
+
+If the beta sticks out, we use an `embed message'
+%
+\verbatimsnippet{mpiembedmessage}
+
+\subsection{MPI}
+
+\subsubsection{Send message}
+
+We send elements from an $\alpha$-structure.
+
+\begin{remark}
+  Note: the $\alpha$ can be embedded in a beta, but retain its own
+  numbering in 1D. In higher dimensions that is wrong.
+\end{remark}
+
+For MPI, the message uses the MPI `subarray' type, which handles any
+dimension elegantly:
+%
+\verbatimsnippet{mpisend}
+%
+\verbatimsnippet{mpisrcindex}
+%
+based on
+%
+\verbatimsnippet{impsrcindex}
+%
+and
+%
+\verbatimsnippet{subarray}
+
+\subsubsection{Receive message}
+
+The receive message writes into a $\beta$ structure.
+%
+\verbatimsnippet{mpirecv}
+%
+using
+%
+\verbatimsnippet{mpitarindex}
+
+(Note the \n{embed_structure}, which is equal to the local structure,
+except when the halo sticks out.)
+
+Again, we have a basic routine
+%
+\verbatimsnippet{imptarindex}
+
+\subsection{OpenMP}
+
+In OpenMP, we `post a receive' by adding a request object to a task.
+%
+\verbatimsnippet{ompaccept}
+%
+The actual work is then done in the `wait' call:
+%
+\verbatimsnippet{ompwait}
+%
+using an elaborate copy routine
+%
+\verbatimsnippet{ompcopydata}
+
+\section{More examples}
+
+\verbatimsnippet{shiftleftbump}
+
+\end{document}
+
+\section{Examples}
+
+\subsection{Simple stuff: vector scaling}
+
+The following code is written for OpenMP:
+%
+\verbatimsnippet{ompscalevec}
+%
+Noteworthy features:
+\begin{itemize}
+\item The local data \verb+double *outdata = outvector->get_data();+
+  is in fact the global array shared by all processors.
+\item Its first element is \verb+outvector->global_first_index()+; this is zero
+  for pure OpenMP, but nonzero in hybrid context.
+\item Input and output vectors are addressed with offsets to a `base register'.
+\item The target base is then the first index for this processor,
+  \verb+outvector->first_index(p)+, offset by the global base index:
+\begin{verbatim}
+tar0 = outvector->first_index(p)-outvector->global_first_index(),
+\end{verbatim}
+\item The source base index is slightly tricky: here we need to find
+  the target base, which is formulated wrt the output vector, but we
+  substract the global base of the input vector.
+\begin{verbatim}
+src0 = outvector->first_index(p)-invector->global_first_index(),
+\end{verbatim}
+\end{itemize}
+
+\subsection{Border cases}
+
+A right shift operation is defined for all but the globally first index. The OpenMP case
+has many similarities with the previous:
+%
+\verbatimsnippet{omprightshiftbump}
+%
+but note the small complication in setting the lower bound.
+
+\subsection{Three point stencils}
+
+The threepoint sum \[ y_i=x_i+x_{i-1}+x_{i+1} \]
+
+In shared memory without wrap around connections we need to treat the
+first and last processor specially:
+\verbatimsnippet{threepointsumbumpomp}
+Note that the \n{i-1,i,i+1} indexing survives intact.
+
+If there are wrap around connections, all processors are treated equally,
+but we note that in~C the indexing shifts from $i-1,i,i+1$ to $i,i+1,i+2$.
+\verbatimsnippet{threepointsummodomp}
+
+MPI with wrap:
+\verbatimsnippet{mpi3pmod}
+without:
+\verbatimsnippet{mpi3pbump}
+
+We can summarize this by saying that the indexing shifts if there are halo points
+on this address space:
+\begin{itemize}
+\item For MPI that happens on interior domains, and end points if we have modulo connections.
+\item OpenMP domains act like MPI end points.
+\end{itemize}
+
+\subsection{Replicated quantities}
+
+A function that illustrates the problems with replicated quantities:
+\verbatimsnippet{ompnormsquared}
+
+We see that \n{outdata} is defined as \verb+get_data(p)+, which is
+normally a global pointer, but here a pointer to private replication
+of processor~\n{p}.
+
+\subsection{Unsolved problem}
+
+Hybrid is a problem. For instance the \n{<=} operator implies a left halo
+on every MPI rank but zero. So now if you're in the embedded OpenMP
+context, how can you tell if that halo exists?
+
+The following code is wrong:
+\verbatimsnippet{omprightshiftbump}
+
+\end{document}

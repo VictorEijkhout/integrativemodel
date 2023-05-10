@@ -1,0 +1,241 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% gentle.tex : master file for report IMP-11
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-11}
+
+\usepackage{geometry,fancyhdr,wrapfig,verbatim}
+
+\input setup
+
+\title[IMP introduction]{A gentle introduction to the Integrative Model for Parallelism}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+In this report we give the philosophy, the basic concepts,
+and some demonstration, of the \acf{IMP}.
+We show that a judicious design of programming abstractions
+can lead to a system that accomplishes the holy grail of parallel programming:
+\begin{enumerate}
+\item High level expression,
+\item translating to efficient use of low level primitives,
+\item in a wide range of applications.
+\end{enumerate}
+It does this through a new theoretical formulation of parallel computing.
+\end{abstract}
+
+\acresetall
+
+\section{Introduction}
+\input model
+
+\section{A motivating example for the basic concepts}
+\label{imp11example}
+\input threepoint
+
+%% \section{Basic concepts}
+%% \label{basictype}
+%% \input shorttype
+
+\section{Practical realization}
+\label{sec:realization}
+
+\subsection{Programming the model}
+\input programthreepoint
+
+%% \subsection{Design concepts of the Integrative Model for Parallelism}
+%% \label{imp11concepts}
+%% \input imp
+
+\subsection{Software realization and proof of concept}
+\label{imp11software}
+\input shortsoftware
+
+\section{Applications of the IMP model}
+\label{imp11apps}
+
+In this section we will show how the basic elements of the \ac{IMP}
+system can be used to define the user-level kernels for various
+algorithms.
+
+\subsection{Flexible treatment of distributions}
+%
+Simple operations such as vector addition become complicated
+if the vectors concerned do not have the same distribution.
+For instance, the PETSc library requires matrices and vectors
+that appear in one operation, such as \n{MatMult} or \n{VecAXPY},
+to be identically distributed.
+
+In \ac{IMP}, a vector addition would mathematically be
+\[ y(d) \leftarrow x_1(d)+x_2(d) \]
+where $d$~is a distribution. If the $\alpha$-distributions
+of $x_1,x_2$ are not~$d$, data motion is automatically generated.
+
+For instance, this is the definition of the vector sum operation:
+%
+\verbatimsnippet{vecsum}
+
+\subsection{Regular stencils}
+%
+The motivating example above used mechanism of shifts on the output
+distribution. These shifts are very similar to the mechanism
+used to specify stencils in the Pochoir compiler~\cite{Tang:2011:pochoir}.
+
+\subsection{Irregular sparse matrices}
+%
+We implement distributed sparse matrices with a small derived class:
+%
+\verbatimsnippet{spmvpkernel}
+
+\pagebreak
+\subsection{Redundant computation}
+
+\begin{wrapfigure}{r}{3.5in}
+  \includegraphics[scale=.12]{nbody-8421}
+  \caption{Distributed structure of a tree with 16 leaves on 8 processors.}
+  \label{fig:ntree}
+%  \vspace{-.2in}
+\end{wrapfigure}
+%
+Tree-structured computations are problem case for distributed computing:
+at the highest levels in the tree there will be fewer nodes per level than processors.
+This means that we have to decide either
+to let processors go inactive, or
+to have partial or total redundance calculation.
+
+There are various arguments why redundancy is the better strategy.
+The obvious counter argument that redundant computation entails more work
+is countered by the fact that (in the downward tree) there will be less communication.
+Furthermore, redundant computing is more `symmetric', hence probably easier to
+  reason about and to program; it will certainly be easier to realize
+in the case of non-uniform refinement on the partially populated levels.
+
+Here we look at a gather operation towards the root of a tree,
+where the top levels of the tree are redundantly distributed in a manner we will
+make precise. For purposes of illustration it is easiest to consider
+figure~\ref{fig:ntree}.
+\begin{enumerate}
+\item The bottom two levels are disjointly distributed,
+  and the first step of the reduction is a strictly local operation.
+\item The top three levels are partially or totally redundant;
+\item The reductions to the redundant tree levels are no longer local
+  and involve communication. (If there source level is redundant,
+  this communication is no longer uniquely determined.)
+\end{enumerate}
+
+Mathematically, we derive these distributions by successive division.
+Let $\gamma$ be the distribution of one level, and say
+\[ \gamma(p) = [ i_0,\ldots,i_1 ], \]
+then $\gamma'=\gamma/2$ is the distribution
+\[ \gamma'(p) = [ i_0/2,\ldots,i_1/2 ]. \]
+This gives the desired behaviour:
+\[ \left. 
+\begin{array}{c} \gamma(p) = [0]\\ \gamma(p+1)=[1]\\
+  \gamma(p+2)=[2]\\ \gamma(p+3)=[2]
+\end{array}
+\right\} \Rightarrow \left\{
+\begin{array}{c} \gamma'(p) = [0]\\ \gamma'(p+1)=[0]\\
+  \gamma'(p+2)=[1]\\ \gamma'(p+3)=[1]
+\end{array} \right.
+\]
+
+The code implementing this is relatively straightforward:
+%
+\verbatimsnippet{dividedistributions}
+
+The indirect functions of the kernel are then given by
+an explicit function pointer:
+%
+\verbatimsnippet{dividekernels}
+
+\subsection{Load balancing}
+
+In IMP, a load redistribution can be realized through a copy operation
+between two different distributions on the same data.
+We implement this through the basic mechanism of operating on
+distributions, driven by an object that describes the current
+workload.
+
+\verbatimsnippet{apply_average}
+
+The \n{transform_by_average} function is not entirely trivial, but can
+be written on the user level: all available functionality follows from
+our definition of distributions.
+
+\section{Innovation and impact}
+
+In addition to the \textbf{theoretical novelty} argument,
+we can make several practical arguments for our proposed system, 
+showing that in several aspects our system creates the opportunity for
+a significant leap in the state of parallel scientific programming,
+rather than a simple incremental improvement.
+
+For the Integrative Model
+we claim a \textbf{productivity} advantage over
+existing software/hardware systems. Secondly, by programming in a
+mode-independent manner we make a \textbf{code portability} and
+\textbf{future-proofing} argument: codes will become transferable to
+different and future hardware environments. Thirdly, we argue that an IMP
+system is capable of dealing with circumstances such as replicated data
+that current systems typically do not include, giving us a
+\textbf{capability} argument.
+
+We further claim a \textbf{capability argument} that 
+our system can deal with hybrid computing as easily
+as with single-mode (distributed or shared memory) computing. On
+projected future (\textbf{exascale}) architectures that can become a very important
+consideration~\cite{Kogge:newnormal}, and we are pretty much unique in making this claim.
+
+A hybrid system also allows us to make a \textbf{performance} argument. Since
+the ISP system can analyze the Intermediate Representation of the
+code, it can engage in task re-ordering and migration. We have shown
+theoretically how this can transform codes to a `communication
+avoiding' state.
+
+\section{Conclusion}
+
+We have made a theoretical and practical case that it is possible
+to have an efficient, and efficiently programmable parallel system
+based on the following principles:
+\begin{itemize}
+\item There should be a separation between how algorithms are expressed
+  and how they are executed. In particular, we argue for a programming
+  model with sequential semantics and an execution model based on dataflow.
+\item Information about the algorithm and the execution should be
+  explicitly expressed, rather be implicit and derived by a compiler
+  or runtime system. We have shown that \ac{IMP} offers a way to
+  express these algorithm and data properties in a way that is not a great
+  imposition to the programmer.
+\item For an efficient execution, it is necessary to express both
+  information about the data and about the algorithm. \ac{IMP} has
+  a construct, the $\beta$-distribution, that contains this information
+  and that is derived from the user specification of the data and algorithm.
+  In particular, data dependencies (including messages) are not explicitly
+  programmed, but rather derived, in~\ac{IMP}.
+\item It is possible to have a model for parallelism that is completely
+  mathematically defined. This makes it possible to prove correctness, efficiency,
+  and to define transformations on the algorithm. In work not reported here
+  we have shown that \ac{IMP} can accomodate, for instance, load balancing
+  and redundant computing.
+\end{itemize}
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}
+

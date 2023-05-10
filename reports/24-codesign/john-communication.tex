@@ -1,0 +1,114 @@
+   \item \textbf{Performance gains from architectural support for
+  communication and synchronization.}  Current processor architectures
+     "support" communication and synchronization only implicitly, as
+     side effects of ordered sequences of loads and stores to a
+     cache-coherent shared memory space.  Implementations of
+     inter-process communication and synchronization using shared
+     memory are inefficient because they require multiple transactions
+     to communicate even the most basic information, and because the
+     memory accesses used for communication are indistinguishable from
+     memory access used privately by processes (and therefore cannot
+     be treated differently by the hardware).
+     
+     To make matters worse, programming communication and
+     synchronization operations directly via shared memory is
+     incredibly difficult, requiring extremely detailed knowledge of
+     both the coherence model and the consistency model of the
+     processor in question.  Many implementations have subtle errors
+     that persist for years, only showing up sporadically or after
+     moving the code to a system with a weaker consistency
+     model. I.e., in the latter case the original code was
+     ]textit{architecturally} incorrect -- it contained a race
+       condition -- but the race condition did not occur on the
+       specific \textit{implementation} on which it was developed,
+       because the \textit{implementation} did not allow transactions
+       to occur out of order to the same degree as the
+       \textit{architecture} allowed.
+     
+     The problem here is that the \textit{architecture} does not
+     directly support communication and synchronization as directly
+     visible concepts, and that while the implementation makes it
+     possible to implement communication and synchronization
+     operations, the logical reasoning required is not natural for
+     human programmers.  Sutter and Larus observe:
+ \begin{quote}
+   humans are quickly overwhelmed by concurrency and find it much more
+   difficult to reason about concurrent than sequential code. Even
+   careful people miss possible interleavings among even simple
+   collections of partially ordered operations.  \cite{Sutter_2005}
+ \end{quote}
+     
+     Communication and synchronization between shared-memory "nodes"
+     is even more coarse, and is implemented by strongly ordered (and
+     very slow) IO mechanisms -- originally developed for accessing
+     disk drives and fundamentally unchanged since their inception.
+     
+     In contrast, the actual implementation of processors is full of
+     high-performance communication and synchronization mechanisms.
+     The out-of-order core of a modern microprocessor is essentially a
+     dataflow engine interconnecting the register file(s) with the
+     various functional units and dynamically deriving its dataflow
+     dependencies from an analysis of the incoming serial code.  The
+     cache coherence and data communications between processors (e.g.,
+     HyperTransport for AMD processors and QPI for Intel processors)
+     are based on hardware FIFOs with credit-based flow-control and
+     multiple virtual channels.  Unfortunately, these highly efficient
+     mechanisms are not visible to software, and therefore cannot be
+     directly exploited to implement communication and synchronization
+     operations between processes.
+     
+     We propose to investigate the semantic requirements for a set of
+     communication and synchronization primitives at a higher level --
+     explicit in the architectural specification and more closely
+     matching the mental models used by humans.
+     
+     Example: FIFOs: It is clear that direct hardware implementations
+     of functions such as FIFOs can be dramatically more efficient
+     than any conceivable software implementation.  Kirsch, \textit{et
+       al.} report results for several concurrent non-blocking FIFO
+     implementations on a 4-socket, 40-core server.  A single FIFO
+     implemented in the style of Michael and
+     Scott~\cite{michael1996simple} shows an average overhead
+     corresponding to 100,000 processor cycles per enqueue or dequeue
+     operation when 20 threads are attempting to enqueue and 20
+     threads are attempting to dequeue with 4600 cycle "work" periods
+     between enqueue or dequeue operations.  By abandoning FIFO
+     ordering and creating 64 independent FIFOs, Kirsch \textit{et
+       al.} were able to improve performance and reduce the overhead
+     to the equivalent of 6700 cycles.  In contrast, a hardware FIFO
+     implementation can easily deliver results that are limited only
+     by the bandwidth of the interface -- several hundred times the
+     throughput of the 64-way parallel software implementation --
+     without any need to sacrifice strict ordering.
+     
+     Hardware support of FIFOs also reduces the gap between human
+     reasoning and machine operation.  For example, humans are quite
+     adept at understanding causality, which is the fundamental
+     principle behind data dependence graphs and dataflow hardware
+     mechanisms, so programming using FIFOs for communication is much
+     easier than programming at the lower level of mutexes or their
+     lock-free counterparts.
+     
+     Research questions:  
+     \begin{itemize}
+       \item What sort of payload(s) do we need from a hardware FIFO?  Words? Cache lines? bigger blocks?
+       \item How many FIFOs does an application need?  Do we want to access all memory via FIFOs or use block transfers for standard (unordered) traffic and save the FIFOs for ordered communication traffic?
+       \item How do we manage buffering/flow-control in the hardware
+         FIFO?  We have to either limit the number of requests to
+         guarantee that the FIFO cannot "fall behind" (creating an
+         unbounded queue of transactions needing to be handled) or we
+         need a NACK mechanism that forces processors to try again
+         later.
+      \item What specific changes are needed to a current processor in order to exploit a hardware FIFO? 
+      \begin{itemize}
+        \item A low-latency non-speculative memory space is required.
+        \item Where would a FIFO live?  In an Intel Xeon E5 processor, the L3 ring looks like the right spot, with 32 Byte/cycle read/write ports on the L3 ring interconnect.
+        \item Accesses bigger than 16 Bytes require core support to
+          put the data straight into registers (if caches are used).
+          Support for up to full cache lines (loaded into 2 AVX or 4
+          SSE or 8 GP registers with a single non-interruptible
+          instruction) is desired.
+        \item Local memory allows arbitrary payload sizes (up to the size of the local memory) - but be careful of the FIFO falling behind (due to bandwidth limits) if the payloads are large.
+      \end{itemize}
+    \end{itemize}
+

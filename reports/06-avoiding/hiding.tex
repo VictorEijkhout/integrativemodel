@@ -1,0 +1,76 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% hiding.tex : include file for report IMP-06
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Orchestrating data transfer}
+
+%\begin{figure}[ht]
+  \begin{wrapfigure}{r}{2in}
+    \includegraphics[scale=.04]{task-send1}
+    \caption{Depiction of task $(k_1,q)$ sending data to $(k_2,p)$}
+    \label{fig:tasksend1}
+  \end{wrapfigure}
+%\end{figure}
+%
+In figure~\ref{fig:tasksend1} we depict the logical structure of data
+transfer: kernel~$k_1$ produces data (specifically, in processor~$q$), which is needed in
+kernel~$k_2$ (specifically, in processor~$q$).
+(While the picture makes the kernel tasks look synchronized, that is,
+all tasks in $k_1$ happening before~$k_1$, this need not be the case
+in practice.)
+
+Actually realizing this conceptual picture in practice is not
+trivial. We know that kernel~$k_2$ takes a certain object as input, so
+the easiest implementation posts both the sends and receives for that
+object as a first step in~$k_2$. This is depicted in
+figure~\ref{fig:tasksend2}. However, we would like to post the
+send/receive operations earlier, so that we can take advantage of
+possible offloaded communication.
+
+%\begin{figure}[ht]
+  \begin{wrapfigure}{r}{2in}
+\includegraphics[scale=.04]{task-send2}
+  \caption{Data transfer as part of $k_2$}
+  \label{fig:tasksend2}
+\end{wrapfigure}
+%\end{figure}
+%
+The optimized solution is then that the descriptors for the
+send/receive operations are moved from $k_2$ which creates them, to
+$k_1$ where can can earliest be executed. This means that the transfer
+can overlap with any intervening kernel~$k_3$. It also means that the
+space available for $k_3$ is diminished by buffer space for the
+$k_1\rightarrow k_2$ transfer. See figure~\ref{fig:tasksend3}.
+
+\begin{figure}[ht]
+\includegraphics[scale=.04]{task-send3}
+  \caption{Buffer space detracts from available space for intervening kernel~$k_3$}
+  \label{fig:tasksend3}
+\end{figure}
+
+\subsection{Overlap}
+
+\begin{figure}[ht]
+  \includegraphics[scale=.5]{pipelineprods}
+  \caption{Matrix-vector and vector-vector inner product in the kernel
+    structure of pipelined CG}
+  \label{fig:pipelineprods}
+\end{figure}
+
+We analyze the task graph to find operations that can potentially
+overlap. For instance, in pipelined Conjugate Gradients~\cite{IMP-17}
+the matrix-vector product and one inner product are seen to be
+causally unrelated, hence overlappable; figure~\ref{fig:pipelineprods}.
+
+Such an analysis is NP-complete in the general
+case~\cite{Taylor:syncNP}, but becomes very efficient in the
+parallelism model of IMP.

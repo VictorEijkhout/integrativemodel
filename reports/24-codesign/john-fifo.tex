@@ -1,0 +1,96 @@
+The assumption of transparent caches has led to a variety of design decisions
+that effectively prevent the efficient use of shared memory for communication and
+synchronization.  For example, the assumption of transparent caches prohibits
+memory references from generating side effects (since memory reads might be
+repeated any number of times, with the data dropped from cache before being
+fully read).  A common use of side effects would be in combining communication
+and synchronization operations, such as in a FIFO.   Extracting an item from a 
+queue should return the desired data item and atomically update the pointer
+in preparation for the next access.  In the absence of support for side effects, 
+functions such as FIFOs must be implemented indirectly via sequences of 
+ordered memory operations, and implementations are made ridiculously 
+complex by the need to recognize and recover from failures in atomicity.
+State-of-the-art software implementations of fixed-length FIFOs in shared 
+memory on small SMP systems have typical access times in excess of 
+1 microsecond (2000-3000 processor clock cycles), and overhead that limits
+throughput to approximate one transaction per latency.  In contrast, hardware
+FIFOs (which are used throughout all modern microprocessor systems, but
+which are not visible to the software) can easily have latency in the 10 ns 
+range on-chip and in the 60 ns range on two-chip systems, with the capability
+to fully pipeline accesses up to the bandwidth limits of the interconnect.
+
+     In contrast, the actual implementation of processors is full of
+     high-performance communication and synchronization mechanisms.
+     The out-of-order core of a modern microprocessor is essentially a
+     dataflow engine interconnecting the register file(s) with the
+     various functional units and dynamically deriving its dataflow
+     dependencies from an analysis of the incoming serial code.  The
+     cache coherence and data communications between processors (e.g.,
+     HyperTransport for AMD processors and QPI for Intel processors)
+     are based on hardware FIFOs with credit-based flow-control and
+     multiple virtual channels.  Unfortunately, these highly efficient
+     mechanisms are not visible to software, and therefore cannot be
+     directly exploited to implement communication and synchronization
+     operations between processes.
+     
+     We propose to investigate the semantic requirements for a set of
+     communication and synchronization primitives at a higher level --
+     explicit in the architectural specification and more closely
+     matching the mental models used by humans.
+     
+     Example: FIFOs: It is clear that direct hardware implementations
+     of functions such as FIFOs can be dramatically more efficient
+     than any conceivable software implementation.  Kirsch, \textit{et
+       al.} report results for several concurrent non-blocking FIFO
+     implementations on a 4-socket, 40-core server.  A single FIFO
+     implemented in the style of Michael and
+     Scott~\cite{michael1996simple} shows an average overhead
+     corresponding to 100,000 processor cycles per enqueue or dequeue
+     operation when 20 threads are attempting to enqueue and 20
+     threads are attempting to dequeue with 4600 cycle "work" periods
+     between enqueue or dequeue operations.  By abandoning FIFO
+     ordering and creating 64 independent FIFOs, Kirsch \textit{et
+       al.} were able to improve performance and reduce the overhead
+     to the equivalent of 6700 cycles.  In contrast, a hardware FIFO
+     implementation can easily deliver results that are limited only
+     by the bandwidth of the interface -- several hundred times the
+     throughput of the 64-way parallel software implementation --
+     without any need to sacrifice strict ordering.
+     
+     Hardware support of FIFOs also reduces the gap between human
+     reasoning and machine operation.  For example, humans are quite
+     adept at understanding causality, which is the fundamental
+     principle behind data dependence graphs and dataflow hardware
+     mechanisms, so programming using FIFOs for communication is much
+     easier than programming at the lower level of mutexes or their
+     lock-free counterparts.
+
+     Research questions:  
+     \begin{itemize}
+       \item What sort of payload(s) do we need from a hardware FIFO?
+         Words? Cache lines? bigger blocks?
+       \item How many FIFOs does an application need?  Do we want to
+         access all memory via FIFOs or use block transfers for
+         standard (unordered) traffic and save the FIFOs for ordered
+         communication traffic?
+       \item How do we manage buffering/flow-control in the hardware
+         FIFO?  We have to either limit the number of requests to
+         guarantee that the FIFO cannot "fall behind" (creating an
+         unbounded queue of transactions needing to be handled) or we
+         need a NACK mechanism that forces processors to try again
+         later.
+      \item What specific changes are needed to a current processor in
+        order to exploit a hardware FIFO?
+      \begin{itemize}
+        \item A low-latency non-speculative memory space is required.
+        \item Where would a FIFO live?  In an Intel Xeon E5 processor, the L3 ring looks like the right spot, with 32 Byte/cycle read/write ports on the L3 ring interconnect.
+        \item Accesses bigger than 16 Bytes require core support to put the data straight into registers (if caches are used).   Support for up to full cache lines (loaded into 2 AVX or 4 SSE or 8 GP registers with a single non-interruptible instruction) is desired.
+        \item Local memory allows arbitrary payload sizes (up to the size of the local memory) - but be careful of the FIFO falling behind (due to bandwidth limits) if the payloads are large.
+      \end{itemize}
+      \item What do we need other than FIFOs?
+        \begin{itemize}
+          \item Barrier networks are nice for some applications (particularly data parallel implementations).
+          \item Collective operators like reductions and broadcasts are fairly common -- do they need to be separately handled in hardware?  Are they even the right ideas conceptually once we leave the bulk synchronous model behind?
+          \item What about multicast and subset communicators?   Multi-level algorithms might be able to benefit from the latter.  How do we bridge between finite hardware resources and potentially very large software footprints?
+          \item Does Transactional Memory fit in here at all?   Probably not -- TM is mostly a way of avoiding confusing states when multiple entities are reading and writing a directly accessible shared memory space.  If shared memory is rejected in favor of messages, then TM would simple be an implementation detail in the case where the messages happened to be transported over a shared memory interface.
+    \end{itemize}

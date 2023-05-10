@@ -1,0 +1,48 @@
+We will give a brief description of an example of managed local
+storage and its possible advantages. We consider the problem of doing
+multiple local averaging updates on a large grid:
+\begin{verbatim}
+for t=0 until convergence:
+  for i in domain:
+    a(t+1,i) = // combination of a(t,i')
+\end{verbatim}
+where $i$ is a multi-dimensional index, and the $i'$s are in a small
+neighbourhood of~$i$. As written, this kernel is bandwidth-bound;
+however, the observation that points on level~$t$ are used multiple
+times allows for a severe reduction in bandwidth, especially if
+multiple levels are considered together and the domain is blocked and
+intermediate results are also reused. (This idea goes back at least to
+1994~\cite{OpJo:improved-ssor} and was recently revived as a
+`communication avoiding' algorithm~\cite{Demmel2008IEEE:avoiding}.)
+
+This strategy can be coded by
+hand, but in two and three dimensions it becomes increasingly
+cumbersome. Therefore, it has been proposed to code this as a
+`cache-oblivious' algorithm~\cite{Prokop:masters1999}. While this
+offers a decided improvement over the naive code, it is no substitute
+for knowing precisely how to block.
+
+Our framework allows us to reason analytically about the data points
+and the amount of
+storage needed.  If we assume that all $a(t,\cdot)$ have the same
+distribution~$u$ (in the technical sense; see
+section~\ref{sec:distro}), and $A$~is an adjacency matrix describing
+the neighbourhood structure (that is, $A(i,j)$ is nonzero if $j$~is in
+the local neighbourhood of~$i$), then $p\mapsto\In(E_p)$ is the
+distribution~$Au$~\cite{Eijkhout:WCECSbook2013}. This means that in
+order to block two levels, processor~$p$ needs space
+$|u(p)|+|(Au)(p)|$ and this analysis can be repeated transitively.
+
+Two observations:
+\begin{itemize}
+\item This blocking requires redundantly duplicated work, which is
+  trivially realized in distributed memory; in shared memory it
+  requires abolishing coherence and the use of managed local storage
+  as we propose.
+\item For simple problems the blocking analysis can be done symbolically, but
+  at worst it can be done at runtime; its complexity is then comparable 
+  to the graph closure analysis that is common in many problems, such as
+  setting up a Scharz precondition. We will investigate the complexity such
+  runtime analysis incurs relative to thread granularity; however, note that this
+  is an amortizable preprocessing cost.
+\end{itemize}

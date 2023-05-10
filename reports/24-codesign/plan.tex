@@ -1,0 +1,77 @@
+Here we give a global overview of our research agenda; a set of detailed research
+questions was given in section~\ref{sec:proposed}.
+
+We approach our project from two ends: software and hardware,
+but both angles of attack are complementary and will be
+persued in close collaboration.
+
+\bparagraph{Management plan}
+Since all participants in the project will be located at the same
+institution, we will hold monthly general meetings.  The PIs will hold
+bi-weekly meetings with the students and post-doc, and the students will
+have regular meetings with the post-doc. The students will be encouraged
+to collaborate. We will use contacts at national labs and industry to
+let the students do summer internships to broaden their perspective on
+the subject of parallel programming and parallel hardware.  We are
+confident that this project has enough material for two doctoral
+degrees and scientific advancement of the post-doc.
+
+\bparagraph{Timeline}
+It is hard to divide this project in discrete subprojects, but globally
+we will use the following program.
+\begin{description}
+\item[Year 1] We start by investigating relevant issues in software
+  and hardware to determine what semantics can realistically be asked
+  to be supported, and how software and hardware can interact.
+  Joint investigation of software and hardware will lead to a first overall design.
+\item[Year 2] We will investigate the implications of replacing caches
+  by local memory, of enhanced DRAM semantics, and of abolishing
+  coherence. These are matters related to data transport, and they lead to 
+  research questions in software and hardware:
+  \begin{itemize}
+  \item We will develop the concepts and their practical realization
+    in \ac{IMP}, delivering both theory and a prototype
+    implementation.
+  \item We will construct cycle-accurate simulators of hardware,
+    including enhanced DRAM controllers.
+  \end{itemize}
+\item[Year 3] We will extend our investigations to issues of threading and the synchronization this entails.
+  Again, we will develop the theoretical apparatus, an API for expressing it, prototype software,
+  and simulators for the hardware designs.
+\end{description}
+
+\endinput
+
+
+\textbf{Software.}
+We will investigate parallelizable algorithms for their suitability of
+  expression in the \ac{IMP} model. This serves several purposes.
+\begin{itemize}
+\item First of all, having a repertoire of parallelized algorithms
+  will bolster our case for the universality of the model, or
+  conversely teach us where its limitations lie.
+\item By going through all the details of translating \ac{IMP}
+  algorithms down to the hardware we will learn at what levels
+  scheduling and optimization can be done: compilation, runtime setup,
+  just-in-time, and whether this is done in user-space software,
+  system level, or hardware level.
+\item As an end result of this software investigation we hope to
+  settle on a set of desired primitives for hardware to provide.
+\end{itemize}
+
+\textbf{Hardware.}
+Approaching the work from the hardware end, we will simulate various
+hardware designs and evaluate their performance on the
+\ac{IMP}-expressed algorithms.
+\begin{itemize}
+\item We will start by writing simulators for various aspects of hardware that
+  give both cycle-accurate timing, as well as detailed reporting on
+  the power budget. 
+\item One question to be  investigated is the trade-offs
+  between cache and managed local memory by running several algorithms
+  through the simulators. Initially we will focus mostly on reducing latency,
+  later we will address the power consumption explicitly.
+\item Another aspect to be investigated is the balance between sophistication on the
+  hardware level versus performance improvements on the algorithm
+  level.
+\end{itemize}

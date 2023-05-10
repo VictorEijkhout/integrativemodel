@@ -1,0 +1,320 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% setup.tex : packages and macros for the report series
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{comment}
+
+\usepackage{amsmath,amssymb,graphicx,mdframed,multicol,pslatex,algorithm2e,verbatim,wrapfig}
+
+\includecomment{series}
+\excludecomment{notseries}
+\includecomment{book}
+
+%%%%%%%%%%%%%%%%\input acdxmacros
+%%
+%% Acronyms and index
+%%
+
+\newif\ifindexmargin \indexmargintrue
+\def\marginindex#1{}%{\marginpar{\small\it #1}}
+\newcommand{\indexterm}[1]{\emph{#1}\index{#1}%
+    \marginindex{#1}}
+\newcommand{\indextermtt}[1]{\emph{#1}\index{#1|texttt}%
+    \marginindex{#1}}
+\let\indextermdef\indexterm
+\newcommand{\indextermp}[1]{\emph{#1s}\index{#1}%
+    \marginindex{#1}}
+\newcommand{\indextermsub}[2]{\emph{#1 #2}\index{#2!#1}%
+    \marginindex{#1 #2}}
+\newcommand{\indextermsubp}[2]{\emph{#1 #2s}\index{#2!#1}%
+    \marginindex{#1 #2s}}
+\newcommand{\indextermbus}[2]{\emph{#1 #2}\index{#1!#2}%
+    \marginindex{#1 #2}}
+\makeatletter
+\usepackage{acronym}
+\newcommand\indexac[1]{\emph{\ac{#1}}%
+  %\tracingmacros=2 \tracingcommands=2
+  \edef\tmp{\noexpand\index{%
+    \expandafter\expandafter\expandafter
+        \@secondoftwo\csname fn@#1\endcsname%
+    @\acl{#1} (#1)}}\tmp}
+\newcommand\indexacp[1]{\emph{\ac{#1}}%
+  %\tracingmacros=2 \tracingcommands=2
+  \edef\tmp{\noexpand\index{%
+    \expandafter\expandafter\expandafter
+        \@secondoftwo\csname fn@#1\endcsname%
+    @\acl{#1} (#1)}}\tmp}
+\newcommand\indexacf[1]{\emph{\acf{#1}}%
+  \edef\tmp{\noexpand\index{%
+    \expandafter\expandafter\expandafter
+        \@secondoftwo\csname fn@#1\endcsname
+    @\acl{#1} (#1)}}\tmp}
+\newcommand\indexacs[1]{\emph{\acs{#1}}%
+  \edef\tmp{\noexpand\index{%
+    \expandafter\expandafter\expandafter
+        \@secondoftwo\csname fn@#1\endcsname
+    @\acl{#1} (#1)}}\tmp}
+\newcommand\indexacstart[1]{%
+  \edef\tmp{\noexpand\index{%
+    \expandafter\expandafter\expandafter
+        \@secondoftwo\csname fn@#1\endcsname
+    @\acl{#1} (#1)|(}}\tmp}
+\newcommand\indexacstartbf[1]{%
+  \edef\tmp{\noexpand\index{%
+    \expandafter\expandafter\expandafter
+        \@secondoftwo\csname fn@#1\endcsname
+    @\acl{#1} (#1)|(textbf}}\tmp}
+\newcommand\indexacend[1]{%
+  \edef\tmp{\noexpand\index{%
+    \expandafter\expandafter\expandafter
+        \@secondoftwo\csname fn@#1\endcsname
+    @\acl{#1} (#1)|)}}\tmp}
+\newcommand\indexacsub[2]{\emph{\ac{#1}}%
+  %\tracingmacros=2 \tracingcommands=2
+  \edef\tmp{\noexpand\index{%
+    \expandafter\expandafter\expandafter
+        \@secondoftwo\csname fn@#1\endcsname%
+    @\acl{#1} (#1), #2}!#2}\tmp}
+\makeatother
+
+\acrodef{API}{Application Programmer Interface}
+\acrodef{BFS}{Breadth-First Search}
+\acrodef{BH}{Barnes-Hut}
+\acrodef{BLAS}{Basic Linear Algebra Subprograms}
+\acrodef{BSP}{Bulk Synchronous Parallelism}
+\acrodef{CAF}{Co-Array Fortran}
+\acrodef{CG}{Conjugate Gradients}
+\acrodef{CREW}{Concurrent Read, Exclusive Write}
+\acrodef{CSP}{Communication Sequential Processes}
+\acrodef{DAG}{Directed Acyclic Graph}
+\acrodef{DSL}{Domain-Specific Language}
+\acrodef{DTD}{Distributed Termination Detection}
+\acrodef{FDM}{Finite Difference Method}
+\acrodef{FE}{Finite Element}
+\acrodef{FEM}{Finite Element Method}
+\acrodef{FMM}{Fast Multipole Method}
+\acrodef{FSM}{Finite State Machine}
+\acrodef{GA}{Global Arrays}
+\acrodef{GPU}{Graphics Processing Unit}
+\acrodef{GS}{Gauss-Seidel}
+\acrodef{HPC}{High Performance Computing}
+\acrodef{HPF}{High Performance Fortran}
+\acrodef{IMP}{Integrative Model for Parallelism}
+\acrodef{IR}{Intermediate Representation}
+\acrodef{ISA}{Incremental Single Assignment}
+\acrodef{KNL}{Knights Landing}
+\acrodef{MD}{Molecular Dynamics}
+\acrodef{MPI}{Message Passing Interface}
+\acrodef{NUMA}{Non-Uniform Memory Access}
+\acrodef{OO}{Object-Oriented}
+\acrodef{PDE}{Partial Differential Equation}
+\acrodef{PGAS}{Partitioned Global Address Space}
+\acrodef{PRAM}{Parallel Random Access Machine}
+\acrodef{RMA}{Remote Memory Access}
+\acrodef{RPC}{Remote Procedure Call}
+\acrodef{SIMD}{Single Instruction Multiple Data}
+\acrodef{SIMT}{Single Instruction Multiple Thread}
+\acrodef{SA}{Simulated Annealing}
+\acrodef{SMP}{Symmetric Multi-Processor}
+\acrodef{SSA}{Static Single Assignment}
+\acrodef{SPMD}{Single Program Multiple Data}
+\acrodef{SSSP}{Single-Source Shortest Path}
+\acrodef{UPC}{Universal Parallel C}
+
+%%%%%%%%%%%%%%%%\input impmacros
+%\usepackage[pdftex,colorlinks]{hyperref}
+\usepackage{etoolbox}
+
+% refer to the HPSC book
+\usepackage{xr-hyper}
+\begin{book}
+% already loaded through beamer, so only for book
+\usepackage[pdftex,colorlinks]{hyperref}
+\end{book}
+
+\hypersetup{bookmarksopen=true}
+\externaldocument[HPSC-]{../../../../istc/scicompbook/scicompbook}
+\newcommand\HPSCref[1]{HPSC-\nobreak\ref{HPSC-#1}}
+
+\hyphenation{exa-scale data-flow}
+
+\def\heading#1{\paragraph*{\textbf{#1}\kern1em}\ignorespaces}
+
+\expandafter\ifx\csname corollary\endcsname\relax
+    \newtheorem{corollary}{Corollary}
+\fi
+\expandafter\ifx\csname lemma\endcsname\relax
+    \newtheorem{lemma}{Lemma}
+\fi
+\expandafter\ifx\csname theorem\endcsname\relax
+    \newtheorem{theorem}{Theorem}
+\fi
+\expandafter\ifx\csname proof\endcsname\relax
+ \newenvironment{proof}{\begin{quotation}\small\sl\noindent Proof.\ \ignorespaces}
+     {\end{quotation}}
+\fi
+\expandafter\ifx\csname definition\endcsname\relax
+  \newtheorem{definition}{Definition}
+\fi
+\expandafter\ifx\csname example\endcsname\relax
+  \newtheorem{example}{Example}
+\fi
+\expandafter\ifx\csname remark\endcsname\relax
+  \newtheorem{remark}{Remark}
+\fi
+
+\def\verbatimsnippetfont{\small}
+\def\verbatimsnippet#1{\begingroup\verbatimsnippetfont \verbatiminput{snippets/#1} \endgroup}
+\def\quotesnippet#1{\begin{quotation}\includesnippet{#1}\end{quotation}}
+\def\includesnippet#1{\input{snippets/#1.tex}}
+
+\def\I{{\cal I}}\def\P{{\cal P}}\def\g{^{(g)}}
+\def\RR{{\cal R}}
+\def\argmin{\mathop{\mathrm{argmin}}}
+\def\mapop{\mathop{\mathtt{map}}}
+\def\kw#1{\mathord{\mathrm{#1}}}%{\ifmmode \mathord{\mathrm{#1}} \else $\mathord{\mathrm{#1}}$ \fi}
+\def\pred{\mathop{\mathit{pred}}}
+\def\succ{\mathop{\mathit{succ}}}
+\def\reduce{\mathop{\mathrm{reduce}}}
+
+\def\impref#1{\emph{IMP-#1}~\cite{IMP-#1}}
+
+\usepackage{framed}
+\def\DataType#1#2#3{\begin{framed}
+  \textbf{Datatype} $\kw{#1}$: #2
+  \[ #3 \]
+  \end{framed}
+}
+\def\Function#1#2#3{\begin{framed}
+  \textbf{Function} $#1$: #2
+  \[ #3 \]
+  \end{framed}
+}
+\def\Functionl#1#2#3#4{\begin{framed}
+  \textbf{Function} $#1$: #2
+  \begin{equation} #3 \label{#4}\end{equation}
+  \end{framed}
+}
+\usepackage{mdframed}
+
+\def\inv{^{-1}}
+\def\card{\mathop{\mathrm{card}}}
+\def\CtrlMsg#1{\textsl{#1}}
+\def\upcount{\mathop{\uparrow}{}}
+\newcommand\diag{\mathbin{\mathrm{diag}}}
+\def\take{\mathop{\mathbf 1}}
+\def\definedas{\quad\mathrel{:=}\quad}
+\def\n{\bgroup\tt\catcode`\_=12 \let\next=}
+
+\def\kernel#1{\left\langle#1\right\rangle}
+\def\In{\mathord{\mathrm{In}}}
+\def\Out{\mathord{\mathrm{Out}}}
+\def\ptop{_{p\rightarrow p}}
+\def\ptoq{_{p\rightarrow q}}
+\def\qtop{_{q\rightarrow p}}
+\def\pqr{_{q\rightarrow p\rightarrow r}}
+\def\ptoi{_{p\rightarrow i}}
+\def\itop{_{i\rightarrow p}}
+\def\Inst{\mathord{\mathrm{Inst}}}
+\def\Scat{\mathord{\mathrm{Scat}}}
+\def\ScatR{\mathord{\mathrm{ScatR}}}
+\def\ScatS{\mathord{\mathrm{ScatS}}}
+\def\Thru{\mathord{\mathrm{Thru}}}
+
+\def\Src{\mathord{\mathrm{Src}}}
+\def\Tar{\mathord{\mathrm{Tar}}}
+
+\def\twocode {\afterassignment\twocodeb\def\nexta}
+\def\twocodeb{\bgroup \catcode`\_=12\relax
+              \afterassignment\twocodec\global\def\nextb}
+\def\twocodec{\egroup %\show\nexta \show\nextb
+  \par\smallskip
+  \hskip\unitindent $\vcenter{\hsize=.37\hsize$\nexta$}\quad
+   \vcenter{\hsize=.5\hsize\footnotesize\tt\nextb}$
+  \par\smallskip
+}
+
+%%%%%%%%%%%%%%%%\input inex
+\excludecomment{proposal}
+\includecomment{longstory}
+\includecomment{lrsx}
+\includecomment{dataflow}
+\excludecomment{public}
+\includecomment{implementation}
+%%%%\input ../all.inex
+%%%%
+% no edit
+%%%%
+\includecomment{paper}
+
+\begin{proposal}
+\excludecomment{lrsx}
+\excludecomment{paper}
+\end{proposal}
+
+\includecomment{insulting}
+\includecomment{fullmonty}
+\begin{public}
+\excludecomment{fullmonty}
+\excludecomment{insulting}
+\excludecomment{impquestion}
+\excludecomment{inprogress}
+\end{public}
+
+\begin{fullmonty}
+\newenvironment{inprogress}
+  {\par\bigskip \mbox{\bf Material in progress}\smallskip}
+  {\par\smallskip \mbox{\it End of material in progress}\bigskip}
+\newbox\qbox
+\newenvironment{impquestion}
+  {\begin{quote}\setbox\qbox\vbox\bgroup
+                \advance\hsize by -\unitindent {\bf Question}\\}
+  {\egroup\fbox{\box\qbox}\end{quote}}
+\end{fullmonty}
+
+\includecomment{nonlrsx}
+\begin{lrsx}
+\excludecomment{nonlrsx}
+\end{lrsx}
+
+\includecomment{shortstory}
+\begin{longstory}
+\excludecomment{shortstory}
+\end{longstory}
+\includecomment{theory}
+\begin{shortstory}
+\excludecomment{theory}
+\end{shortstory}
+%%%%
+%%%%
+
+\includecomment{lrsx}
+\includecomment{mvpexample}
+\includecomment{bh}
+\includecomment{programming}
+\includecomment{partialdist}
+\includecomment{dataflow}
+
+\usepackage{outliner}
+\OutlineLevelStart0{\section{#1}}
+\OutlineLevelStart1{\subsection{#1}}
+\OutlineLevelStart2{\subsubsection{#1}}
+
+\newenvironment{note}{\begin{quotation}Note.}{\end{quotation}}
+
+\def\n{\bgroup\tt\catcode`\_=12 \let\next=}
+\def\I{{\cal I}}\def\P{{\cal P}}\def\g{^{(g)}}
+\def\bp#1{\mathord{\downarrow_{#1}}}
+\def\Bp#1{\mathord{\downarrow\downarrow_{#1}}}
+
+\def\construction{ \\ {\small Unpublished preliminary report. Do not
+disseminate.}}

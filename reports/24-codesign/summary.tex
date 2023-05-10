@@ -1,0 +1,134 @@
+% -*- latex -*-
+{\Large\textbf{\TheTitle}\par}
+
+\bparagraph{Overview}
+It is becoming increasingly clear that continued performance scaling of 
+parallel computers at the rates to which we have been accustomed (i.e., 500x or more
+per decade for the performance of a machine at any rank on TOP500 list) will
+require a fundamental rethinking of architecture and implementation of 
+both hardware and software.   This not merely a problem for exascale systems,
+but is pervasive across the HPC ecosystem -- increased application performance at
+any scale now depends primarily on increasing the number of processor cores used,
+rather than on using cores of increasing performance.
+
+
+%For example, from the TOP500 results of 1993 to 2003, 
+%almost 80\% of the increase in aggregate performance came from increases in per-processor 
+%performance, while for the decade of 2003 to 2013 over 70\% of the increase in aggregate
+%performance came from simply increasing the number of processor cores.
+
+%% Exascale computers will only be
+%% feasible if major components of the software/hardware stack are fundamentally
+%% redesigned to reduce both purchase price and power costs.
+
+%Based on an extrapolation of recent hardware trends, exascale systems in 
+%the near term (e.g., 2018) could cost well over \$1B to purchase and could 
+%consume in excess of 100MW of power.  
+%while the core counts of even the 
+%smallest systems in the TOP500 list already exceed 10,000 and are growing
+%at more than 50\% per year.
+
+%Limitations on power density dictate that increased performance be obtained via 
+%increased thread parallelism % on high core count,
+%using increased numbers of relatively loosely-coupled, 
+%using relatively simple and relatively low-frequency processing cores. 
+%% In the past, this sort of parallelism was only 
+%% one of many contributors to performance increases, with processor frequency
+%% and processor instruction-level parallelism making comparable contributions.
+%In the future, "loosely-coupled" parallelism may be required to deliver more
+%than 100\% of the desired performance increases, as frequencies are
+%decreased to reduce energy consumption per unit of computational work.
+%Single-core performance is approximately stagnant in high-performance systems, 
+%so to first order, all future performance increases must come from increased parallelism.
+
+
+%and SIMD width can only be decreased so far.
+
+This proposal argues that current processor and system design is poorly suited to
+efficient large-scale parallelism, and that this is a direct result of retaining architectural assumptions 
+that are fundamentally misaligned with the complexity, performance, and power balances of the current 
+(and projected) technology base.   As a consequence, more and more resources (design, silicon, and 
+power) are required to deliver even small improvements in end-user performance, price/performance, or 
+power/performance from the continuing improvements in semiconductor process technology, while the 
+difficulty of programming large-scale parallel systems continues to increase.
+
+%We have identified several performance and 
+%functionality limiters that are due primarily to architectural decisions -- 
+%mostly related to the inability to either ``see'' or control data motion in the memory hierarchy
+%and data motion related to communication.
+
+Thus, a fundamental rethinking of hardware and software appears overdue.   First, we propose
+fundamental changes to the hardware architecture related to data motion through the memory
+hierarchy and data motion associated with communication and synchronization. 
+%-- making transfers
+%through the memory hierarchy explicit and controllable via higher level semantics, and separating 
+%the architectural functionality of communication and synchronization operations from those of
+%private memory transfers.
+Second, we propose that the newly developed \textit{Integrative Model for Parallelism} programming 
+model can significantly increase programmability while effectively exploiting the capabilities introduced 
+by the revised hardware architecture.
+%This proposal describes adoption of the newly developed \textit{Integrative Model for Parallelism}.
+Rather than raising the abstraction level this model skews it:
+models need to become more global in expression, but need the ability to explicitly control data motion 
+and exploit fine-grained synchronization.
+
+The hardware part of this project will lead to greater power efficiency, lower latency,
+and  better suitability for massive multi-threading; the software part will 
+deliver a productive programming model that can effectively utilize this hardware.
+
+\bparagraph{Intellectual merit}
+%
+This project is distinctive in that it links the architectural requirements of programming models and hardware.
+Solely redesigning hardware to drive down its cost or increase its efficiency is not enough
+if the algorithm semantics do not reach it.  New programming models will not be effective
+if the hardware does not provide the required control and/or efficiency.
+Thus, our approach seems an important step on the way to developing a software/hardware
+architecture more suited to cost- and power-effective large-scale parallelism.
+
+\bparagraph{Broader impact}
+%
+Our co-designed software/hardware stack will have clear benefits
+by facilitating research on the exascale. It will also offer easier
+programmability on hardware that is simpler to produce (this has
+obvious effects on the computer industry) and more efficient 
+to deploy. Thus the realization of our ideas will benefit
+large parts of science.
+
+\endinput
+\bparagraph{Team}
+%
+The PIs combine in-depth knowledge of the practice and theory of
+parallel programming and the development of high performance hardware.
+
+%\bparagraph{Keywords}
+%
+\begin{comment}
+  The increasing importance of loosely-coupled parallelism stands in stark
+  contrast to the almost complete absence of the concepts of processor-to-processor
+  communication and synchronization in the architectural specifications of the
+  microprocessor architectures in use today.  It seems exceedingly unlikely 
+  that architectures that do not recognize the existence of communication and 
+  synchronization as fundamental concepts will ever be able to provide those
+  functions in an efficient manner.  Thus, a fundamental rethinking of hardware
+  architecture appears to be mandatory.
+
+  The likely hybrid nature of exascale hardware
+  would only be addressable by a combination of
+  currently existing programming models, so a new model that takes
+  an integrative approach would be needed.
+
+  It is becoming clear that power consumption is becoming an
+  increasingly important factor in system design and operation.
+  At the lowest level of hardware, the dynamic power utilization associated 
+  with data motion now exceeds that of computation, with a trend toward
+  increasing disparity over time.  Therefore both hardware and software
+  models must be redesigned to make data motion visible and controllable,
+  so that locality can be exploited to the maximum extent possible.
+
+  Ideas for improved control of data motion (both "horizontally" between processing
+  elements and "vertically" through the memory hierarchy) exist in the literature, but
+  none are based on a comprehensive re-thinking of the memory hierarchy, the 
+  differences between memory access and communication, and the possibilities for
+  fundamentally different hardware implementation of these basic concepts in
+  a hardware/software co-design project.
+\end{comment}

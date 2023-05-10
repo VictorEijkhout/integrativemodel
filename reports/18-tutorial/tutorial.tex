@@ -1,0 +1,242 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% tutorial.tex : master file for report IMP-18
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-18}
+
+\usepackage{geometry,fancyhdr,wrapfig,verbatim}
+
+\input setup
+
+\title[IMP tutorial]{A tutorial introduction to IMP software}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\acresetall
+\begin{document}
+\maketitle
+
+\begin{abstract}
+An introduction to the interface.
+\end{abstract}
+
+\section{Introduction}
+
+In all of the prototypes and code examples, the string `\n{IMP}' stands for
+`put \n{mpi} or \n{omp} here, depending on how you want your program executed.
+
+\section{Concepts}
+
+\subsection{Environments}
+\label{sec:env}
+
+With the environment you tell IMP how the program is going to be interpreted.
+If you specify an \n{mpi_environment}, IMP will call \n{MPI_Init} and see how
+many processors there are; with an \n{omp_environment} IMP will look at the
+\n{OMP_NUM_THREADS} environment variable; et cetera.
+
+\begin{verbatim}
+IMP_environment(int argc,char **argv);
+\end{verbatim}
+
+\subsection{Distributions}
+
+Distributions indicate how a set of $N$ indices is distributed over the processors.
+The easiest way is to use
+\begin{verbatim}
+IMP_distribution(environment *env,
+    const char *type,index_int g)
+\end{verbatim}
+where
+\begin{itemize}
+\item the environment was created as described in section~\ref{sec:env};
+\item the \n{type} argument specifies the type of distribution; and
+\item the final parameter (of type \n{long int}) is the global size of the index set.
+\end{itemize}
+There are various more specific routines; for instance
+\begin{verbatim}
+IMP_distribution(environment *env,
+    const char *type,index_int l,index_int g)
+\end{verbatim}
+can specify the local size (per node or thread) through the \n{l} parameter.
+
+\subsection{Objects}
+
+After the relative intricacies of defining distributions, objects are easy,
+since the only thing they do is allocating the memory needed based on the
+distributions:
+\begin{verbatim}
+IMP_object( distribution *d );
+IMP_object( distribution *d, double *x );
+\end{verbatim}
+where the second call takes an array \emph{you} supply.
+
+\subsection{Kernels}
+
+Kernels are the data parallel operations that take an object
+and make another object from it.
+\begin{verbatim}
+IMP_kernel( object *in,object *out );
+\end{verbatim}
+Unfortunately, there is a lot more to this story: you need to supply the
+\emph{signature} of the kernel, and the \emph{local function} that is executed
+by each processor or thread.
+
+\subsubsection{Kernel signature}
+
+Let's say you have two objects \n{obj1,obj2} and you have defined
+\begin{verbatim}
+kernel *k = new IMP_kernel(obj1,obj2);
+\end{verbatim}
+Now you need to specify the signature, which describes the data dependency
+structure of the kernel.
+
+The easiest case is a `conveniently parallel' function: index~$i$ of the output
+is determined by only index~$i$ of the input. In this case, you write
+\begin{verbatim}
+k->set_type_local();
+\end{verbatim}
+However, in general index~$i$ of the output will come from more than one
+index of the input. For instance, if it needs $i-\nobreak1$~of the input,
+you write
+\begin{verbatim}
+k->add_beta_oper( new ioperator( "<<1" ) );
+\end{verbatim}
+and similarly for $i+1$
+\begin{verbatim}
+k->add_beta_oper( new ioperator( ">>1" ) );
+\end{verbatim}
+
+For sparse matrix multiplication, the beta distribution can be
+found from the actual sparse matrix:
+\begin{verbatim}
+d->set_index_pattern( mat );
+\end{verbatim}
+
+The final case we mention is that of collectives. In that case
+the $\beta$ and $\gamma$ distribution are identical, so you would
+specify
+\begin{verbatim}
+k->set_explicit_beta_distribution( obj2->get_distribution() );
+\end{verbatim}
+
+\subsubsection{Local function}
+
+The local function is something you write without using any further
+IMP tools. It needs to have a prototype
+\begin{verbatim}
+void localfunction(int step,int p,object *in,object *out,void *ctx);
+\end{verbatim}
+The opaque context pointer can be specified for the kernel:
+\begin{verbatim}
+k->set_localexecutectx( (void*) &your_data_structure );
+\end{verbatim}
+
+The code for local functions can be tricky, but using the following as
+template one can actually write a single function for both MPI and
+OpenMP mode:
+\verbatimsnippet{omprightshiftbump}
+
+\subsection{Algorithms}
+
+Finally, kernels are stored in a data structure called an
+\n{algorithm}.
+%
+\verbatimsnippet{heatmainloop}
+%
+By having a separate analyze and execute stage, the IMP system can
+optimize the task graph, for instance to effect latency hiding.
+
+\section{Operations}
+
+Using the above mechanisms it is possible to write new kernels, but a
+number of kernels are already given as ready-to-use building blocks.
+
+\subsection{Base kernels}
+
+With the current program structure, only certain kernels are available
+as base classes, with the specific kernels derived from them:
+\begin{verbatim}
+class copy_kernel : virtual public kernel {
+public:
+  copy_kernel( object *in,object *out ) : kernel(in,out);
+}
+class axpy_kernel : virtual public kernel {
+public:
+  axpy_kernel( object *in,object *out,double *x ) : kernel(in,out);
+}
+class scale_kernel : virtual public kernel {
+public:
+  scale_kernel( double *a,object *in,object *out ) : kernel(in,out);
+}
+class scaledown_kernel : virtual public kernel {
+public:
+  scaledown_kernel( double *a,object *in,object *out ) : kernel(in,out);
+}
+class sum_kernel : virtual public kernel {
+public:
+  sum_kernel( object *in1,object *in2,object *out ) : kernel(in1,out);
+}
+class scalar_kernel : virtual public kernel {
+public:
+  scalar_kernel( object *in1,const char *op,object *in2,object *out ) : kernel(in1,out);
+}
+class axbyz_kernel : virtual public kernel {
+protected:
+public:
+  axbyz_kernel( char op1,object *s1,object *x1,
+		char op2,object *s2,object *x2,object *out )
+    : kernel(x1,out);
+}
+\end{verbatim}
+
+Given these base kernels, the derived kernels are easy to define, for
+instance:
+\verbatimsnippet{mpicopy}
+
+\subsection{Derived kernels}
+
+The following kernels are more or less written from the ground up:
+%
+\verbatimsnippet{spmvpkernel}
+%
+\verbatimsnippet{sidewaysdownkernel}
+%
+\verbatimsnippet{centerofmass}
+%
+\verbatimsnippet{reductionkernel}
+%
+\verbatimsnippet{innerproductkernel}
+
+\section{Obscure stuff}
+
+\subsection{Processor masks}
+
+Sometimes a kernel need not apply to all processors. Thus we have a
+mask to blank out processors. Note: the mask is actually the set of
+active processors.
+
+\begin{itemize}
+\item Class objects of type \n{processor_mask} can have processors
+  added or subtracted.
+\item Masks can be added to a distribution by
+  \verb+dist->add_mask(m)+. Objects created on a masked distribution
+  has no storage on excluded processors.
+\item You can also set a mask on a dependency object, which applies
+  the mask to the beta object created.
+\item The task execution routine returns immediately if there is a
+  mask on the output or the first halo object.
+\end{itemize}
+
+\end{document}

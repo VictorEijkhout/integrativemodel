@@ -1,0 +1,71 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% exec.tex : master file for IMP-04
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{taccreport}
+
+\taccreportnumber{IMP-04}
+
+\usepackage{geometry,fancyhdr,multirow,wrapfig}
+
+\input setup
+
+\title[IMP execution]{Task execution in the Integrative Model}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+IMP distributions are defined with respect to abstract processing entities,
+leading to a concept of tasks, rather than processes. In this note
+we show how processors can be defined, and we describe their interaction
+as it arises from the task dataflow.
+\end{abstract}
+
+\section{Task execution}
+\label{sec:exec}
+
+The \ac{IMP} model leads to a dataflow view of task
+execution; see for instance \impref{01}.
+
+\input tasks
+
+\section{Task synchronization in practice}
+\input mpiompsync
+
+\section{Implementation}
+
+After the discussion in section~\ref{sec:post-xpct}, this is what task execution
+in the \ac{IMP} code looks like. The `post' and `xpct' messages are the actions
+of a successor task. SPELL THIS OUT!
+
+\verbatimsnippet{taskexecute}
+
+This connection between tasks is made in \n{algorithm::optimize}:
+
+\verbatimsnippet{queueoptimize}
+
+\begin{itemize}
+\item The `lift' commands return the message vector from a task, and zero out
+  the container for it on the task. Thus, these lines effect a transfer
+  of the message vectors between two tasks.
+\item The \n{othertsk} is a task on the same processor, belonging
+  to the kernel of the predecessor task. \textbf{We need to prove explicitly that
+    this has the right properties.}
+\end{itemize}
+
+\bibliography{vle,imp}
+\bibliographystyle{plain}
+
+\end{document}

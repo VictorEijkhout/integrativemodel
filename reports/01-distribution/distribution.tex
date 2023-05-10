@@ -1,0 +1,103 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-8
+%%%%
+%%%% distribution.tex : master file for report IMP-01
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-01}
+
+\usepackage{geometry,fancyhdr,verbatim,wrapfig}
+
+\input setup
+
+\title[IMP Distribution theory]{IMP Distribution Theory}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input abstract
+\end{abstract}
+
+\section{Motivation}
+
+The concept of distribution of an indexed object comes up naturally in parallel computing
+through the \indexterm{owner computes} rule: the distribution is the
+mapping from the processor to the set of indices where it computes the
+object. If we now consider the data parallel computation of one object
+from another, we have an input distribution and an output
+distribution. These are typically specified by the user program.
+
+User distributions can be simple, such as blocked, cyclic, or
+block-cyclic, in one or more dimensions. They can also be irregular,
+such as they appear in \ac{FEM} calculations. In addition to these
+traditional distributions, our theory will cover overlapping and even
+fully redundant distributions. We will also cover partial
+distributions, for instance as a way to handle adaptive mesh
+refinement through our data parallel framework.
+
+\section{Motivating examples}
+\label{sec:threepoint-example}
+\input threepoint
+\subsection{Non-trivial example}
+
+Consider one level of multigrid coarsening, with 6 points divided over
+4 processes. Since the coarse level has fewer points than processes,
+we need to have some duplication. (The alternative, of having inactive
+processes, is harder to code, and in fact less efficient.)
+
+\includegraphics[scale=.12]{nbody-unbalance}
+
+The first two processes achieve their coarsening by a local operation,
+but the second pair needs to exchange messages. As we will see, this
+non-uniform messaging is easily achieved in \ac{IMP}.
+
+\subsection{Programming the model}
+\input programthreepoint
+
+\section{Distributions}
+\label{sec:distribution}
+\input kerneldistro
+\input moredistro
+
+\section{Transformations between distributions}
+\label{sec:alpha-beta}
+Distributions by themselves are a useful tool, but
+their most important application is describing
+the communication involved in
+converting between one distribution and another. 
+As already remarked above, we consider the result 
+of an all-gather or the construction of a halo region
+as a different distribution of a data set,
+rather than as `local data' 
+as is mostly done in distributed memory
+programming. In this section
+we formalize this transformation.
+
+\subsection{Definition}
+\label{sec:u-inv-v}
+\input transformdef
+
+\input transformation
+
+\section{Signature function}
+\label{sec:define-signature}
+\index{signature function|(}
+\input indirect
+\index{signature function|)}
+
+\bibliography{vle,imp}
+\bibliographystyle{plain}
+
+\end{document}

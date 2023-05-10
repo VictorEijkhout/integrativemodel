@@ -1,0 +1,242 @@
+We will now outline several approaches that may alleviate the problems 
+discussed above.  We will see that, to a varying extent, solving
+the hardware problems requires changes to the programming model, while
+several desirable changes to the programming model require changes to
+the hardware to be effective.
+
+\subsection{Incremental Hardware Improvements}
+
+%\begin{comment}
+When criticizing a system, it is generally wise to consider incremental solutions, 
+rather than complete redesigns.  Incremental solutions are typically considered
+to be cheaper to implement and easier to exploit by incremental modifications
+to the existing code base.   
+%\end{comment}
+
+Incremental approaches are possible for several of the issues
+mentioned above.  Some approaches to explicit control over cache
+coherence (e.g.,~\cite{dally2012ExplicitManagement}) could provide a
+modest reduction in memory latency, a corresponding decrease in
+concurrency requirements, and a decrease in the the power consumption
+associated with cache coherence.  Other approaches
+(e.g.,~\cite{mccalpin2012push,CommSyncMulticore_2008})
+could improve communication and synchronization performance.
+
+%\begin{comment}
+However, implicit approaches are largely at the point of diminishing
+returns.  For example, processors could also be designed with support
+for a larger number of cache misses, but a significantly larger miss
+handling structure could easily increase the L2 cache hit latency,
+which is likely to be unacceptable for many applications.  Hardware
+prefetchers could be made more aggressive, but this can also easily
+lead to performance degradation due to false prefetches and eviction
+of needed data from the caches.
+%\end{comment}
+
+%\begin{comment}
+The bandwidth/latency/concurrency examples above were both optimistic (based 
+on idle-system latency), and pessimistic (not assuming cache reuse or aggressive 
+hardware prefetchers).
+
+We can improve the situation by make the optimistic numbers more
+reliable, for instance by \textbf{reducing the latency to memory}. The
+figure of approximately 80ns can easily be reduced to 60 by losing
+coherence between the multiple sockets.  Coherence between cores is an
+important cost factor in high-core-count chips such as the Intel Xeon
+Phi, and relaxing coherence there can greatly reduce latency.
+
+This type of coherence is rarely needed in scientific computations.
+However, to guard against its accidental use, one needs a programming
+model that avoids it.
+
+One could also increase the actual concurrency by addressing
+the \acp{LFB}. Increasing the number of them would increase the L2 latency,
+which is undesirable since the L2 is typically the major source of reuse.
+Wider \acp{LFB} have been tried in the DEC Alpha processor, and are certainly possible.
+Some issues with cache line alignment, overlap with other \acp{LFB},
+and crossing page boundaries exist, but these are not major.
+Optimistically, a programming model that keeps explicit track of data
+can address these issues.
+%\end{comment}
+
+\subsection{Software approaches}
+
+Much work has been done in the past decade on programming in a way
+that more effectively uses the existing hardware. (Cache and register
+reuse~\cite{DemEtAl:ieeeproc2004}, prefetch
+streams~\cite{Lee:2012:prefetching}, DRAM banks~\cite{Diamond2011}.)
+The problems with this are twofold. Practically, reports of
+performance improvement are all \emph{proof of concept}, and can not
+be integrated into applications without considerable effort.
+Secondly, as with the above incremental approaches,
+they \textbf{both do not come close bridging the enormous gaps
+described} in section~\ref{sec:diagnosis}.
+
+\subsection{The need for fundamental solutions}
+
+%\begin{comment}
+Our major problem with incremental solutions is that they do not
+directly address the shortcomings of the underlying architecture,
+and therefore do not put us on a path toward effective exploitation
+of projected hardware technologies.  Although some of these
+approaches may provide some benefit, they provide it in most
+cases by making the most complex existing features of the architecture even 
+more complex.  Due to the complexity of current processor designs,
+very few of the proposed mechanisms in the literature are  
+actually implementable, and once the detailed implementation is 
+accounted for, few of the remaining approaches would be helpful if implemented. 
+In the end, physics wins, and only architectures designed to provide control
+over the most expensive operations (in power or latency) are 
+likely to be suitable foundations for cost- and power-effective 
+large-scale parallel systems.
+%\end{comment}
+
+The solutions just mentioned do not address the fundamental 
+shortcomings of the underlying architecture.
+Therefore, \textbf{we advocate redesigning hardware and software
+in tandem}, achieving both higher hardware efficiency and programmer
+productivity. 
+
+In the hardware case this means making visible
+essential concepts, and exposing already existing
+mechanisms to programmability in user space. For software is means
+developing a vocabulary to address these now exposed features.
+
+We briefly tabulate the aspects of our software/hardware co-design research.
+
+%{\scriptsize
+\def\w{.27\textwidth}
+\begin{tabular}{|p{\w}|p{\w}|p{\w}|p{.1\textwidth}|}
+%\begin{tabular}{|l|l|l|c|}
+
+\hline
+Hardware redesign&Problem addressed&Programming model capability&Research\\
+\hline\hline
+
+data motion semantics&power efficiency, effective bandwidth&semantic aggregation
+  &\ref{sec:propose-data-motion}\\ \hline
+
+non-coherent caches& latency, power, complexity &explicit treatment of data distribution
+  &\ref{sec:proposed-coherence}\\ \hline
+
+managed local memory&latency, power, precise control
+  &explicitly known data dependencies
+  &\ref{sec:propose-rdma}\\ \hline
+
+%in-order execution&power demands of core&data movement pre-staged
+                % pushed as opposed to pulled by `miss'
+%  &\ref{sec:proposed-sync}\\ \hline
+
+low overhead synchronization&fine-grained threads&explicit description
+    of parallelism and dataflow
+  &\ref{sec:proposed-sync}\\
+\hline
+\end{tabular}
+
+We also summarize in Figure~\ref{fig:structure}
+\begin{figure}[ht]
+\includegraphics[scale=.16]{graphics/proc_structure}
+\caption{Old and new processor structure}
+\label{fig:structure}
+\end{figure}
+our envisioned processor design: the basic block diagram of the processor
+stays the same (although we probably reduce the number of cache levels
+to~one), but all components get a different semantics.
+Programming these semantics is the work of the programming model
+that we will discuss next.
+
+
+%\begin{comment}
+% Copying these to Section 6 ("Plan") -- don't delete them yet
+
+\subsubsection{Explicit Control of Data Motion}
+
+
+Technology projections suggest that (once we adopt more efficient 
+processor architectures) the energy cost of data motion will become 
+the dominant factor in overall power consumption, and perhaps
+also in total lifetime system cost~\cite{ExascaleTechnologyReport_2008}.
+
+We therefore propose to improve the efficiency of data motion by making
+data motion architecturally explicit, allowing various components of
+a system to communicate about data motion at a relatively high
+semantic level.  
+
+Rather than making a sequence of individual requests
+for the physically addressed cache lines containing data in various virtually
+addressed data structures, a processor should be able to convey a 
+description of the entirety of its data needs for a phase of execution to
+other processing elements.   These ``other processing elements'' may 
+include (potentially heterogeneous) general-purpose processors,
+(potentially heterogeneous) specialized processors, memory controllers, 
+IO controllers, communications controllers, and power management hardware.
+
+
+%\begin{comment}
+% nested comments not allowed
+One way to make data movement far more efficient
+is to add considerable semantic information to it.
+Above we already remarked that prefetch streams
+are able to alleviate our above analysis. Unfortunately,
+these streams are in general inferred by the memory
+system, rather than programmed in user space. 
+Although software prefetch instructions exist, they provide 
+little semantic content and they interact with the (minimally-documented)
+hardware prefetchers in complex and often unpredictable 
+ways.  Most importantly, the software prefetch instructions
+do not increase the maximum memory concurrency available 
+to a processor, nor do they provide guarantees that the 
+prefetched data will still be in cache when it is actually needed.
+%\end{comment}
+
+%\begin{comment}
+% nested comments not allowed
+(The IBM Power architecture is an exception here.)
+\textit{John, how about the x86 prefetch instruction?}
+%\end{comment}
+
+Possible hints to the prefetches could include
+the number of independent streams and their lengths,
+whether the stream is for read or write. More sophisticated
+annotations are possible: for instance in a sparse matrix-vector
+product the stream of indices, consisting of 32-bit integers,
+is consumed at half the rate of the 64-bit floating point data.
+
+
+
+\subsubsection{Managed local memory}
+
+The most far-going solution to our problem is largely to abandon the notion
+of caches, and replace that with explicitly managed `scratchpad' local memory,
+or `local memory' for short.
+(Local memory being explicitly managed, the notion of coherency naturally disappears.)
+Such local memory can have similar bandwidth and latency characteristics
+as caches, as evinced by the TI TMS320 family of DSP chips
+or the Cell processor that was used in the Los Alamos Roadrunner supercomputer.
+
+Local memory solves the above signalled memory bottleneck problems:
+\begin{itemize}
+\item Data movement is no longer effected by cache misses generated by
+  an operation; data can be placed ahead the operations that need it,
+  reducing or eliminating the latency to memory.
+\item Data is loaded from local memory with uniform latency/bandwidth behaviour,
+  so complicated out-of-order instruction scheduling can be abandoned.
+  This will make the individual core simpler and thereby more power-efficient.
+\item Cores no longer need complicated mechanisms for maintaining coherence.
+  This reduces latency, and simplifies their design.
+\end{itemize}
+
+\subsubsection{Synchronization}
+
+In section~\ref{sec:diagnosis} we mostly concentrated on bandwidth and power issues 
+for a single instruction stream. However, processors are gradually becoming more threaded,
+with the Intel Xeon Phi having hardware support for four threads, and larger numbers
+likely in the future. Below we will see how the \ac{IMP} programming model can 
+generate fine-grained tasks organized in a DAG; for this we want efficient
+exposed synchronization mechanisms.
+
+Note that GPUs handle fine-grained tasks only in the sense of fast context switching;
+they lack efficient fine-grained control over data dependencies between threads.
+
+%\end{comment}
+

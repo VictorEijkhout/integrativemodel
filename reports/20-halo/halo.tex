@@ -1,0 +1,132 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% halo.tex : master file for report IMP-20
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-20}
+
+\input setup
+
+\title[Halo math]{A mathematical formalization of data parallel operations}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  We give a mathematical treatment of generalized data parallel
+  operations,
+  %
+  showing that formulating an algorithm in terms of data
+  parallel operations allows for automatic derivation of a dataflow
+  formulation.
+  %
+  To this end we give a formal definition of the concept of
+  `distribution', and we introduce the concept of a `signature
+  function'.
+  The former is strictly a description of parallel data, independent
+  of any algorithm considerations, whereas the latter is strictly an
+  algorithm property, not involving any mention of parallel execution.
+  %
+  Formally, our result is then that given distributions and signature
+  functions, any task dependencies (whether realized as
+  synchronization or as message passing) can be systematically derived.
+\end{abstract}
+
+\acresetall
+
+\section{Introduction}
+
+Much theoretical work has been done about parallel and concurrent
+programming. However, almost without exception this work starts from
+an implicit assumption of independent tasks that interact. Any overall
+behaviour of the parallel assembly of processes is at best an emergent
+property. This does not do justice to the nature of the way parallelism
+often occurs in scientific computing: there an essentially sequential
+program is executed (`matrix times vector, inner product of the output
+with another vector, scale vector by the inner product value', et
+cetera) of operations that are, in a generalized sense, data parallel.
+The parallelism is solely due to the fact that the objects
+are distributed. 
+
+The problem with coding in this manner is that, in any but the most
+regular applications, the synchronizations and communications between
+the underlying processes are hard to derive by a compiler or
+middleware layer. Thus, systems based on such `sequential semantics'
+have had limited success in scientific computing.
+
+In this paper we give a mathematical foundation for algorithms that
+can be formulated in terms of generalized data parallelism. We give a
+non-standard definition of the concept of `distribution' and we define
+the `signature function' of a data parallel operation. Taken together,
+these then allow for task synchronizations and communications to be
+formally derived. 
+
+In particular, we show that we can derive a dataflow formulation of
+the algorithm from the sequential semantics description. In a
+practical programming system this dataflow can then be realized in
+terms of task dependencies or message passing, or hybrid combinations
+of these.
+
+\section{Motivating example}
+\label{sec:threepoint-example}
+\input threepoint
+\subsection{Programming the model}
+\input programthreepoint
+
+\section{Formal definition}
+\input distributionmath
+
+\section{Practical importance of this theory}
+
+The above discussion considered operations that can be described as
+`generalized data parallel'. From such operations one can construct
+many scientific algorithms. For instance, in a multigrid method a
+red-black smoother is data parallel, as are the restriction and
+prolongation operators.
+
+In the \ac{IMP} model these are termed `kernels', and each kernel
+gives rise to one layer of task dependencies; see
+section~\ref{sec:3pt-dag}.
+Taking together the dependencies for the single kernels
+then gives us a complete task graph for a parallel execution;
+the edges in this graph can be interpreted as MPI messages
+or strict dependencies in a \ac{DAG} execution model.
+
+Demonstration software along these lines has been built, showing
+performance comparable to hand-coded software; see~\cite{IMP-19}.
+
+\section{Summary and further reading}
+
+In this report we have motivated and defined our mathematical
+underpinning of a concept that is sometimes known as `halo region' and
+shown how it is a basic tool for parallel computation. The story of
+the IMP model is further developed in our reports series. We
+particularly draw attention to:
+\begin{itemize}
+\item \cite{IMP-01} goes in more detail on the concept of
+  distributions, giving many examples.
+\item \cite{IMP-03} gives a type system of IMP, showing how our computer code
+  is a direct implementation of the math; \cite{IMP-18}~gives a
+  tutorial in the use of this code.
+\item \cite{IMP-19}~reports on how our work is progressing and shows
+  results from some proof-of-concept implementations of algorithms.
+\end{itemize}
+
+\input ack
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

@@ -1,0 +1,113 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% imp.tex : include file for report IMP-11
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+In the \acf{IMP} we have realized a programming system with sequential
+semantics, while maintaining the efficiency of traditional programming
+systems such as MPI or OpenMP tasks. This success is due to the following
+design decisions.
+
+\subsubsection{Sequential semantics}
+
+As argued above, the programming concepts of the IMP model
+are based on sequential semantics:
+a~programmer specifies the major steps in an algorithm,
+where each step has a distributed realization, which is however not visible
+on the programming level.
+%
+\begin{figure}[p]
+\hbox\bgroup
+  \includegraphics[scale=.4]{heat-kernels}
+  \includegraphics[scale=.4]{heat-tasks}
+  \egroup
+  \caption{Kernel (left) and task relations (right)
+    for the one-dimensional heat equation,
+    executing 15 steps on 6 processors.}
+  \label{fig:heat-flow}
+\end{figure}
+%
+The main concept here is that of a `kernel':
+a specification of a function that is applied in parallel on one distributed
+object, yielding as result another distributed object.
+
+Figure~\ref{fig:heat-flow} shows the kernel structure of a heat
+equation (left), which is what the programmer specifies,
+and the task structure (right) which is derived by the IMP system.
+
+\subsubsection{Inspector-executor}
+
+The notion of inspector-executor reflects the fact that a code commonly
+needs some amount of analysis of runtime conditions, and that this analysis
+can often be reused. Thus, the inspector-executor paradigm was first
+invented as a compiler technique~\cite{Koelbel:parallel-loops},
+and later as a more general code design technique~\cite{Sussman92partiprimitives}.
+In the latter case,
+a runtime component does a one-time analysis of the data access pattern
+of the code, and stores this in a condensed form that can be used at high speed
+during execution.
+
+The prime example of this mechanism is the explicit construction of
+halo regions, and the messages needed to populate them, in sparse linear
+algebra packages such as the PETSc and Trilinos libraries~\cite{GrSm:petsc,Trilinos}.
+We can also consider task graph packages such as
+Quark and SuperMatrix~\cite{Yarkhan:quark-report,spaa2007,Quintana:2008:PMA}
+as instances of this mechanism: the task scheduler can perform some amount of introspection
+of the structure of the computation before the computation is actually performed.
+
+Thus, the kernels of the \ac{IMP} are separately declared, analyzed,
+and executed.
+
+%% \subsubsection{Generalized data parallelism}
+
+%% Parallelism in \ac{HPC} is often of a generalized data parallel type:
+%% matrix times vector, even irregular sparse; mesh operations including adaptive
+%% refinement; most linear algebra operations.
+%% In \ac{IMP}, the user indicates explicitly the data parallelism
+%% in an operation by specifying the pointwise operation and the distribution
+%% to which it is applied.
+%% While this may seem a large burden on the user,
+%% given the right programming model this is actually not the case.
+%% We will address this matter below.
+
+%% This programming model differs considerably from traditional engineering codes,
+%% but it actually has aspects in common with with current task-driven systems.
+
+\subsubsection{Programming with distributions}
+
+Our data model is that of distributions.
+It is not feasible for a
+system to decide on an optimal distribution itself, so it is unavoidable
+for a programmer to specify the initial data distributions.
+After that, the system will internally derive distributions such as
+the $\beta$-distribution.
+
+While distributions
+have been used many times before, there are distinct innovations in our use
+of the term.
+Rather than considering a distribution as mapping data to processors,
+  we consider it a mapping of processors to data. This makes redundant
+  replication and redundant computation elegantly expressible.
+
+\endinput
+Thus the key to the success of \ac{IMP}
+is that it lets the programmer spell out
+\begin{enumerate}
+\item Available data parallelism
+\item The data access pattern of the algorithm.
+\end{enumerate}
+This makes the model more powerful than existing systems,
+which derive this information through a combination
+of the compiler and the runtime system.
+
+As we will see in the examples below, this specification can take a
+number of elegant forms that are no great imposition on the
+programmer.

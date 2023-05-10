@@ -1,0 +1,105 @@
+%\usepackage[pdftex,colorlinks]{hyperref}
+\usepackage{etoolbox}
+
+\usepackage[pdftex,colorlinks]{hyperref}
+\usepackage{xr-hyper}
+\hypersetup{bookmarksopen=true}
+\externaldocument[HPSC-]{../../../../istc/scicompbook/scicompbook}
+\newcommand\HPSCref[1]{HPSC-\nobreak\ref{HPSC-#1}}
+
+\hyphenation{exa-scale data-flow}
+
+\def\heading#1{\paragraph*{\textbf{#1}\kern1em}\ignorespaces}
+
+\expandafter\ifx\csname corollary\endcsname\relax
+    \newtheorem{corollary}{Corollary}
+\fi
+\expandafter\ifx\csname lemma\endcsname\relax
+    \newtheorem{lemma}{Lemma}
+\fi
+\expandafter\ifx\csname theorem\endcsname\relax
+    \newtheorem{theorem}{Theorem}
+\fi
+\expandafter\ifx\csname proof\endcsname\relax
+ \newenvironment{proof}{\begin{quotation}\small\sl\noindent Proof.\ \ignorespaces}
+     {\end{quotation}}
+\fi
+\expandafter\ifx\csname definition\endcsname\relax
+  \newtheorem{definition}{Definition}
+\fi
+\expandafter\ifx\csname example\endcsname\relax
+  \newtheorem{example}{Example}
+\fi
+\expandafter\ifx\csname remark\endcsname\relax
+  \newtheorem{remark}{Remark}
+\fi
+
+\def\verbatimsnippet#1{\begingroup\small \verbatiminput{snippets/#1} \endgroup}
+\def\quotesnippet#1{\begin{quotation}\includesnippet{#1}\end{quotation}}
+\def\includesnippet#1{\input{snippets/#1.tex}}
+
+\def\I{{\cal I}}\def\P{{\cal P}}\def\g{^{(g)}}
+\def\RR{{\cal R}}
+\def\argmin{\mathop{\mathrm{argmin}}}
+\def\mapop{\mathop{\mathtt{map}}}
+\def\kw#1{\mathord{\mathrm{#1}}}%{\ifmmode \mathord{\mathrm{#1}} \else $\mathord{\mathrm{#1}}$ \fi}
+\def\pred{\mathop{\mathit{pred}}}
+\def\succ{\mathop{\mathit{succ}}}
+\def\reduce{\mathop{\mathrm{reduce}}}
+
+\def\impref#1{\emph{IMP-#1}~\cite{IMP-#1}}
+
+\usepackage{framed}
+\def\DataType#1#2#3{\begin{framed}
+  \textbf{Datatype} $\kw{#1}$: #2
+  \[ #3 \]
+  \end{framed}
+}
+\def\Function#1#2#3{\begin{framed}
+  \textbf{Function} $#1$: #2
+  \[ #3 \]
+  \end{framed}
+}
+\def\Functionl#1#2#3#4{\begin{framed}
+  \textbf{Function} $#1$: #2
+  \begin{equation} #3 \label{#4}\end{equation}
+  \end{framed}
+}
+\usepackage{mdframed}
+
+\def\inv{^{-1}}
+\def\card{\mathop{\mathrm{card}}}
+\def\CtrlMsg#1{\textsl{#1}}
+\def\upcount{\mathop{\uparrow}{}}
+\newcommand\diag{\mathbin{\mathrm{diag}}}
+\def\take{\mathop{\mathbf 1}}
+\def\definedas{\quad\mathrel{:=}\quad}
+\def\n{\bgroup\tt\catcode`\_=12 \let\next=}
+
+\def\kernel#1{\left\langle#1\right\rangle}
+\def\In{\mathord{\mathrm{In}}}
+\def\Out{\mathord{\mathrm{Out}}}
+\def\ptop{_{p\rightarrow p}}
+\def\ptoq{_{p\rightarrow q}}
+\def\qtop{_{q\rightarrow p}}
+\def\pqr{_{q\rightarrow p\rightarrow r}}
+\def\ptoi{_{p\rightarrow i}}
+\def\itop{_{i\rightarrow p}}
+\def\Inst{\mathord{\mathrm{Inst}}}
+\def\Scat{\mathord{\mathrm{Scat}}}
+\def\ScatR{\mathord{\mathrm{ScatR}}}
+\def\ScatS{\mathord{\mathrm{ScatS}}}
+\def\Thru{\mathord{\mathrm{Thru}}}
+
+\def\Src{\mathord{\mathrm{Src}}}
+\def\Tar{\mathord{\mathrm{Tar}}}
+
+\def\twocode {\afterassignment\twocodeb\def\nexta}
+\def\twocodeb{\bgroup \catcode`\_=12\relax
+              \afterassignment\twocodec\global\def\nextb}
+\def\twocodec{\egroup %\show\nexta \show\nextb
+  \par\smallskip
+  \hskip\unitindent $\vcenter{\hsize=.37\hsize$\nexta$}\quad
+   \vcenter{\hsize=.5\hsize\footnotesize\tt\nextb}$
+  \par\smallskip
+}

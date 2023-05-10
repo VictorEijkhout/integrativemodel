@@ -1,0 +1,77 @@
+\subsection{Overview of software issues}
+
+As remarked, we intend to co-design a new software model for parallelism
+and a new hardware setup. This approach is necessary because we feel that there
+is a mismatch between software and hardware models, both existing and proposed.
+%
+Here are some of the failings of parallel programming models in our view.
+
+\subsubsection{Amount of expressivity}
+
+Many models (MPI, OpenMP, CUDA) are fairly low level, and
+  designed to address a particular hardware paradigm. Since they are
+  immediate reflections of their intended hardware model, they have in
+  general proved to be very successful for that one design, but they
+  can not easily be applied to other types of hardware. Furthermore,
+  they are often perceived as being hard to program.
+
+On the other hand, there are high level models, such as
+  \ac{PGAS} languages, that are easier to use and potentially
+  more widely applicable, but in
+  fact are found to abstract away from the hardware too far to be
+  efficiently implementable. For instance, \ac{PGAS} compilers are
+  typically unable to aggregate small messages, so these languages are
+  only efficient on shared memory or on special hardware.
+
+\subsubsection{Inappropriate focus}
+
+Shared memory models such as OpenMP obscure data motion:
+  accessing an array may involve moving elements from a different
+  cache where they previously were written or they may already be
+  local, but this distinction is not deducible on the program level.
+  Thus it is not possible for software layers to optimize for this.
+  In this respect \ac{CAF} is better, since it exposes what is a local
+  and what a remote memory reference.
+
+Even in programming systems that feature explicit communication, such as
+\ac{MPI}, this communication is not a language-level object. Thus,
+optimizing communications scheduling and providing resilience are hard
+to realize on intermediate software layers.
+
+Most models are also not solidly based in a theory of parallel
+  computing. This manifests itself in the fact that there is often not
+  an adequate cost model: measures such as running time can not easily
+  be inferred from the code. Again, this makes optimal scheduling hard.
+
+%% \item The compiler understanding of parallelism models is often
+%%   minimal. We already mentioned the lack of aggregation in \ac{PGAS}
+%%   languages. In the \ac{MPI} case there is in fact no compiler-like level that reasons about the communication. In fact, one-sided communication conflicts
+%%   with certain code motion opimizations.
+%% \end{itemize}
+
+
+\subsubsection{Concurrency}
+\label{sec:SWConcurrency}
+
+     %% The problem here is that the \textit{architecture} does not
+     %% directly support communication and synchronization as directly
+     %% visible concepts, and that while the implementation makes it
+     %% possible to implement communication and synchronization
+
+Many current programming models for shared memory are based more in
+concurrency than true parallelism, and the logical reasoning required
+that is not natural for human programmers.  Sutter and Larus observe:
+ \begin{quote}
+[H]umans are quickly overwhelmed by concurrency and find it much more
+difficult to reason about concurrent than sequential code. Even
+careful people miss possible interleavings among even simple
+collections of partially ordered operations~\cite{Sutter_2005}.
+ \end{quote}
+By contrast, a distributed model where communication is explicitly managed
+is part of \ac{MPI}, which has been used successfully 
+for the last two decades, running up to a million processors.
+By abandoning transparent shared caches we get rid of the concurrency problem, 
+moving closer to a memory model where all communication is
+explicitly managed. Our \ac{IMP} programming model assists in generating
+such implementations from high level descriptions.
+

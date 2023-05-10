@@ -1,0 +1,477 @@
+\subsection{Overview of hardware issues}
+\label{sec:hw}
+
+Current hardware is designed to provide the semantics of a von Neumann
+machine, that is, a flat memory model where the processor can equally
+simply access any memory location, and where multiple processing units
+(cores) communicate through ordered sequences of references to a single
+memory address space.   This model is at the limits of its scalability, and
+for this reason we propose to replace it by a machine model where
+layers in the memory hierarchy are visible and can be explicitly
+addressed. 
+%% In this section we argue why such a rethinking of
+%% hardware semantics is necessary, and we will indicate our research direction;
+%% more detail will be provided in section~\ref{sec:proposed}.
+
+%The roots of current scalability issues are two-fold: (1) processors cycle times have
+%become orders of magnitude faster than memory access times; and (2) parallelism
+%across increasing numbers of threads or tasks is now the primary route to increased
+%performance.
+
+\subsubsection{Locality management and caches}
+
+The imbalance between processor speed and memory latency makes
+exploitation of a hierarchical memory mandatory for performance.  Transparent, 
+hardware-controlled caches allow programmers to ignore the memory hierarchy
+when considering program functionality, but not when considering performance.
+
+The magnitude of this performance gap, combined with  the inability to understand and 
+control locality using caches, leads to an increasing performance disparity between naively
+and expertly coded variants of the same algorithm~\cite{GotoGeijn:2008:Anatomy}.  This gap
+cannot be bridged with compiler technology alone, not least because the hardware
+provides no mechanisms for locality control.  
+
+The inability to predict or control locality also makes it extremely difficult to generate
+\textit{a priori} performance models based on inspection of the code, or even parametric
+performance models based on compiler analysis plus observation of run-time variables.
+Even an oracle compiler cannot know what random virtual to physical address translations
+will be provided at run-time, and many cache structures in current systems have 
+undocumented and/or intrinsically unpredictable replacement policies.
+Auto-tuning~\cite{DemEtAl:ieeeproc2004,ButtEijkLang:spmvp}
+can deliver some performance benefits, but does not address the fundamental issue 
+that the most expensive hardware operations are not controllable.
+
+We propose to primarily exploit locality using explicitly managed fast local 
+memory (section~\ref{sec:propose-rdma}), and will investigate the extent to 
+which improved predictability of performance will enable better overall scheduling.
+
+\subsubsection{Cache coherence and memory latency}
+
+Ironically, the use of hardware cache coherence in multiprocessor systems has 
+been a major factor in preventing decreases in memory latency, thus exacerbating
+the (still) growing gap between processor and memory speeds.
+
+Cache coherence across multiple sockets aggrevates this problem, making
+a dual socket design a common compromise.
+For instance a single AMD quadcore Opteron has a 50ns latency, while the quad socket
+design in TACC's Ranger has 100--130ns.
+
+As an illustration that a large core count, single socket design
+is not the solution, the 
+Intel Xeon Phi SE10P with 61 cores on a single chip
+has a local memory latency of 275 ns, largely due
+to the complicated snooping on 61 coherent caches.
+
+\subsubsection{Communication/Synchronization and Cache Coherence}
+\label{sec:issue-coherence}
+
+Hardware  cache coherence has been a critical feature in enabling
+the development of the large global market for shared-memory multiprocessor (and now
+multi-core) servers, and many consider it to be an ``untouchable'' foundation of 
+modern computer architectures.  We disagree for several reasons.
+
+% such as the SunFire series.
+%% Hardware-based cache coherence allows implementation of "single system image"
+%% shared memory systems and dramatically simplifies the abstract machine model
+%% seen by both the operating system and by user processes.  With a modest 
+%% number of cores, hardware-based cache coherence has been both practical
+%% and effective for existing server workloads, but it is not an accident that 
+%Despite the ubiquity of shared-memory parallel systems,  parallel programming 
+%is only recently becoming widespread, and remains difficult to use, difficult to debug, 
+%and difficult to tune for performance.
+
+%The difficulty of writing correct code for shared memory systems will be discussed in 
+%Section~\cite{sec:SWConcurrency}. 
+
+First, although shared memory provides a mechanism to \textit{enable} communication 
+and synchronization between processes, it is not an \textit{efficient} mechanism.  The 
+very concept of communication is absent from the architectural specifications of the
+current commodity processors, except for a handful of references to ``lock'' operations
+as a (very primitive) means of implementing mutual exclusion algorithms. 
+The load and store operations that make up communication and synchronization 
+operations in shared memory are not distinguishable from private memory references
+and therefore cannot be treated differently by the hardware.   The sequences of 
+operations making up a communication + synchronization operation generate chains
+of serialized coherence operations as modified flags and data are bounced back and
+forth between caches.  Although increasingly complex mechanisms have been proposed
+to improve the performance of these operations, we think it makes more sense to 
+extend the hardware architecture to differentiate between private memory references and 
+communication references so that communication can be handled more efficiently.
+
+This inefficiency leads to poor performance in the best of cases and disastrous 
+performance under load.   For example, a simple producer-consumer hand-off using one
+``data'' variable and a separate ``flag'' variable requires an average of approximately 760 
+processor cycles (one way) on a two-socket Xeon E5 system when the threads are running 
+on cores in different sockets. This will be further addressed below.
+
+Second, although the performance problems above prevent the exploitation of 
+fine-grained parallelism, they are not fundamental problems.  That is to say, they
+are not due to physics, they are due to inefficient protocols -- and problems that are 
+due to inefficiency can be overcome by a suitable change of architecture.  Most 
+research in this area has focused on small modifications to existing protocols or 
+the addition of simple functionality (such as hardware barriers~\cite{Voltron2007,
+OnChipMulticoreBarriers_2006} and stream processing~\cite{srinii2003reconfigurable}),
+rather than considering fundamental architecture issues.  
+
+We propose a fundamental reconsideration of communication and synchronization in 
+section~\ref{sec:proposed-coherence}, with the goal of providing semantically useful 
+primitives whose performance is limited by physics (i.e., bandwidth or the speed of light) 
+rather than by the inefficiency of protocols that are in use because of historical inertia, 
+rather than architectural evaluation.
+
+\begin{comment}
+Moving forward, however, underlying technology 
+trends are forcing the use of ever-increasing numbers of independent threads (or tasks) as the 
+primary driving factor in increased performance.   This is necessary both 
+because of the plateau in single-processor performance and because of 
+the desire to use compiler-generated parallelism where possible to improve
+programmer productivity.  
+\end{comment}
+
+\subsubsection{Threading and Synchronization Issues}
+\label{sec:issue-thread}
+
+It is the consensus that future generations of processors will be
+threaded to a larger extent than currently, and that these threads are
+going to be encapsulate smaller quantities of work.  Compiler
+technology can identify small bits of independent code (and IMP makes
+the compiler's job even easier), but with current hardware the cost of 
+synchronization makes fine-grained parallelization impractical.
+
+A common support structure for threading is the workqueue, for instance
+dispensed through a FIFO mechanism.
+An optimized 
+implementation of a well-designed non-blocking concurrent FIFO (e.g.,~\cite{michael1996simple})
+typically requires
+about a microsecond (2000-3000 processor cycles) for an enqueue or dequeue operation in the 
+absence of contention, and can increase to, for example, 100,000 cycles under heavy load on a 40-core
+system~\cite{kirsch2012performance}. Related work include~HSA~\cite{HSA:overview}.
+
+This type of inefficiency is not limited to FIFOs.  Highly tuned OpenMP structures to begin and end
+parallel sections show overheads of thousands to tends of thousands of cycles on dual-socket
+multicore and single socket many-core systems.
+\begin{comment}
+ On a two-socket Xeon E5 system, the highly tuned 
+OpenMP code generated by the Intel C compiler (version 13.0) requires an average of 9000 
+cycles (3 microseconds) to launch 16 threads at the beginning of an OpenMP PARALLEL FOR 
+loop, and an additional 3700 cycles to pull the threads together at the barrier at the end of the 
+loop.  Thus each loop needs to be performing almost 13,000 cycles of work to reach 50\%
+utilization.  The corresponding overheads on the 61 core Xeon Phi SE10P are 6-10 times
+higher (in absolute measure, 2-4 times higher in cycles) for 61 to 244 threads.
+\end{comment}
+
+\begin{comment}
+One obstacle is that current cache design makes fine-grained
+communication and synchronization extremely inefficient.
+Consider a FIFO used to distribute work queue entries.
+Extracting an item from a queue
+should return the desired data item and atomically update the pointer
+in preparation for the next access. Unfortunately, transparent caches
+and speculative loads prohibit side effects.  In the absence of
+support for side effects, functions such as FIFOs must be implemented
+indirectly via complicated sequences of ordered memory operations.
+Tuned software implementations of FIFOs (e.g.,~\cite{michael1996simple})
+have an overhead of 2000-3000 processor clock cycles for enqueue/dequeue 
+operations even without contention, and values as high as 100,000 cycles per
+operation have been reported on a 40-core system.~\cite{kirsch2012performance}.
+In contrast, hardware FIFOs (which are used throughout all modern 
+microprocessor systems, but which are not visible to the software) can 
+easily have latency in the 10 ns range on-chip and in the 60 ns range on 
+two-chip systems, with the capability
+to fully pipeline accesses up to the bandwidth limits of the interconnect.
+
+
+%% State-of-the-art software implementations of fixed-length FIFOs in shared 
+%% memory on small SMP systems have typical access times in excess of 
+%% 1 microsecond (2000-3000 processor clock cycles), and overhead that limits
+%% throughput to approximate one transaction per latency.  
+
+
+Kirsch, \textit{et
+       al.} report results for several concurrent non-blocking FIFO
+     implementations on a 4-socket, 40-core server.  A single FIFO
+     implemented in the style of Michael and
+     Scott~\cite{michael1996simple} shows an average overhead
+     corresponding to 100,000 processor cycles per enqueue or dequeue
+     operation when 20 threads are attempting to enqueue and 20
+     threads are attempting to dequeue with 4600 cycle "work" periods
+     between enqueue or dequeue operations.
+%
+
+
+\end{comment}
+
+\begin{comment}
+We argue several points here: first that transparent cache coherence should be 
+abandoned as the primary means of exploiting memory locality,  secondly that 
+communication and synchronization need to be formulated independently from
+data movement mechanisms, and lastly that hardware primitives can very 
+efficiently support low-latency/low-overhead/high-throughput communication and 
+synchronization, but that current architectures do not expose these mechanisms
+for user access.
+\end{comment}
+
+\begin{comment}
+Related work was rather widespread during the 1990's, but the technological 
+environment has changed considerably, calling for a reconsideration of 
+both what is important and what is feasible to implement.   More recent work
+is generally focused on either incremental modifications to existing cache 
+coherence protocols, or limited hardware modifications, such as hardware
+barrier support for OpenMP~\cite{Voltron2007,OnChipMulticoreBarriers_2006}.
+The recent SARC project~\cite{katevenis2010explicit} takes a somewhat 
+broader view of the hardware issues, but does not tie this back to a formal 
+model for specifying communication in parallel programs.  The ``HSA (Heterogeneous
+System Architecture) Foundation''~\cite{HSA} proposes a work queue based
+infrastructure for heterogeneous computing that is intended to allow hardware
+implementation, but the focus is clearly on programming a single system composed
+of a small number of fast, general-purpose cores and a larger number of ``throughput''
+cores sharing a single memory space, while the current project considers 
+communication for much larger systems.
+\end{comment}
+
+
+
+     
+\subsubsection{DRAM Bandwidth, Locality and Power}
+\label{sec:issue-dram}
+
+As noted above, memory and processor speeds have diverged dramatically
+over the last 20 years.  Although DRAM peak transfer rates have scaled fairly well,
+most other metrics of DRAM performance have fallen much farther behind.
+%% For example, DRAM cycle times in the early 1990s were only a few times longer 
+%% than processor cycle times, allowing very simple memory architectures to obtain reasonable
+%% efficiency.  
+The increasing ratio of bandwidth to latency means that the concurrency required
+to fill the memory pipeline is continually increasing.  Current single processor cores are not 
+able to generate enough cache misses to fill these deeper memory pipelines.  Indeed, 
+current multi-core and many-core chips typically require that \textit{all} cores be
+actively generating cache misses in order to maximize memory system
+throughput.  
+
+Unfortunately, the resulting concurrency has much less locality than the address
+streams from a single process, making it much harder for the hardware to schedule
+requests to exploit the power and latency savings of open page mode and to 
+minimize bus stalls due to rank-to-rank and read/write turnarounds.
+
+While the physics of deeply pipelined DRAM operation are intrinsically
+complex, current architectures exacerbate the problems by providing
+only an extremely limited semantic interface between processors and
+their memory systems.
+
+We argue in section~\ref{sec:propose-dram} that by allowing processors to 
+interact with memory controllers at a higher semantic level, we can extract more 
+bandwidth out of current and projected DRAM memory designs while 
+simultaneously lowering power consumption.   
+
+
+
+\begin{comment}
+Unpublished
+experiments at TACC with the DRAMSIM2 simulation
+framework~\cite{DRAMSim2} show that with the resulting optimal
+scheduling, a DDR3/1600 DRAM channel can easily deliver 95\% of its
+peak bandwidth (over 97\% of the non-refresh cycles) for the STREAM
+benchmark kernels at a power efficiency of approximately 20 mW/Gbs.
+This power efficiency value is 3-5$\times$ better than the assumptions of most
+exascale studies, because we assume that with architectural extensions
+open page mode can continue to be effectively exploited, while the
+more common assumption is that the massive multi-threading assumed to
+be required to tolerate latency will destroy any hope of page-level
+locality exploitation at the DRAMs.  
+\end{comment}
+
+
+% Essentially, the memory subsystem is designed to 
+%implement the `load data from address' operation, and any application-level
+%structure to the memory requests needs to be inferred, for instance by 
+%generating prefetch streams.
+
+%(In traditional processor designs, the power
+%consumption of memory is a small fraction of processor power; however,
+%in GPUS and the Intel Xeon Phi, which have considerably higher
+%bandwidth, memory power consumption is actually close to on par.
+%Similarly, if our efforts to reduce processor power by using more
+%efficient processors are successful, DRAM power will become a much
+%larger fraction of the total system power budget.)
+
+\begin{comment}
+  Some background:
+  \begin{itemize}
+  \item DRAM is organized in pages, of which only one is open at a time;
+    closing a page to open another incurs a considerable latency.
+
+    DRAM performance and power consumption vary significantly depending
+    on open page hit rates, with multicore workloads significantly
+    reducing open page hit rates~\cite{DBLP:conf/isca/UdipiMCBDJ10} with
+    a corresponding increase in power
+    consumption~\cite{Stuecheli:2010:VWQ:1815961.1815972}.
+
+    Application performance can be negatively impacted by the increased
+    latency of closed-page memory accesses, and code modifications to
+    improve the hardware's ability to exploit open pages provided
+    significant performance increases in the HOMME application
+    benchmark~\cite{Diamond2011}.  Part of the 35\% performance
+    improvement observed was due to decreased L3 cache miss rate, part
+    to the decreased effectively latency, and part to the improved
+    ability of the DRAM to schedule the reduced number of independent
+    load streams.
+
+    %% (3) DRAM utilization is declining due to the increasing relative time
+    %% required for read-write and rank-to-rank turnarounds (with fixed burst
+    %% length)~\cite{Stuecheli:2010:VWQ:1815961.1815972}.  Increasing the
+    %% effective burst length by scheduling multiple transfers of the same
+    %% type (e.g., reads to the same rank, writes to any rank) back-to-back
+    %% can eliminate many of these stalls.  If these well-scheduled requests
+    %% are to currently open pages, then power consumption is reduced as
+    %% well.
+
+    %% Stuecheli, et al.~\cite{Stuecheli:2010:VWQ:1815961.1815972}, claim
+    %% an average DRAM power reduction of 33\% when page hit rates are
+    %% increased from 0\% to 75\%.  This is correct for their
+    %% configurations, but much greater power reductions are available for
+    %% single-rank systems, for which both dynamic read termination and
+    %% dynamic write termination can be disabled.  In this case, the power
+    %% consumption for 95\% open page accesses can be as low as 20\% of the
+    %% power consumption of the Stuecheli's
+    %% configuration~\cite{MicronPowerCalc2011}.
+
+  \item 
+    Power consumption of memory-bandwidth-limited algorithms can be
+    reduced significantly without noticeable change to the performance by
+    slowing down the processor
+    frequency~\cite{McCalpinBlog_2010-10-07,Demmel_EECS_2012-168}.  In the
+    latter reference, the dynamic power consumption (i.e.,the power
+    consumption above the system idle value) was reduced by 50\% by
+    dropping the CPU frequency from 3.4 GHz to 1.6 GHz with no significant
+    change in the performance of either the STREAM or DGEMV benchmarks.
+    (Note that since the execution time was the same, the power
+    consumption dropped by the same ratio as the energy consumption.)
+    When the same approach was applied to several hundred sparse
+    matrix-vector problems, the problems that operated on data sets at
+    least 20\% larger than the L3 cache showed similar behavior.  Although
+    there was a great deal of scatter in the results, the majority of the
+    reduced-frequency tests ran 5\%--15\% slower, but with a 40\%--50\%
+    reduction in dynamic energy consumption.  (Note that since the
+    execution times were extended by 5\%--15\%, the average power
+    consumption fell at a slightly faster rate than the net energy
+    consumption.)
+
+    While current hardware allows reduction of
+    power consumption for memory bandwidth-limited codes by decreasing the
+    core frequency, but that the natural next step of powering down cores
+    (using the ``C-state'' mechanism) results in significant bandwidth
+    loss.  The problem is that the large number of outstanding cache
+    misses required to fill the memory pipeline cannot be generated by a
+    single processor.  For the Xeon E5 processors in the TACC ``Stampede''
+    system, for example, the required concurrency for reads for each chip
+    is the memory latency times the memory bandwidth, or 77 ns * 51.2 GB/s
+    = 3924 Bytes = 62 cache lines.  Since each Xeon E5 core can have at
+    most 10 outstanding L1 cache misses~\cite{IntelSWOptGuide}, one must
+    use many cores to generate sufficient concurrency per chip.  
+    Detailed
+    microbenchmarking shows that while a single core can generate more
+    than 10 outstanding cache line transfers when L2 prefetches are taken
+    into account, the use of multiple cores causes contention for DRAM
+    pages and increased memory latency.  This, in turn, increases the
+    number of outstanding transactions required.  In practice, the best
+    bandwidth achievable on the system is about 75\% of the peak DRAM
+    bandwidth, and is obtained using all 8 cores.
+
+  \end{itemize}
+\end{comment}
+
+%% (Comment) There is quite an active literature on the topic of DRAM
+%% scheduling to reduce stalls and reduce power consumption, but it is
+%% strongly dominated by approaches that make the system *more complex*,
+%% with more complex protocols and more complex heuristics, rather than
+%% focusing on what might be done with the semantic information that we
+%% routinely throw away in the all current transparent load/store
+%% architectures.  ``Simple but efficient'' has not been successful in
+%% the HPC market (though it has been successful for embedded devices),
+%% but it is an approach that will be required if we want significant
+%% power and cost reductions in the future.
+
+%% We assert that providing a ``higher-level'' semantic interface between
+%% processors and memory controllers could allow a single processor to
+%% manage the necessary concurrency.  This would both allow the other
+%% cores to be put into low-power idle states and would dramatically
+%% simplify the memory controller scheduling problem.  Unpublished
+%% experiments at TACC with the DRAMSIM2 simulation
+%% framework~\cite{DRAMSim2} show that with the resulting optimal
+%% scheduling, a DDR3/1600 DRAM channel can easily deliver 95\% of its
+%% peak bandwidth (over 97\% of the non-refresh cycles) for the STREAM
+%% benchmark kernels at a power efficiency of approximately 20 mW/Gbs.
+%% This power efficiency value 3-5x better than the assumptions of most
+%% exascale studies, because we assume that with architectural extensions
+%% open page mode can continue to be effectively exploited, while the
+%% more common assumption is that the massive multithreading assumed to
+%% be required to tolerate latency will destroy any hope of page-level
+%% locality exploitation at the DRAMs.  Exploration of this issue through
+%% simulation and analysis is an explicit research goal of this project.
+
+%% \subsubsection{Memory semantics}
+
+%% Another result of the flat memory model is that the semantics of the
+%% whole memory system is limited to supporting essentially only the
+%% `load data from address' operation. While the memory can sustain high
+%% bandwidth in operations such the loading of strided data, there is no
+%% way for the programmer to specify this, except partially through inlined
+%% assembly instructions or rare libraries such as Altivec. 
+%% In general,
+%% the memory system will infer strided access
+%% and generate data prefetch streams for as best as possible.
+
+\begin{comment}
+\subsubsection{Concurrency}
+
+Many aspect of processor design are dictated by the need for
+concurrency. However, this increases processor complexity and drives
+up the power budget. This concurrency is partly needed to cover the
+memory latency.  Our approach of eliminating cache coherence, supporting
+higher-level semantics between processors and memory controllers, and  
+supporting communication and synchronization through higher-level
+hardware-supported mechanisms will combine to dramatically decrease 
+latency for both memory references and communication.  This will enable 
+simpler processor design, reduced power, and increased efficiency when
+operating on small tasks.
+\end{comment}
+
+\begin{comment}
+\subsubsection{Reproducible and accurate performance model}
+
+Because of the lack of visibility or control over the location of data in 
+a cached system, it is very hard to make usefully accurate performance 
+models based on inspection of the code. This means that it
+will be hard for software layers to schedule and reorder independent
+operations for performance improvement, either in terms of runtime or power (see
+section~\ref{sec:issue-dram}). This problem will be tackled in our
+approach by having a programming model that expresses algorithms in
+terms of primitives that are closer to the hardware, and by having
+more a predictable memory hierarchy through replaced caches by
+\ac{DMA}.
+
+There is a further issue with caches and predictability.  Level 2 and
+Level 3 caches in current systems are indexed by physical address, so
+that cache conflicts are based on address bits that are not visible to
+the user code and which are typically deliberately "randomized" by the
+operating system.  The performance variability introduced by this
+randomization of cache conflicts is typically unimportant for
+single-threaded applications.  However, in the common case of bulk
+synchronous parallel programming, it is common for all tasks to be
+reduced to the effective speed of the slowest task.  As the number of
+processors in use increases, the probability that at least one task
+will suffer from a pathological set of "random" cache conflicts can
+easily increase to unacceptable levels.
+   
+%   In addition to these random effects, there are some algorithms
+%   (such as the Fast Fourier Transform) for which cache conflicts are
+%   pervasive and effectively impossible work around.
+   
+Explicitly controlled local memories provide an alternative to caches
+that can reduce performance variability (since data is placed at
+specific addresses in local memory there are no "conflicts"), decrease
+latency (since local memories are not required to be kept coherent by
+the hardware), decrease power consumption (since no snooping or
+associative tag lookups are required), and in some cases significantly
+improve absolute performance.
+\end{comment}

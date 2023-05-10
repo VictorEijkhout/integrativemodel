@@ -1,0 +1,225 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%% distributed.tex : master file for report IMP-23
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,fleqn,preprint]{impreport}
+
+\taccreportnumber{IMP-23}
+
+\input setup
+
+\title[distributed theory IMP]{Distributed computing theory in IMP}
+\author[Eijkhout]{Victor Eijkhout\thanks{{\tt
+      eijkhout@tacc.utexas.edu}, Texas Advanced Computing Center, The
+    University of Texas at Austin}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  We address a number of distributed computing issues in IMP, such as
+  \begin{itemize}
+  \item sequential consistency;
+  \item causal ordering and distributed time.
+  \end{itemize}
+\end{abstract}
+
+\acresetall
+
+\Level 0 {Introduction}
+
+Distributed computing has a long history, and a repertoire of
+typical issues. Here we address a few.
+
+\Level 0 {Sequential consistency}
+
+\subsection{Introduction}
+
+\input seqconsistency
+
+\subsection{Equivalent IMP programs}
+
+IMP programs explicitly send and receive data, as opposed to merely
+fetching data in shared memory programs. This allows us to solve the
+sequential consistency conundrum.
+
+We take the Lamport example, and --~since the `else' clause is missing
+that would guarantee eventual execution of the critical region~-- we
+abstract its basic problem to: \textsl{guarantee that at most one of
+  \n{execute1/2} is executed}.
+
+The case where neither of \n{execute1/2} is called corresponds to the
+program (where we make the initialization explicit):
+\begin{multicols}{2}
+  Process 1:
+\begin{verbatim}
+a := 0
+a := 1
+send(a)
+receive(b)
+if iszero(b):
+  // false
+\end{verbatim}
+\columnbreak
+Process 2:
+\begin{verbatim}
+b := 0
+b := 1
+send(b)
+receive(a)
+if iszero(a):
+  // false  
+\end{verbatim}
+\end{multicols}
+
+On the other hand, a program that would execute only \n{execute1}
+would be:
+\begin{multicols}{2}
+  Process 1:
+\begin{verbatim}
+a := 0
+a := 1
+send(a)
+receive(b)
+if iszero(b):
+  // true
+\end{verbatim}
+\columnbreak
+Process 2:
+\begin{verbatim}
+b := 0
+send(b)
+b := 1
+receive(a)
+if iszero(a):
+  // false  
+\end{verbatim}
+\end{multicols}
+
+The following IMP program satisfies the property that the processes
+can communicate the initial or the changed value of~\n{a,b}:
+\begin{multicols}{2}
+  Process 1:
+\begin{verbatim}
+a := 0
+if c1 then
+  send(a)
+a := 1
+if not c1 then
+  send(a)
+receive(b)
+if iszero(b):
+\end{verbatim}
+\columnbreak
+Process 2:
+\begin{verbatim}
+b := 0
+if c2 then
+  send(b)
+b := 1
+if not c2 then
+  send(b)
+receive(a)
+if iszero(a):
+\end{verbatim}
+\end{multicols}
+
+However, it also generates the execution where both processes
+communicate their initial value of \n{a,b}, so neither process calls
+\n{execute}.
+
+\pagebreak
+
+The solution involves a global synchronization step and an identically
+computed condition~\n{c} on all processes:
+\begin{multicols}{3}
+  Process 1:
+\begin{verbatim}
+c in [0,1]
+d := 0
+a := 0
+if c then
+  send(a)
+  d := 1
+d = max(d)
+a := 1
+if not c or not d then
+  send(a)
+receive(b)
+if iszero(b):
+\end{verbatim}
+
+\columnbreak
+Collective:
+\begin{verbatim}
+replicated
+
+
+
+
+
+d = max(d)
+\end{verbatim}
+\vfill\hbox{}
+\columnbreak
+
+Process 2:
+\begin{verbatim}
+c in [0,1]
+d := 0
+b := 0
+if not c then
+  send(b)
+  d := 1
+d = max(d)
+b := 1
+if c or not d then
+  send(b)
+receive(a)
+if iszero(a):
+\end{verbatim}
+\end{multicols}
+
+The generalization to more than two processes depends on the semantics
+of Lamport's example, which are ambiguous because of the missing
+`else' clauses.
+
+\subsection{Discussion}
+
+We see that we can solve the sequential consistency problem by making
+as many kernels as there are processes, and letting at most one
+critical operation execute per kernel. Conflicts are prevented by a
+global barrier between the updates. While a barrier sounds onerous, it
+is no worse than Lamport's requirement of FIFO processing of memory
+requests.
+
+(Note that we use a slight extension of strict IMP semantics
+here. By making the send operations conditional, we lose that the
+receive operation knows precisely from which kernel it receives.)
+
+%% \Level 0 {Causal ordering and distributed time}
+\input ordering
+
+\Level 0 {Deadlock}
+
+Deadlock is impossible in IMP because we don't have cycles. It's a
+Directed \emph{Acyclic} Graph, duh!
+
+\input deadlock
+
+\Level 0 {Distributed knowledge}
+
+See the discussion in~\cite{Goodell2011scalablempi}.
+
+\bibliography{vle}
+\bibliographystyle{plain}
+
+\end{document}

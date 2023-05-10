@@ -1,0 +1,397 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-6
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+Dataflow is typically considered in shared
+memory where task coordination and synchronization is
+relatively easy, and its mechanisms can be largely ignored.
+If our model wants to incorporate distributed memory,
+we need to become explicit about a number of aspects
+of parallel task execution. 
+
+The main problem we want 
+to address here is that a data dependency $q\rightarrow p$
+(that is, $q$~preceeds~$p$ by producing data for it)
+involves $q$ producing data that may need to be released
+if it is in a temporary buffer. We will give a 
+sufficient condition for this.
+
+We start with a detailed description of the interaction 
+of two tasks that are in a data dependency relation.
+
+\Level 1 {Task lifeline}
+\label{sec:tasklife}
+
+We formalize a \indextermdef{task} as a \ac{FSM} with five states.
+Some state transitions are $\varepsilon$-transitions, buth others
+are effected by receiving control messages from other tasks.
+Conversely, a task sends out control messages to other task \acp{FSM}
+upon entering or leaving a state.
+
+The states of a task are the following; their only possible occurence
+is in this sequence.
+\begin{description}
+  \item[requesting] Each task starts out by posting a request for incoming
+    data to each of its predecessors.
+  \item[accepting] The requested data is in the process of arriving or
+    being made available.
+  \item[exec] The data dependencies are satisfied and the task can
+    execute locally; in a refinement of this model there can be a
+    separate exec state for each predecessor.
+  \item[avail] Data that was produced and that serves as origin for
+    some dependency is published to all successor tasks.
+  \item[used] All published origin data has been absorbed by the endpoint of the
+    data dependency, and any temporary buffers can be released.
+\end{description}
+
+The easiest depicting of the state transitions and their dependence on
+control messages is as follows:
+
+\begin{tabular}{cccccccccc}
+  $q$ exec& $\longrightarrow$ & avail     & $\longrightarrow$ & used \\
+          & $\downarrow$      &           & $\uparrow$ \\
+  request & $\longrightarrow$ & accepting & $\longrightarrow$ & $p$ exec\\
+\end{tabular}
+
+where the transition $\mathrm{exec}\rightarrow\mathrm{avail}$ of task~$q$
+sends a control message to all successors $p>q$ that effects
+the transition $\mathrm{requesting}\rightarrow\mathrm{accepting}$.
+Similarly, the transition of~$p$ to state exec releases a control message
+that tells its predecessors that send buffers can be released or overwritten.
+
+\begin{figure}[t]
+  \def\longdown#1{%
+     \vbox{\hsize=10pt\moveright.5ex\vbox to #1{\leaders\vrule\vfill}}}
+  \def\longdownarrow#1{%
+     \vbox{\hsize=10pt\moveright.45ex\vbox to #1{\leaders\vrule\vfill}\vbox{$\downarrow$}}}
+  \def\longrightarrow#1{%
+     \raise.60ex\hbox to #1{\leaders\hrule\hfill}$\rightarrow$}
+  \def\longleftarrow#1{%
+     $\leftarrow$\raise.60ex\hbox to #1{\leaders\hrule\hfill}}
+  \begin{tabular}{ccccc}
+    $p$ states&control messages&$q,s$ states\\ [5pt] \hline 
+    requesting&&&\multirow{13}{*}{\longdown{130pt}}\\
+    \multirow{4}{*}{\longdownarrow{40pt}} \\
+        &\CtrlMsg{notifyReadyToSend}&$\vdots$\\ [-5pt]
+        &\longleftarrow{100pt}&exec\\ [-5pt]
+        &$\forall q<p$\\ [5pt]
+        &\CtrlMsg{requestToSend}&\multirow{3}{*}{\longdownarrow{15pt}}&&$q<p$\\  [-5pt]
+    accepting
+        &\longrightarrow{100pt}\\
+    \multirow{8}{*}{\longdownarrow{80pt}}
+        &sendData\\  [-5pt]
+        &\longleftarrow{50pt}&avail\\
+        &\CtrlMsg{acknowledgeReceipt}\\  [-5pt]
+        &\longrightarrow{100pt}&$\downarrow$\\  [-5pt]
+    &$\forall q<p$&\\
+    &&used\\ [10pt]
+    &&requesting&\multirow{10}{*}{\longdown{160pt}}\\
+    &\CtrlMsg{notifyReadyToSend}\\ [-5pt]
+    exec&\longrightarrow{100pt}&\multirow{3}{*}{\longdownarrow{30pt}}\\ [-5pt]
+    &$\forall s>p$\\
+    \multirow{3}{*}{\longdownarrow{30pt}}\\
+        &\CtrlMsg{requestToSend}&&&$s>p$\\  [-5pt]
+        &\longleftarrow{100pt}&accepting\\ [-5pt]
+        &$\exists s>p$&$\vdots$\\
+    avail\\
+    \multirow{5}{*}{\longdownarrow{30pt}}
+        &sendData\\  [-5pt]
+        &\longrightarrow{50pt}\\
+        &\CtrlMsg{acknowledgeReceipt}\\ [-5pt]
+        &\longleftarrow{100pt}\\ [-5pt]
+        &$\forall s>p$\\ [5pt]
+    used\\
+  \end{tabular}
+  \caption{State diagram of a task~$p$, related to predecessor
+    tasks~$q<p$ and successor tasks~$s>p$}
+  \label{fig:task-states}
+\end{figure}
+
+Here is the full definition of the states of a task~$p$, their transitions,
+and all control messages involved, taking into account that
+a task can have multiple predecessors. This is graphically depicted
+in figure~\ref{fig:task-states}.
+
+Note that \CtrlMsg{notifyReadToSend}, \CtrlMsg{requestToSend}, \CtrlMsg{acknowledgeReceipt}
+are \indexterm{control messages}, as opposed to data.
+
+\def\ctrlmsg#1#2{%
+  \bgroup\def\ctrlfr{#1}\def\ctrlto{#2}\catcode`\_=12\relax
+  \def\ctrldisp{$\ctrlfr_{\mathrm\ctrlnm}(\ctrlto)$\egroup}%
+  \afterassignment\ctrldisp\def\ctrlnm}
+\begin{description}
+  \item[requesting] This is the starting state for a task.
+  \item[\CtrlMsg{notifyReadyToSend}] is a control message coming from a predecessor~$q$.
+    The transition to the next state, `accepting' is effected by 
+    receiving this message from $\forall_{q<p}$.
+  \item[accepting] This is the state where a task is receiving or
+    reading data from a predecessor task. In this state:
+    \begin{itemize}
+    \item $p$ sends a `\CtrlMsg{requestToSend}' message to all~$q<p$;
+    \item $q$ does the actual send; 
+    \item $p$ sends an \CtrlMsg{acknowledgeReceipt} message, signalling that $q$ can 
+      release its send data.
+    \end{itemize}
+  \item[exec] is the local computation state; it is entered with an
+    $\epsilon$-transition from the `accepting' state. The local computation
+    is concluded with a `\CtrlMsg{notifyReadyToSend}' message to all~$s>p$.
+  \item[avail] Receiving a `\CtrlMsg{requestToSend}' message from any $s>p$
+    effect the transition from exec to avail. This is the state where
+    all send data for possible successors $s>p$ has been
+    generated.
+  \item[used] is the state where all send data has been used by
+    successor tasks; this state is entered when all successors have
+    sent an \CtrlMsg{acknowledgeReceipt} message.
+\end{description}
+
+Remarks.
+\begin{itemize}
+\item The transition between the `requesting' and `accepting' states
+  requires all predecessors to be publishing their data.  This is
+  conforming to the traditional dataflow model where all predecessors
+  need to be available for a task to fire.  In certain circumstances
+  (for instance stencil operations, where the predecessors contribute
+  halo data) it may be considered a limitation. However, relaxing this
+  condition necessitates assumptions on the associativity of the
+  operations that process the contributed data.
+\item The avail state is triggered by a successor requesting
+  data. This is somewhat opposed to the accepting state needing all
+  predecessors. However, it allows for such minimal publishing
+  mechanisms as copy-on-write.
+\item The \CtrlMsg{acknowledgeReceipt} message is discussed further
+  in section~\ref{sec:ack-msg} below.
+\end{itemize}
+
+\Level 1 {Communication and computation overlap}
+\label{sec:post-xpct}
+
+This story is not without its problems if we try to realize it in practice.
+For instance, in many cases a task takes up a dedicated hardware resource:
+\begin{itemize}
+\item In MPI a task is a code section, meaning that on one processor it does
+  not overlap in execution with other tasks. Its execution corresponds to
+  a definite contiguous time interval.
+\item In threading models a task takes up a thread, so the number of tasks
+  that can be active simultaneously is limited. Furthermore, it depends on
+  details of the runtime system to what extent a task can be suspended and reactivated.
+  Thread suspension would be needed if the thread is waiting for a synchronization,
+  and reactivation is needed when this synchronization is concluded.
+\end{itemize}
+In the above story this leaves us with two problems, at the receive and send stages.
+\begin{itemize}
+\item The problem with receiving affect performance. If an active task is
+  expected to conclude all its actions (both communication and computation)
+  in sequence, this means that the receive is posted only just in time.
+  Consequently there will be no overlap of the incoming communication
+  with other actions on the same processor.
+\item The problem with sending is a logical one. After a send has been posted,
+  a task can not complete until the corresponding receive has been executed.
+  This gets in the way of the concept just explained of task execution taking
+  a finite and contiguous time interval
+\end{itemize}
+
+The practical solution to this problem can not be formulated in a model
+with only tasks: we need to invoke the definition of processors in \impref{05}
+as subsets of tasks, presumably on a shared address space.
+Let task~$t$ have coordinates $(s,p)$ (kernel step, virtual process),
+and a predecessor be $t'=(s',p')$ where $s'<s$ and $p'\not=p$.
+In that case we let $t'$ perform the \CtrlMsg{requestToSend}
+action of~$t$, and $t$ performs the \CtrlMsg{acknowledgeReceipt}
+actions for~$t'$.
+
+This scheme has some implications for data management: $t$~will deallocate
+the send buffers of~$t'$, and $t'$~needs to know the $\beta$-vector of~$t$.
+In particular, this $\beta$-vector needs to be allocated fairly early,
+and it may interfere with memory management before $t$'s local execution
+is performed.
+
+\Level 1 {Acknowledge receipt}
+\label{sec:ack-msg}
+
+The \CtrlMsg{acknowledgeReceipt} message deserves special attention.
+It runs opposite to the actual data dependency, thus it
+doesn't have a place in a dataflow model. In certain special 
+cases it exists. For instance, in MPI it shows up in 
+the sending process as an \n{MPI_Request} being fullfilled.
+On the other hand, with typical shared memory task graphs
+no such explicit acknowledgement exists.
+
+There are various reasons for needing this message.
+For instance, in MPI the sending process can have allocated
+buffers that need to be released or reused.
+More tricky, suppose that the sent data needs to be overwritten
+by a subsequent task, for instance in doing repeated Finite Element
+grid updates. Without explicit acknowledgement, the processor
+executing the tasks can not know when it is safe to do so.
+
+(The presentation of \ac{IMP} has so far implicitly used
+a functional~/ \ac{SSA} model, where data is created
+but otherwise never updated. Functional languages
+`solve' this by having a \indexterm{garbage collector}.
+In scientific applications
+that is not tenable, so we need to find a way to support
+mutable data.)
+
+Fortunately, our synchronization model gives us a way around this.
+
+\Level 2 {Looped reasoning}
+
+We define a condition on task graph to allow us to reason
+circuitously.
+
+\begin{definition}
+  A task graph is a \indextermsub{looped}{task graph} if
+  \begin{equation}
+    \forall_v\forall_{v'\in\succ\bigl(\pred(v)\bigr)}\colon
+    \succ(v)\cap\succ(v')\not=\emptyset
+    \label{eq:loopdef}
+  \end{equation}
+\end{definition}
+
+\begin{figure}[ht]
+  \includegraphics[scale=.1]{loopedgraph}
+  \caption{A looped (left) and non-looped (right) task graph}
+  \label{fig:loopedgraph}
+\end{figure}
+
+Figure~\ref{fig:loopedgraph} shows a looped and not-looped task graph.
+
+We give two equivalent formulations of \eqref{eq:loopdef}:
+\[
+    \forall_{u\in\pred(v)}\forall_{v'\in\succ(u)}\exists_{w\in\succ(v)}
+    \colon w\in\succ(v')
+\]
+and
+\[
+    \forall_u\forall_{v,v'\in\succ(u)}
+    \colon \succ(v)\cap\succ(v')\not=\emptyset
+\]
+    
+In many cases, the condition for a graph being looped is easily
+derived from the structure of the \indexterm{signature function}.
+
+\begin{lemma}
+  Let the signature function be an invertible mapping~$f$,
+  or sum of such mappings.
+  Then
+  \[ \pred(v)=v\cup f\inv v,\quad \succ(v)=v\cup fv \Rightarrow
+  \succ(\pred(v)) = f\inv v\cup v \cup fv
+  \]
+\end{lemma}
+
+\begin{proof}
+  We need to check three cases.
+  \begin{enumerate}
+  \item $v'\in v$: $\succ(v)\cap \succ(v')\not=\emptyset$ trivially.
+  \item $v'\in fv$: \[ \succ(v)=v\cup fv,\quad \succ(v)=fv\cup ffv \]
+    making the intersection~$fv$.
+  \item $v'\in f\inv v$: \[ \succ(v')=f\inv v\cup v \]
+    making the intersection~$v$.
+  \end{enumerate}
+\end{proof}
+
+\pagebreak
+\Level 2 {Inferring task conclusion}
+
+\begin{wrapfigure}{r}{2.5in}
+  \includegraphics[scale=.1]{nogc}
+  \caption{Chain of reasoning in theorem~\ref{th:ABC}.}
+\end{wrapfigure}
+%
+In order to analyze this situation, we reduce the above five 
+\emph{communication states} to
+three \emph{activation states},
+called `A,B,C' for `Active', `Broadcasting', `Concluded'.
+\begin{description}
+\item[A] A task is `Active' if it is in states `accepting'
+  or `exec'; that is, it is incorporating data dependencies into its
+  local computation.
+\item[B] A task is in state `Broadcasting' if it is in state `avail';
+  that is, it is publishing its data to tasks that depend on it.
+\item[C] A task is in state `Concluded' if it is in state `used'; that
+  is, its produced data is successfully dispatched and the task is
+  finished in every sense.
+\end{description}
+The state `request' is meaningless in that tasks can be created 
+in it.
+
+The basic laws of task activation states, in terms of kernels and
+distributions are the following:
+\begin{enumerate}
+\item If a task is Active, its predecessors are Active or Broadcasting:
+  \[ p\in A \wedge q\in\pred(p) \Rightarrow q\in B. 
+  \]
+\item If a task is Broadcasting, its predecessors are Concluded:
+  \[ p\in B \wedge q\in\pred(p) \Rightarrow q\in C. \]
+\end{enumerate}
+
+We now have a relation between the activation states of tasks.
+
+\begin{theorem}
+  \label{th:ABC}
+  \textsl{(McCalpin-Eijkhout Garbage Eliminator)}
+  For any task~$p$ in a looped task graph, if it has an active successor, that is,
+  \[ \exists_{s\in \succ(p)}\colon A(s) \]
+  then all its predecessors are concluded:
+  \[ \forall_{q\in\pred(p)}\colon C(q). \]
+\end{theorem}
+\begin{proof}
+  Task $p$ detects a active successor by getting a \CtrlMsg{requestToSend}.
+  \[ 
+  \begin{array}{l@{\Rightarrow}l}
+    \exists_{s>p}\colon \CtrlMsg{RequestToSend}(s,p) & \exists_{s>p}\colon A(s)\\
+    & \exists_{s>p} \forall_{p'<s} \colon \CtrlMsg{Sending}(p',s)\\
+    & \exists_{s>p} \forall_{p'<s} \colon B(p') \\
+    & \exists_{s>p} \forall_{p'<s} \forall_{q<p'} \colon \CtrlMsg{AcknowledgeReceipt}(p',q) \\
+    & \exists_{s>p} \forall_{p'<s} \forall_{q<p'} \colon C(q) \\
+  \end{array}
+  \]
+  Since $p$ is one of these $p'$, we have proved that its predecessors are concluded.
+\end{proof}
+
+From theorem~\ref{th:ABC} we can prove
+\begin{theorem}
+  \label{th:nogc}
+  If every processor $P$ contains a `start-to-finish' sequence of
+  tasks, that is,
+  \[ P\supset\langle t_0,\ldots,t_k\rangle,\qquad\hbox{where}\qquad
+  \begin{cases}
+    t_0\in T_0\\ t_k\in T_\infty\\
+    t_i < t_{i+1}
+  \end{cases}
+  \]
+  then no garbage collection is needed.
+\end{theorem}
+\begin{proof}
+  Every task has a successor on the same processor, which can perform
+  the act of freeing the send buffer.
+\end{proof}
+
+\Level 1 {Task failure detection}
+
+\begin{wrapfigure}{r}{2.5in}
+  \includegraphics[scale=.1]{detect}
+  \caption{Chain of reasoning in theorem~\ref{th:resil}.}
+  \label{fig:taskfail}
+\end{wrapfigure}
+%
+The above `loopy' reasoning can also be used for a different purpose,
+namely in the service of resilience. 
+
+Let us define a failing task as one that has received its input, but
+never sends its output. In figure~\ref{fig:taskfail} task~$p$ fails in
+this sense. Now if task~$s$ goes into state~$A$, at least one of its
+predecessors~$p'$ has to be in state~$B$, so its predecessors~$q$ in
+turn have to be in state~$C$. Thus, if $q$~is in state~$C$, $p$~has to
+be sending at some point. If we have a timing model for the program,
+we can stipulate a time-out that lets $s$ decide that $p$ is lost to
+us.
+

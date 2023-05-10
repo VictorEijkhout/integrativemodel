@@ -1,0 +1,51 @@
+% -*- latex -*-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%% This text file is part of the theory writeup on the
+%%%% Integrative Model for Parallelism,
+%%%% copyright Victor Eijkhout (eijkhout@tacc.utexas.edu) 2014-8
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+In order for the N-body problem to be efficiently implementable in
+the \ac{IMP} model we use a different formulation. In a way this 
+is a different arrangement of the statements of the naive formulation.
+Such reformulation was already used to arrive at implementations
+in distributed memory with message
+passing; see~\cite{Salmon86fastparallel}. 
+
+Let us then consider the following form of the N-body algorithms
+(see~\cite{Katzenelson:nbody,Agullo:pipeFMMinria}):
+\begin{enumerate}
+\item\label{fmm:upward} The field due to cell $i$ on level $\ell$ is given by
+\begin{equation}
+ g(\ell,i) = \oplus_{j\in C^{(\ell)}_i} g(\ell+1,j) 
+ \label{eq:BH-g}
+\end{equation}
+  where $C^{(\ell)}_i$ denotes the set of children of cell~$i$ and
+  $\oplus$~stands for a general
+  combining operator, for instance computing a joint mass and
+  center of mass;
+\item\label{fmm:downward} The field felt by cell $i$ on level $\ell$ is given by
+\begin{equation}
+ f(\ell,i) = f(\ell-1,p(i))+\sum_{j\in S^{(\ell)}_i}g(\ell,j) 
+\label{eq:BH-f}
+\end{equation}
+  where $p(i)$ is the parent cell of~$i$, and $S^{(\ell)}_i$ is the
+  interaction region of~$i$: those cells on the same level (`cousins')
+  for which we sum the field.
+\end{enumerate}
+
+This is a structural description; by suitable choice of kernel it can
+correspond to both the \indexterm{Barnes-Hut} or \indexac{FMM}.
+%
+In \ac{FMM} terms~\cite{Kurzak:FMM}, step~\ref{fmm:upward} is the
+`upward pass', by M2M or multipole-to-multipole translation. The
+direct calculation of $g(\cdot,\cdot)$ on the finest level is done by
+Multipole Expansion Evaluation.
+%
+The first term in step~\ref{fmm:downward} is the `downward pass' by
+L2L or local-to-local translation. The second term is the M2L or
+multipole-to-local translation.
