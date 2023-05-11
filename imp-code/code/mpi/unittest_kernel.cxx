@@ -34,7 +34,7 @@ TEST_CASE( "creation" ) {
   coordinate<index_int,1> omega( total_points );
   mpi_decomposition<1> procs( the_env );
   mpi_distribution<1> dist( omega,procs );
-  mpi_object x( dist );
+  auto x = shared_ptr<object<1>>( make_shared<mpi_object<1>>( dist ) );
 
-  REQUIRE_NOTHROW( mpi_kernel(dist) );
+  REQUIRE_NOTHROW( mpi_kernel(x) );
 }

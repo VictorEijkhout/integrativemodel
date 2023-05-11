@@ -18,6 +18,11 @@
 template<int d>
 class mpi_kernel : public kernel<d> {
 public:
-  mpi_kernel( shared_ptr<mpi_object<d>> );
+  mpi_kernel( std::shared_ptr<object<d>> );
 };
 
+template<int d>
+mpi_kernel<d>> mpi_setconstant_kernel( std::shared_ptr<object> out,double v ) {
+  auto k = mpi_kernel<d>(out);
+  return k;
+};

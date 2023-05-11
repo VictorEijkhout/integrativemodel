@@ -22,6 +22,14 @@ kernel<d>::kernel( shared_ptr<object<d>> out )
   : output(out) {;
 };
 
+template<int d>
+void kernel<d> ::setconstant( double v ) {
+  set_localexecutefn
+    ( function< kernel_function_proto >{
+      [v] ( kernel_function_args ) -> void {
+	vecsetconstant( kernel_function_call,v ); } } );
+};
+
 template class kernel<1>;
 template class kernel<2>;
 template class kernel<3>;

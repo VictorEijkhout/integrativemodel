@@ -17,11 +17,15 @@
 #include <vector>
 
 template<int d>
-class kernel : public distribution<d> {
+class kernel {
 private:
   std::shared_ptr<object<d>> output;
   std::vector<std::shared_ptr<object<d>>> inputs;
 public:
-  kernel( shared_ptr<object<d>> out );
+  kernel( std::shared_ptr<object<d>> out );
+  /*
+   * specific types
+   * THIS IS UGLY because hard to extend
+   */
+  void setconstant( double v );
 };
-

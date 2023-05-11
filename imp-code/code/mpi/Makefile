@@ -92,14 +92,27 @@ mpi_distribution.o : mpi_distribution.h ${IMPCODEDIR}/imp_distribution.h
 # object
 #
 NEW_TESTS += unittest_object
-OBJ_OBJS = mpi_object.o ${IMPCODEDIR}/imp_object.o \
+OBJECT_OBJS = mpi_object.o ${IMPCODEDIR}/imp_object.o \
     ${DISTR_OBJS}
-unittest_object : unittest_main.o unittest_object.o ${OBJ_OBJS}
+unittest_object : unittest_main.o unittest_object.o ${OBJECT_OBJS}
 	@echo "Linking $@"
 	${CXX_LINKER} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
-	    unittest_main.o $@.o ${OBJ_OBJS} \
+	    unittest_main.o $@.o ${OBJECT_OBJS} \
 	    ${TEST_LIBS}
 mpi_object.o : mpi_object.h ${IMPCODEDIR}/imp_object.h
+
+#
+# kernel
+#
+NEW_TESTS += unittest_kernel
+KERNEL_OBJS = mpi_kernel.o ${IMPCODEDIR}/imp_kernel.o \
+    ${OBJECT_OBJS}
+unittest_kernel : unittest_main.o unittest_kernel.o ${KERNEL_OBJS}
+	@echo "Linking $@"
+	${CXX_LINKER} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
+	    unittest_main.o $@.o ${KERNEL_OBJS} \
+	    ${TEST_LIBS}
+mpi_kernel.o : mpi_kernel.h ${IMPCODEDIR}/imp_kernel.h
 
 info ::
 	@echo "make newtests : do new unit tests"

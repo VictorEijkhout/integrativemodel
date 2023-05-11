@@ -31,6 +31,9 @@ ${IMPCODEDIR}/imp_distribution.o : ${IMPCODEDIR}/imp_distribution.cxx ${IMPCODED
 ${IMPCODEDIR}/imp_object.o : ${IMPCODEDIR}/imp_object.cxx ${IMPCODEDIR}/imp_object.h
 	@cd ${IMPCODEDIR} && make --no-print-directory imp_object.o
 
+${IMPCODEDIR}/imp_kernel.o : ${IMPCODEDIR}/imp_kernel.cxx ${IMPCODEDIR}/imp_kernel.h
+	@cd ${IMPCODEDIR} && make --no-print-directory imp_kernel.o
+
 # ${IMPCODEDIR}/indexstruct.o ${IMPCODEDIR}/imp_functions.o : \
 #     ${IMPCODEDIR}/imp_functions.cxx \
 #     ${IMPCODEDIR}/utils.cxx ${IMPCODEDIR}/utils.h \

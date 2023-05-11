@@ -14,9 +14,10 @@
 using std::array;
 using std::string;
 using fmt::print,fmt::format;
+using std::shared_ptr;
 
 template<int d>
-mpi_kernel<d>::mpi_kernel( shared_ptr<mpi_object<d>> obj )
+mpi_kernel<d>::mpi_kernel( shared_ptr<object<d>> obj )
   : kernel<d>::kernel(obj) {
 };
 
