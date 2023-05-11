@@ -103,7 +103,7 @@ bool indexstruct<I,d>::contains_element_in_range( const coordinate<I,d>& idx) co
 //! Base test for disjointness; derived classes will build on this.
 template<typename I,int d>
 bool indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
-  return first_index()>idx->last_actual_index() || last_index()<idx->first_index();
+  return first_index() > idx->last_actual_index() or last_actual_index() < idx->first_index();
 };
 
 //! Operate and truncate to boundary coordinates

@@ -730,9 +730,9 @@ public:
    * Statistics
    */
   virtual coordinate<I,d> first_index() const {    return strct->first_index(); };
-  //! actually last contained index
-  virtual coordinate<I,d> last_index()  const {    return strct->last_index(); };
   //! non-inclusive upper bound, mostly to be correct for contiguous
+  virtual coordinate<I,d> last_index()  const {    return strct->last_index(); };
+  //! actually last contained index
   virtual coordinate<I,d> last_actual_index()  const { return strct->last_actual_index(); };
   I volume()                            const {    return strct->volume(); };
   I outer_volume()                      const {    return strct->outer_volume(); };
