@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** imp_functions.cxx : implementations of the support functions
  ****
@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "imp_base.h"
+//#include "imp_base.h"
 #include "imp_functions.h"
 
 using std::string;
@@ -20,14 +20,42 @@ using std::vector;
 
 using std::shared_ptr;
 
+#include "fmt/format.h"
 using fmt::format;
 using fmt::print;
 
 /*!
+  Set vector elements linearly. A useful test case.
+ */
+template<int d>
+void vecsetconstant( kernel_function_args(d), double value )
+{
+  //  const auto outdistro = outvector->get_distribution();
+  using outdistro = outvector;
+  auto outdata = outvector->get_data(p);
+
+  index_int
+    tar0 = outdistro->location_of_first_index(outdistro,p),
+    len = outdistro->volume(p);
+
+  index_int first_index = outdistro->first_index_r(p).coord(0);
+  print("[%d] writing {} elements @ {} wich has size {}\n",
+	p.as_string(),len,(long)(outdata.data()),outdata.size());
+
+  for (index_int i=0; i<len; i++) {
+    outdata.at(tar0+i) = value;
+  }  
+
+  //  *flopcount += 0.;
+}
+
+#if 0
+/*!
   A no-op function. This can be used as the function of an origin kernel: whatever data is
   in the output vector of the origin kernel will be used as-is.
 */
-void vecnoset( kernel_function_args )
+template<int d>
+void vecnoset( kernel_function_args(d) )
 {
   return;
 }
@@ -38,7 +66,8 @@ void vecnoset( kernel_function_args )
  * Subtlety: we use the output index only, so we can actually cover the case
  * where the distribution does not quite allow for copying, as in transposition.
  */
-void veccopy( kernel_function_args )
+template<int d>
+void veccopy( kernel_function_args(d) )
 {
 #include "def_out.cxx"
 
@@ -98,13 +127,14 @@ void veccopy( kernel_function_args )
   } else
     throw(format("veccopy not implemented for d={}",dim));
 
-  *flopcount += outdistro->volume(p);
+  //  *flopcount += outdistro->volume(p);
 }
 
 /*!
   Delta function
  */
-void vecdelta( kernel_function_args, domain_coordinate& delta)
+template<int d>
+void vecdelta( kernel_function_args(d), domain_coordinate& delta)
 {
   const auto outdistro = outvector->get_distribution();
   int dim = outdistro->dimensionality();
@@ -147,7 +177,8 @@ void vecdelta( kernel_function_args, domain_coordinate& delta)
 /*!
   Set vector elements linearly. A useful test case.
  */
-void vecsetlinear( kernel_function_args )
+template<int d>
+void vecsetlinear( kernel_function_args(d) )
 {
   const auto outdistro = outvector->get_distribution();
   int dim = outdistro->dimensionality();
@@ -190,13 +221,14 @@ void vecsetlinear( kernel_function_args )
   } else
     throw(format("vecsetlinear not implemented for d={}",dim));
 
-  *flopcount += 0.;
+  //  *flopcount += 0.;
 }
 
 /*!
   Set vector elements linearly.
  */
-void vecsetlinear2d( kernel_function_args )
+template<int d>
+void vecsetlinear2d( kernel_function_args(d) )
 {
   const auto outdistro = outvector->get_distribution();
   int dim = p.same_dimensionality( outdistro->dimensionality() );
@@ -225,44 +257,24 @@ void vecsetlinear2d( kernel_function_args )
   } else
     throw(string("dimensionality should be 2 for setlinear2d"));
 
-  *flopcount += 0.;
+  //  *flopcount += 0.;
 }
 
-/*!
-  Set vector elements linearly. A useful test case.
- */
-void vecsetconstant( kernel_function_args, double value )
-{
-  const auto outdistro = outvector->get_distribution();
-  auto outdata = outvector->get_data(p);
-
-  index_int
-    tar0 = outdistro->location_of_first_index(outdistro,p),
-    len = outdistro->volume(p);
-
-  index_int first_index = outdistro->first_index_r(p).coord(0);
-  print("[%d] writing {} elements @ {} wich has size {}\n",
-	p.as_string(),len,(long)(outdata.data()),outdata.size());
-
-  for (index_int i=0; i<len; i++) {
-    outdata.at(tar0+i) = value;
-  }  
-
-  *flopcount += 0.;
-}
-
-void vecsetconstantzero( kernel_function_args ) {
+template<int d>
+void vecsetconstantzero( kernel_function_args(d) ) {
   vecsetconstant(kernel_function_call,0.); 
 };
 
-void vecsetconstantone( kernel_function_args ) {
+template<int d>
+void vecsetconstantone( kernel_function_args(d) ) {
   vecsetconstant(kernel_function_call,1.); 
 };
 
 /*!
   Set vector elements linearly. A useful test case.
 */
-void vecsetconstantp( kernel_function_args ) {
+template<int d>
+void vecsetconstantp( kernel_function_args(d) ) {
   const auto outdistro = outvector->get_distribution();
   int dim;
   try {
@@ -313,14 +325,15 @@ void vecsetconstantp( kernel_function_args ) {
   } else
     throw(format("vecsetconstantp not implemented for d={}",dim));
 
-  *flopcount += 0.;
+  //  *flopcount += 0.;
 }
 
 /*! 
   Deceptively descriptive name for a very ad-hoc function:
   set \$! y_i = p+.5\$!
 */
-void vector_gen(kernel_function_args ) {
+template<int d>
+void vector_gen(kernel_function_args(d) ) {
   const auto outdistro = outvector->get_distribution();
   int dim;
   try {
@@ -365,7 +378,7 @@ void vector_gen(kernel_function_args ) {
     }
   } else
     throw(format("vector_gen not implemented for d={}",dim));
-  *flopcount += plast[0]-pfirst[0]+1;
+  //  *flopcount += plast[0]-pfirst[0]+1;
 }
 
 /*
@@ -377,7 +390,8 @@ void vector_gen(kernel_function_args ) {
   Shift an array to the right without wrap connections.
   We leave the global first position undefined.
 */
-void vecshiftrightbump( kernel_function_args ) {
+template<int d>
+void vecshiftrightbump( kernel_function_args(d) ) {
   auto invector = invectors.at(0);
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
@@ -409,7 +423,7 @@ void vecshiftrightbump( kernel_function_args ) {
     outdata.at(Iout) = indata.at(Iin-1);
   }
   index_int len = plast[0]-pfirst0;
-  *flopcount += len;
+  //  *flopcount += len;
 }
 //snippet end
 
@@ -418,7 +432,8 @@ void vecshiftrightbump( kernel_function_args ) {
   Shift an array to the left without wrap connections.
   We leave the global last position undefined.
 */
-void vecshiftleftbump( kernel_function_args ) {
+template<int d>
+void vecshiftleftbump( kernel_function_args(d) ) {
   auto invector = invectors.at(0);
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
@@ -451,7 +466,7 @@ void vecshiftleftbump( kernel_function_args ) {
     outdata.at(Iout) = indata.at(Iin+1);
   }
   index_int len = plast0-pfirst0+1;
-  *flopcount += len;
+  //  *flopcount += len;
 }
 //snippet end
 
@@ -465,7 +480,8 @@ void vecshiftleftbump( kernel_function_args ) {
   - k=1: add charges
   - k=2: 0=charges added, 1=new center
  */
-void scansumk( kernel_function_args,int k ) {
+template<int d>
+void scansumk( kernel_function_args(d),int k ) {
   auto invector = invectors.at(0);
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
@@ -520,11 +536,12 @@ void scansumk( kernel_function_args,int k ) {
   } else
     throw(string("scansumk only for d=1"));
 
-  *flopcount += k*outsize;
+  //  *flopcount += k*outsize;
 }
 
 //! Short-cut of \ref scansumk for k=1
-void scansum( kernel_function_args ) {
+template<int d>
+void scansum( kernel_function_args(d) ) {
   scansumk(step,p,invectors,outvector,flopcount,1);
 }
 
@@ -533,7 +550,8 @@ void scansum( kernel_function_args ) {
 
   \todo do some sanity check on the size of the output
 */
-void summing( kernel_function_args ) {
+template<int d>
+void summing( kernel_function_args(d) ) {
   auto invector = invectors.at(0);
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
@@ -582,7 +600,7 @@ void summing( kernel_function_args ) {
 
   outdata.at(0) = s;
 
-  *flopcount += len*k;
+  //  *flopcount += len*k;
 
 #if 0
   index_int
@@ -608,7 +626,8 @@ void summing( kernel_function_args ) {
 
   \todo do some sanity check on the size of the output
 */
-void rootofsumming( kernel_function_args ) {
+template<int d>
+void rootofsumming( kernel_function_args(d) ) {
   auto invector = invectors.at(0);
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
@@ -628,12 +647,13 @@ void rootofsumming( kernel_function_args ) {
 
   outdata.at(0) = sqrt(s);
 
-  *flopcount += len;
+  //  *flopcount += len;
 }
 
 //snippet ompnormsquared
 //! Compute the local part of the norm of a vector squared.
-void local_normsquared( kernel_function_args ) {
+template<int d>
+void local_normsquared( kernel_function_args(d) ) {
 #include "def_out.cxx"
   // auto invector = invectors.at(0);
   // const auto indistro = invector->get_distribution(),
@@ -661,12 +681,13 @@ void local_normsquared( kernel_function_args ) {
   // 	     invector->get_name(),w.str(),s);
   outdata.at( INDEX1D(pfirst[0],out_offsets,out_nsize) ) = s;
 
-  *flopcount += 2*indistro->volume(p);
+  //  *flopcount += 2*indistro->volume(p);
 }
 //snippet end
 
 //! Compute the norm of the local part of a vector.
-void local_norm( kernel_function_args ) {
+template<int d>
+void local_norm( kernel_function_args(d) ) {
   auto invector = invectors.at(0);
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
@@ -684,11 +705,12 @@ void local_norm( kernel_function_args ) {
   }
   outdata.at(tar0) = sqrt(s);
 
-  *flopcount += len;
+  //  *flopcount += len;
 }
 
 //! The local part of the inner product of two vectors.
-void local_inner_product( kernel_function_args ) {
+template<int d>
+void local_inner_product( kernel_function_args(d) ) {
   if (invectors.size()<2)
     throw(format("local inner product: #vectors={}, s/b 2",invectors.size()));
   auto invector = invectors.at(0), othervector = invectors.at(1);
@@ -717,13 +739,14 @@ void local_inner_product( kernel_function_args ) {
   //printf("[%d] local normquared %e written to %d\n",p,s,outloc);
   outdata.at(tar0) = s;
 
-  *flopcount += len;
+  //  *flopcount += len;
 }
 
 /*!
   Pointwise square root
  */
-void vectorroot( kernel_function_args ) {
+template<int d>
+void vectorroot( kernel_function_args(d) ) {
   auto invector = invectors.at(0);
   const auto indistro = invector->get_distribution(),
     outdistro = outvector->get_distribution();
@@ -744,14 +767,15 @@ void vectorroot( kernel_function_args ) {
     outdata.at(tar0+i) = sqrt( indata.at(src0+i) );
   }  
 
-  *flopcount += len*ortho;
+  //  *flopcount += len*ortho;
 }
 
 /*!
   Multiply a vector by a scalar; this is a limited case of an AXPY.
   The scalar comes in as an extra input object.
 */
-void vecscaleby( kernel_function_args ) {
+template<int d>
+void vecscaleby( kernel_function_args(d) ) {
 #include "def_out.cxx"
   auto
     inscalar = invectors.at(1);
@@ -807,11 +831,12 @@ void vecscaleby( kernel_function_args ) {
   } else
     throw(format("veccopy not implemented for d={}",dim));
 
-  *flopcount += outdistro->volume(p);
+  //  *flopcount += outdistro->volume(p);
 }
 
 //! \todo replace this by vecscalebyc with lambda
-void vecscalebytwo( kernel_function_args ) {
+template<int d>
+void vecscalebytwo( kernel_function_args(d) ) {
   vecscalebyc(step,p,invectors,outvector,flopcount,2.);
 }
 
@@ -821,7 +846,8 @@ void vecscalebytwo( kernel_function_args ) {
   \todo replace void ctx by actual scale
 */
 //snippet ompscalevec
-void vecscalebyc( kernel_function_args,double a ) {
+template<int d>
+void vecscalebyc( kernel_function_args(d),double a ) {
 #include "def_out.cxx"
   // auto invector = invectors.at(0);
   // const auto indistro = invector->get_distribution();
@@ -857,7 +883,7 @@ void vecscalebyc( kernel_function_args,double a ) {
     outdata.at(Iout) = a*indata.at(Iin);
   }
 
-  *flopcount += plast[0]-pfirst[0]+1;
+  //  *flopcount += plast[0]-pfirst[0]+1;
 }
 //snippet end
 
@@ -866,7 +892,8 @@ void vecscalebyc( kernel_function_args,double a ) {
   The scalar comes in through the context as a (void*)(double*)&scalar,
   or as an extra input object.
 */
-void vecscaledownby( kernel_function_args ) {
+template<int d>
+void vecscaledownby( kernel_function_args(d) ) {
 #include "def_out.cxx"
   if (invectors.size()!=2)
     throw(string("vecscaledownby needs two inputs"));
@@ -897,10 +924,11 @@ void vecscaledownby( kernel_function_args ) {
     //print("[{}] copy global index {}@{}:{}\n",p->as_string(),i,I,indata.at(I));
     outdata.at(I) = a * indata.at(I);
   }
-  *flopcount += outdistro->volume(p);
+  //  *flopcount += outdistro->volume(p);
 }
 
-void vecscaledownbyc( kernel_function_args,double a ) {
+template<int d>
+void vecscaledownbyc( kernel_function_args(d),double a ) {
   auto invector = invectors.at(0);
   //inscalar = invectors.at(1);
   const auto indistro = invector->get_distribution(),
@@ -919,7 +947,7 @@ void vecscaledownbyc( kernel_function_args,double a ) {
   for (index_int i=0; i<len; i++) {
     outdata.at(tar0+i) = ainv*indata.at(src0+i);
   }
-  *flopcount += len;
+  //  *flopcount += len;
 }
 
 /*!
@@ -928,7 +956,8 @@ void vecscaledownbyc( kernel_function_args,double a ) {
   as an doubledouble_object_struct structure.
 \todo 
 */
-void vecaxbyz( kernel_function_args,void *ctx ) {
+template<int d>
+void vecaxbyz( kernel_function_args(d),void *ctx ) {
   auto invector1 = invectors.at(0), invector2 = invectors.at(2);
   const auto indistro1 = invector1->get_distribution(),
     indistro2 = invector2->get_distribution(),
@@ -959,13 +988,14 @@ void vecaxbyz( kernel_function_args,void *ctx ) {
   }
   // print("axbyz computing {}x{} + {}x{}->{} : {}\n",
   // 	     s1,invector1->get_name(),s2,invector2->get_name(),outvector->get_name(),w.str());
-  *flopcount += 3*len;
+  //  *flopcount += 3*len;
 }
 
 /*
  * Central difference computation
  */
-void central_difference( kernel_function_args ) {
+template<int d>
+void central_difference( kernel_function_args(d) ) {
   central_difference_damp(step,p,invectors,outvector,flopcount,1.);
 }
 
@@ -973,7 +1003,8 @@ void central_difference( kernel_function_args ) {
  * Central difference computation with a damping parameter
  */
 //snippet centraldiff
-void central_difference_damp( kernel_function_args,double damp)
+template<int d>
+void central_difference_damp( kernel_function_args(d),double damp)
 {
   auto invector = invectors.at(0);
   const auto indistro = invector->get_distribution(),
@@ -1018,7 +1049,7 @@ void central_difference_damp( kernel_function_args,double damp)
       Iin  = INDEX1D(i,in_offsets,in_nsize),
       Iout = INDEX1D(i,out_offsets,out_nsize);
     outdata.at(Iout) = ( 2*indata.at(Iin) - indata.at(Iin+1) )*damp;
-    *flopcount += 3;
+    //    *flopcount += 3;
     lo++;
   }
   if (hi==out_gstruct->last_index_r()[0]) {
@@ -1027,7 +1058,7 @@ void central_difference_damp( kernel_function_args,double damp)
       Iin  = INDEX1D(i,in_offsets,in_nsize),
       Iout = INDEX1D(i,out_offsets,out_nsize);
     outdata.at(Iout) = ( 2*indata.at(Iin) - indata.at(Iin-1) )*damp;
-    *flopcount += 3;
+    //    *flopcount += 3;
     hi--;
   }
 
@@ -1040,7 +1071,7 @@ void central_difference_damp( kernel_function_args,double damp)
     outdata.at(Iout) = ( 2*indata.at(Iin) - indata.at(Iin-1) - indata.at(Iin+1) )
                     *damp;
   }
-  *flopcount += 4*(hi-lo+1);
+  //  *flopcount += 4*(hi-lo+1);
   //snippet end
   
 }
@@ -1062,7 +1093,8 @@ index_int INDEXanyD(domain_coordinate &i,domain_coordinate &off,domain_coordinat
 };
 
 //snippet centraldiffd
-void central_difference_anyd( kernel_function_args ) {
+template<int d>
+void central_difference_anyd( kernel_function_args(d) ) {
   //snippet end
   auto invector = invectors.at(0);
   const auto indistro = invector->get_distribution(),
@@ -1106,7 +1138,7 @@ void central_difference_anyd( kernel_function_args ) {
       Iout = INDEXanyD(i,out_offsets,out_nsize,dim);
     outdata.at(Iout) = 2*indata.at(Iin); // - indata.at(Iin-1) - indata.at(Iin+1) );
   }
-  *flopcount += 4*pstruct->volume();
+  //  *flopcount += 4*pstruct->volume();
   //snippet end
   
 }
@@ -1121,10 +1153,16 @@ std::shared_ptr<indexstruct> doubleinterval(index_int i) {
 }
 
 //! \todo change void* to string
-void print_trace_message( kernel_function_args,void *ctx ) {
+template<int d>
+void print_trace_message( kernel_function_args(d),void *ctx ) {
   auto inobj = invectors.at(0);
   string *c = (string*)(ctx);
   if (p.is_zero())
     print("{}: {}\n",*c,inobj->get_data(p).at(0));
 };
 
+#endif
+
+template void vecsetconstant<1>( kernel_function_args(1), double value );
+template void vecsetconstant<2>( kernel_function_args(2), double value );
+template void vecsetconstant<3>( kernel_function_args(3), double value );

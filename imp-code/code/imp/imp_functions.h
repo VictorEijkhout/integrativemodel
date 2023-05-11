@@ -3,14 +3,12 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-7
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** imp_functions.cxx : header file for imp support functions
  ****
  ****************************************************************/
 
-// #ifndef IMP_FUNCTIONS_H
-// #define IMP_FUNCTIONS_H
 #pragma one
 
 //snippet numa123index
@@ -37,40 +35,40 @@
 
 template<typename I,int d>
 class coordinate;
-template<typename I,int d>
+template<int d>
 class object;
-template<typename I,int d>
-class sparse_matrix;
+// template<typename I,int d>
+// class sparse_matrix;
 
 template<typename I,int d>
 index_int INDEXanyD(coordinate<I,d> &i,coordinate<I,d> &off,coordinate<I,d> &siz);
 
-#define kernel_function_proto void(int,coordinate<int,d>&,std::vector<std::shared_ptr<object>>&,std::shared_ptr<object>,double*)
-#define kernel_function_args int step,coordinate<int,d> &p,std::vector<std::shared_ptr<object>> &invectors,std::shared_ptr<object> outvector,double *flopcount
-#define kernel_function_types int,coordinate<int,d>&,std::vector<std::shared_ptr<object>>&,std::shared_ptr<object>,double*
+#define kernel_function_proto(d) void(int,coordinate<int,d>&,std::vector<std::shared_ptr<object<d>>>&,std::shared_ptr<object<d>>)
+#define kernel_function_args(d) int step,coordinate<int,d> &p,std::vector<std::shared_ptr<object<d>>> &invectors,std::shared_ptr<object<d>> outvector
+#define kernel_function_types(d) int,coordinate<int,d>&,std::vector<std::shared_ptr<object<d>>>&,std::shared_ptr<object<d>>
 
-#define kernel_function_call step,p,invectors,outvector,flopcount
+#define kernel_function_call(d) step,p,invectors,outvector
 
-template<typename I,int d>
-typedef void(*kernel_function)(int,coordinate<I,d>&,std::vector<std::shared_ptr<object>>&,std::shared_ptr<object>,double*);
+//using kernel_function1 =  void(*)(int,coordinate<int,1>&,std::vector<std::shared_ptr<object<1>>>&,std::shared_ptr<object<1>>,double*);
 
-typedef struct {std::string op; std::shared_ptr<object> obj; } char_object_struct;
-typedef struct {double *s1; double *s2; std::shared_ptr<object>obj; } doubledouble_object_struct;
-typedef struct {char c1; std::shared_ptr<object> s1;
-  char c2; std::shared_ptr<object>s2;
-  std::shared_ptr<object> obj; } charcharxyz_object_struct;
+template<int d>
+void vecsetconstant( kernel_function_types(d), double);
+
+#if 0
+typedef struct {std::string op; std::shared_ptr<object<1>> obj; } char_object_struct;
+typedef struct {double *s1; double *s2; std::shared_ptr<object<1>>obj; } doubledouble_object_struct;
+typedef struct {char c1; std::shared_ptr<object<1>> s1;
+  char c2; std::shared_ptr<object<1>>s2;
+  std::shared_ptr<object<1>> obj; } charcharxyz_object_struct;
 
 template<typename I,int d>
 void vecnoset( kernel_function_types );
 template<typename I,int d>
 void vecsetlinear( kernel_function_types );
 template<typename I,int d>
-template<typename I,int d>
 void vecsetlinear2d( kernel_function_types );
 template<typename I,int d>
 void vecdelta( kernel_function_types, coordinate<I,d>&);
-template<typename I,int d>
-void vecsetconstant( kernel_function_types, double);
 template<typename I,int d>
 void vecsetconstantzero( kernel_function_types );
 template<typename I,int d>
@@ -109,11 +107,11 @@ template<typename I,int d>
 void local_norm( kernel_function_types );
 template<typename I,int d>
 void local_normsquared( kernel_function_types );
-template<typename I,int d>
-void local_sparse_matrix_vector_multiply( kernel_function_types,std::shared_ptr<sparse_matrix> );
-template<typename I,int d>
-void sparse_matrix_multiply
-    (coordinate<int,d>&,std::shared_ptr<object>,std::shared_ptr<object>,double*);
+// template<typename I,int d>
+// void local_sparse_matrix_vector_multiply( kernel_function_types,std::shared_ptr<sparse_matrix> );
+// template<typename I,int d>
+// void sparse_matrix_multiply
+//     (coordinate<int,d>&,std::shared_ptr<object<1>>,std::shared_ptr<object<1>>,double*);
 
 template<typename I,int d>
 void char_scalar_op( kernel_function_args,void* );
@@ -144,5 +142,5 @@ template<typename I,int d>
 void central_difference_anyd( kernel_function_types );
 template<typename I,int d>
 void local_diffusion( kernel_function_types );
+#endif
 
-// #endif

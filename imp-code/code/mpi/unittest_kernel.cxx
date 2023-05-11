@@ -38,3 +38,16 @@ TEST_CASE( "creation" ) {
 
   REQUIRE_NOTHROW( mpi_kernel(x) );
 }
+
+TEST_CASE( "constant" ) {
+  // make an object
+  const int points_per_proc = ipower(5,1);
+  index_int total_points = points_per_proc*the_env.nprocs();
+  coordinate<index_int,1> omega( total_points );
+  mpi_decomposition<1> procs( the_env );
+  mpi_distribution<1> dist( omega,procs );
+  auto x = shared_ptr<object<1>>( make_shared<mpi_object<1>>( dist ) );
+
+  mpi_kernel c(x);
+  REQUIRE_NOTHROW( c.setconstant(5.2) );
+}

@@ -13,6 +13,7 @@
 #pragma once
 
 #include "imp_object.h"
+#include "imp_functions.h"
 #include <memory>
 #include <vector>
 
@@ -23,9 +24,20 @@ private:
   std::vector<std::shared_ptr<object<d>>> inputs;
 public:
   kernel( std::shared_ptr<object<d>> out );
+  
+  /*
+   * local function
+   */
+protected:
+  std::function< kernel_function_proto(d) > localexecutefn;
+  void *localexecutectx{nullptr};
+public:
+  void set_localexecutefn( std::function< kernel_function_proto(d) > f );
+
   /*
    * specific types
    * THIS IS UGLY because hard to extend
    */
+public:
   void setconstant( double v );
 };

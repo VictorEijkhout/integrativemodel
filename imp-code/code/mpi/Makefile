@@ -105,7 +105,7 @@ mpi_object.o : mpi_object.h ${IMPCODEDIR}/imp_object.h
 # kernel
 #
 NEW_TESTS += unittest_kernel
-KERNEL_OBJS = mpi_kernel.o ${IMPCODEDIR}/imp_kernel.o \
+KERNEL_OBJS = mpi_kernel.o ${IMPCODEDIR}/imp_kernel.o ${IMPCODEDIR}/imp_functions.o \
     ${OBJECT_OBJS}
 unittest_kernel : unittest_main.o unittest_kernel.o ${KERNEL_OBJS}
 	@echo "Linking $@"
