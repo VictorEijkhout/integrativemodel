@@ -23,6 +23,18 @@ omp_distribution<d>::omp_distribution
   using I = index_int;
   coordinate<I,d> first = dom.first_index(),last = dom.last_actual_index();
   this->_local_domain = domain<d>( contiguous_indexstruct<I,d>( first,last ) );
+  /*
+   * Polymorphism
+   */
+  this->location_of_first_index =
+    [=] ( const coordinate<int,d> &pcoord) -> index_int
+    { 
+      auto enc = d->get_enclosing_structure();
+      coordinate<index_int,d>
+	first = d->first_index_r(pcoord);
+      index_int loc = first.linear_location_in(enc);
+      return loc;
+    };
 };
 
 //! Function to produce a single scalar, replicated over all processes

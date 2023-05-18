@@ -14,6 +14,7 @@
 
 //#include "imp_base.h"
 #include "imp_functions.h"
+#include "imp_object.h"
 
 using std::string;
 using std::vector;
@@ -30,21 +31,24 @@ using fmt::print;
 template<int d>
 void vecsetconstant( kernel_function_args(d), double value )
 {
-  //  const auto outdistro = outvector->get_distribution();
-  using outdistro = outvector;
-  auto outdata = outvector->get_data(p);
+  auto& outdata = outvector->data();
 
-  index_int
-    tar0 = outdistro->location_of_first_index(outdistro,p),
-    len = outdistro->volume(p);
+  // index_int
+  //   len  = outvector->local_domain()->volume();
+  // index_int
+  //   tar0 = outvector->location_of_first_index(p);
 
-  index_int first_index = outdistro->first_index_r(p).coord(0);
-  print("[%d] writing {} elements @ {} wich has size {}\n",
-	p.as_string(),len,(long)(outdata.data()),outdata.size());
+  // index_int first_index = outdistro->first_index_r(p).coord(0);
+  // print("[%d] writing {} elements in object with size {}\n",
+  // 	p.as_string(),len,outdata.size());
+  // print("[%d] writing {} elements @ {} wich has size {}\n",
+  // 	p.as_string(),len,(long)(outdata.data()),outdata.size());
 
-  for (index_int i=0; i<len; i++) {
-    outdata.at(tar0+i) = value;
-  }  
+  for ( auto& e : outdata )
+    e = value;
+  // for (index_int i=0; i<len; i++) {
+  //   outdata.at(tar0+i) = value;
+  // }  
 
   //  *flopcount += 0.;
 }

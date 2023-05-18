@@ -39,7 +39,7 @@ class task;
 template<int d>
 class decomposition : public std::vector<coordinate<int,d>> {
 public:
-  decomposition() {}; //!< default constructor
+  decomposition()=delete;
   //! Constructor from explicit endpoint coordinate
   decomposition( const coordinate<int,d> nd );
   //! Constructor from environment: uses the endpoint coordinate of the env
@@ -62,8 +62,6 @@ public:
 
   //! How many processors do we have in dimension `nd'?
   int size_of_dimension(int nd) const;
-  //! \todo do we really need this?
-  //  auto get_global_domain_descriptor() { return domain_layout.data(); };
   //! Conversion from grid coordinate to linear numbering.
   int linearize( const coordinate<int,d> &p ) const;
   //! Conversion from linearly numbered process to coordinate in grid

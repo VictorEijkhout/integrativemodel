@@ -21,17 +21,14 @@ public:
   //! Make a domain from an indexstructure with inclusive upper bound
   domain( const indexstructure<index_int,d>& idx )
     : indexstructure<index_int,d>( idx ) {
-    //std::cout << "domain from istruct " << idx.as_string() << '\n';
   };
   //! Make a domain from a indexstruct with inclusive upper bound
   domain( contiguous_indexstruct<index_int,d> ci )
     : indexstructure<index_int,d>::indexstructure<index_int,d>( ci ) {
-    //std::cout << "domain from contiguous " << ci.as_string() << '\n';
   };
   //! Make a domain from a presumable exclusive upper bound
   domain( coordinate<index_int,d> c )
     : domain<d>( contiguous_indexstruct<index_int,d>( coordinate<index_int,d>(0),c-1 ) ) {
-    //std::cout << "domain from coordinate " << c.as_string() << '\n';
   };
   /*! default constructor,
    * needed for the _local_domain member of the `distribution' class,
@@ -71,9 +68,18 @@ public:
    * Local and global domain
    */
 protected:
-  domain<d> _local_domain;
   domain<d> _global_domain;
+  // this is set mode-specific
+  std::vector<domain<d>> _local_domains;
 public:
   const domain<d>& local_domain() const;
+  const domain<d>& local_domain(int p) const;
   const domain<d>& global_domain() const;
+  /*
+   * Polymorphism
+   */
+  std::function < index_int( const coordinate<int,d> &p) >
+  location_of_first_index {
+    [] ( const coordinate<int,d> &p) -> index_int {
+      throw(std::string("not implemented: location_of_first_index")); } };
 };

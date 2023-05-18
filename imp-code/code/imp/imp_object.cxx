@@ -28,14 +28,26 @@ object<d>::object( const distribution<d>& dist )
 
 //! Return a star-pointer to the numerical data, mutable
 template<int d>
-double* object<d>::data() {
+double* object<d>::raw_data() {
   return _data.data();
 };
 
 //! Return a star-pointer to the numerical data, constant
 template<int d>
-double const * object<d>::data() const {
+double const * object<d>::raw_data() const {
   return _data.data();
+};
+
+//! Return access to the numerical data, mutable
+template<int d>
+vector<double>& object<d>::data() {
+  return _data;
+};
+
+//! Return access to the numerical data, constant
+template<int d>
+const vector<double>& object<d>::data() const {
+  return _data;
 };
 
 /*! Set the whole vector to a constant
@@ -55,7 +67,7 @@ void object<d>::set_constant( double x ) {
 template<int d>
 object<d>& object<d>::operator+=( const object<d>& other ) {
   this->assert_compatible_with(other);
-  double *xdata = data(); double const * const ydata = other.data();
+  double *xdata = raw_data(); double const * const ydata = other.raw_data();
   for ( size_t i=0; i<this->local_domain().volume(); i++ )
     xdata[i] += ydata[i];
   return *this;
@@ -69,7 +81,7 @@ object<d>& object<d>::operator+=( const object<d>& other ) {
 template<int d>
 double object<d>::local_norm() const {
   double norm_value;
-  double const * xdata = data();
+  double const * xdata = raw_data();
   for ( size_t i=0; i<this->local_domain().volume(); i++ )
     norm_value += pow( xdata[i],2 );
   return sqrt( norm_value );
@@ -97,8 +109,8 @@ void norm( object<d>& scalar,const object<d>& thing,const environment& env ) {
 template<int d>
 double object<d>::local_inner_product( const object<d>& other ) const {
   double inner_product_value;
-  double const * xdata = data();
-  double const * ydata = other.data();
+  double const * xdata = raw_data();
+  double const * ydata = other.raw_data();
   for ( size_t i=0; i<this->local_domain().volume(); i++ )
     inner_product_value += xdata[i] * ydata[i];
   return inner_product_value;

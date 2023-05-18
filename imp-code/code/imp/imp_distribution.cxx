@@ -12,6 +12,7 @@
 #include "imp_distribution.h"
 #include <cassert>
 using std::vector, std::array;
+using std::string;
 using fmt::format;
 
 /*!
@@ -82,6 +83,12 @@ distribution<d>::distribution
 	return segments;
       } ( procs_d.at(id),starts.at(id),ends.at(id) );
   }
+  /*
+   * Polynmorphism
+   */
+  this->location_of_first_index =
+    [] ( const coordinate<int,d> &p) -> index_int {
+      throw( string("imp_base.h local_of_first_index")); };
 };
 
 /*!
@@ -115,7 +122,13 @@ void distribution<d>::assert_replicated() const {
 */
 template<int d>
 const domain<d>& distribution<d>::local_domain() const {
-  return _local_domain;
+  const auto& local_p = my_decomposition.this_proc();
+  int local_p_num = my_decomposition.linearize(local_p);
+  return _local_domains.at(local_p_num);
+};
+template<int d>
+const domain<d>& distribution<d>::local_domain(int p_num) const {
+  return _local_domains.at(p_num);
 };
 
 /*! Distributions are built on a global domain,

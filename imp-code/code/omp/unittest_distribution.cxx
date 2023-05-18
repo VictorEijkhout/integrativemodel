@@ -248,3 +248,20 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
   }
 }
 
+TEST_CASE( "NUMA addressing" ) {
+  {
+    INFO( "1D" );
+    const int points_per_proc = ipower(10,1);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,1> omega( total_points );
+    omp_decomposition<1> procs( the_env );
+    omp_distribution<1> omega_p( omega,procs );
+
+    for ( int p=0; p<the_env.nprocs(); p++ ) {
+      auto pcoord = procs.coordinate_from_linear(p);
+      REQUIRE_NOTHROW( omega_p.location_of_first_index(pcoord) );
+      REQUIRE( omega_p.location_of_first_index(pcoord)==p*points_per_proc );
+    }
+  }
+}
+

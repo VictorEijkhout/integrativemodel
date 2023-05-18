@@ -21,10 +21,16 @@ template<int d>
 class kernel {
 private:
   std::shared_ptr<object<d>> output;
-  std::vector<std::shared_ptr<object<d>>> inputs;
 public:
   kernel( std::shared_ptr<object<d>> out );
   
+  /*
+   * Dependencies
+   */
+private:
+  std::vector<std::shared_ptr<object<d>>> inputs;
+public:
+  void add_dependency( std::shared_ptr<object<d>> input );
   /*
    * local function
    */

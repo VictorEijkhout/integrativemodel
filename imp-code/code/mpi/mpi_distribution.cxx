@@ -25,15 +25,27 @@ mpi_distribution<d>::mpi_distribution
     ( const domain<d>& dom, const decomposition<d>& procs,
       distribution_type type )
       : distribution<d>(dom,procs,type) {
-  const coordinate<int,d> this_proc = procs.this_proc();
   using I = index_int;
-  coordinate<I,d> first,last;
-  for ( int id=0; id<d; id++) {
-    auto pd = this_proc.at(id);
-    first.at(id) = this->patches.at(id).at(pd).first_index().at(0);
-    last .at(id) = this->patches.at(id).at(pd). last_index().at(0) - 1;
+  for (int p=0; p<procs.global_volume(); p++) {
+    const coordinate<int,d> this_proc = procs.coordinate_from_linear(p);
+    coordinate<I,d> first,last;
+    for ( int id=0; id<d; id++) {
+      auto pd = this_proc.at(id);
+      first.at(id) = this->patches.at(id).at(pd).first_index().at(0);
+      last .at(id) = this->patches.at(id).at(pd). last_index().at(0) - 1;
+    }
+    this->_local_domains.push_back( domain<d>( contiguous_indexstruct<I,d>( first,last ) ) );
   }
-  this->_local_domain = domain<d>( contiguous_indexstruct<I,d>( first,last ) );
+  /*
+   * Polymorphism
+   */
+  const coordinate<int,d> this_proc = procs.this_proc();
+  this->location_of_first_index =
+    [=] ( const coordinate<int,d> &p) -> index_int {
+      if (p==this_proc)
+	return 0;
+      else throw( "Can only ask location_of_first_index on local proc" );
+    }; 
 };
 
 //! Function to produce a single scalar, replicated over all processes

@@ -43,9 +43,9 @@ class object;
 template<typename I,int d>
 index_int INDEXanyD(coordinate<I,d> &i,coordinate<I,d> &off,coordinate<I,d> &siz);
 
-#define kernel_function_proto(d) void(int,coordinate<int,d>&,std::vector<std::shared_ptr<object<d>>>&,std::shared_ptr<object<d>>)
 #define kernel_function_args(d) int step,coordinate<int,d> &p,std::vector<std::shared_ptr<object<d>>> &invectors,std::shared_ptr<object<d>> outvector
 #define kernel_function_types(d) int,coordinate<int,d>&,std::vector<std::shared_ptr<object<d>>>&,std::shared_ptr<object<d>>
+#define kernel_function_proto(d) void( kernel_function_args(d) )
 
 #define kernel_function_call(d) step,p,invectors,outvector
 

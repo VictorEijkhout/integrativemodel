@@ -28,6 +28,11 @@ kernel<d>::kernel( shared_ptr<object<d>> out )
 };
 
 template<int d>
+void kernel<d>::add_dependency( std::shared_ptr<object<d>> input ) {
+  inputs.push_back(input);
+};
+
+template<int d>
 void kernel<d>::set_localexecutefn( std::function< kernel_function_proto(d) > f ) {
   localexecutefn = f;
 };

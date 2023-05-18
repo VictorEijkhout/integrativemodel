@@ -21,8 +21,11 @@ private:
   std::vector<double> _data;
 public:
   object( const distribution<d>& );
-  double* data();
-  double const * data() const;
+  std::vector<double>& data();
+  const std::vector<double>& data() const;
+  double* raw_data();
+  double const * raw_data() const;
+
   void set_constant( double x );
   object<d>& operator+=( const object<d>& );
   virtual double local_norm() const;

@@ -328,7 +328,7 @@ bool strided_indexstruct<I,d>::can_merge_with_type
 };
 
 template<typename I,int d>
-bool strided_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx ) const {
+bool strided_indexstruct<I,d>::contains( const shared_ptr<const indexstruct<I,d>>& idx ) const {
   if (idx->volume()==0) return true;
   if (this->volume()==0) return false;
   if (idx->volume()==1)
@@ -337,7 +337,8 @@ bool strided_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx
   /*
    * Case : contains other strided
    */
-  strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
+  //strided_indexstruct<I,d>*
+  auto strided = dynamic_cast<const strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr)
     return first<=strided->first && strided->last<=last
       && (strided->first-first)%stride_amount==0 && strided->stride_amount%stride_amount==0;
@@ -345,7 +346,7 @@ bool strided_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx
   /*
    * Case: contains indexed
    */
-  indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
+  auto indexed = dynamic_cast<const indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) { // strided & indexed
     //auto nonconst = make_clone();
     return contains_element(indexed->first_index())
@@ -355,7 +356,7 @@ bool strided_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx
   /*
    * Case: contains composite
    */
-  composite_indexstruct<I,d>* composite = dynamic_cast<composite_indexstruct<I,d>*>(idx.get());
+  auto composite = dynamic_cast<const composite_indexstruct<I,d>*>(idx.get());
   if (composite!=nullptr) { // strided & composite
     for ( auto s : composite->get_structs() )
       if (!contains(s))
@@ -405,7 +406,7 @@ bool strided_indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
 };
 
 template<typename I,int d>
-bool strided_indexstruct<I,d>::has_intersect( shared_ptr<indexstruct<I,d>> idx ) {
+bool strided_indexstruct<I,d>::has_intersect( const shared_ptr<const indexstruct<I,d>> idx ) const {
   if (idx->is_empty())
     return false;
   if (contains(idx))
@@ -416,7 +417,7 @@ bool strided_indexstruct<I,d>::has_intersect( shared_ptr<indexstruct<I,d>> idx )
   /*
    * Case : intersect with other strided
    */
-  strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct*>(idx.get());
+  auto strided = dynamic_cast<const strided_indexstruct*>(idx.get());
   if (strided!=nullptr) { // strided & strided
     if (stride_amount==strided->stride_amount) {
       if (first%stride_amount!=strided->first%strided->stride_amount) {
@@ -436,7 +437,7 @@ bool strided_indexstruct<I,d>::has_intersect( shared_ptr<indexstruct<I,d>> idx )
   /*
    * Case: intersect with indexed => reverse
    */
-  indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
+  auto indexed = dynamic_cast<const indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) { // strided & indexed
     return indexed->has_intersect(this->shared_from_this());
   }
@@ -452,7 +453,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::translate_by( coordinate<
 
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::intersect
-    ( shared_ptr<indexstruct<I,d>> idx ) {
+    ( const shared_ptr<const indexstruct<I,d>> idx ) const {
   if (idx->is_empty())
     return shared_ptr<indexstruct<I,d>>( make_shared<empty_indexstruct<I,d>>() );
   if (contains(idx))
@@ -465,7 +466,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::intersect
   /*
    * Case : intersect with other strided
    */
-  strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
+  auto strided = dynamic_cast<const strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) { // strided & strided
     if (stride_amount==strided->stride_amount) {
       if (first%stride_amount!=strided->first%strided->stride_amount) {
@@ -486,19 +487,18 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::intersect
       return idx->intersect(this->shared_from_this());
     } else { // case of different strides
       auto rstruct = shared_ptr<indexstruct<I,d>>( make_shared<empty_indexstruct<I,d>>() );
-      for ( auto i : *this ) {
+      for ( auto i : strided_indexstruct<I,d>(*this) ) { // need a non-const version of this
 	if (idx->contains_element(i))
 	  rstruct = rstruct->add_element(i);
       }
       return rstruct->force_simplify();
-      //throw(std::string("Unimplemented stride-stride intersection"));
     }
   }
 
   /*
    * Case: intersect with indexed => reverse
    */
-  indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
+  auto indexed = dynamic_cast<const indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) { // strided & indexed
     return indexed->make_clone()->intersect(this->shared_from_this());
   }
@@ -506,7 +506,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::intersect
   /*
    * Case: intersect with composite => reverse
    */
-  composite_indexstruct<I,d>* composite = dynamic_cast<composite_indexstruct<I,d>*>(idx.get());
+  auto composite = dynamic_cast<const composite_indexstruct<I,d>*>(idx.get());
   if (composite!=nullptr) { // strided & composite
     return composite->intersect(this->shared_from_this());
   }
@@ -826,7 +826,6 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::split
   } else if (this->contains_element_in_range(ll)) {
     s1 = shared_ptr<indexstruct<I,d>>(make_shared<contiguous_indexstruct<I,d>>(f,ll));
     s2 = shared_ptr<indexstruct<I,d>>(make_shared<contiguous_indexstruct<I,d>>(ll+1,l));
-    // res->push_back( intersect(s1) ); res->push_back( intersect(s2) );
   } else
     throw(fmt::format("Needs to contain split points"));
   res->push_back( intersect(s1) );
@@ -1060,11 +1059,11 @@ coordinate<I,d> indexed_indexstruct<I,d>::get_ith_element( const I i ) const {
 
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::intersect
-    ( shared_ptr<indexstruct<I,d>> idx ) {
+    ( const shared_ptr<const indexstruct<I,d>> idx ) const {
   /*
    * Case : intersect with strided
    */
-  strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
+  auto strided = dynamic_cast<const strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) { // indexed & strided
     auto limited = shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>() );
     auto first = strided->first_index(), last = strided->last_index();
@@ -1076,7 +1075,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::intersect
   /*
    * Case: intersect with indexed => reverse
    */
-  indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
+  auto indexed = dynamic_cast<const indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) { // strided & indexed
     auto limited = shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>() );
     for (auto v : indices)
@@ -1089,17 +1088,17 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::intersect
 
 //! \todo lose those clones
 template<typename I,int d>
-bool indexed_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx ) const {
+bool indexed_indexstruct<I,d>::contains( const shared_ptr<const indexstruct<I,d>>& idx ) const {
   if (idx->volume()==0) return true;
   if (this->volume()==0) return false;
 
   /*
    * Case : contains strided
    */
-  strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
-  auto nonconst = make_clone();
+  auto strided = dynamic_cast<const strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) {
-    for (auto v : *strided) {
+    auto nonconst = make_clone();
+    for ( auto v : indexed_indexstruct<I,d>(*this) ) {
       if (!nonconst->contains_element(v)) {
 	return false; }
     }
@@ -1108,7 +1107,7 @@ bool indexed_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx
   /*
    * Case: contains indexed
    */
-  indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
+  auto indexed = dynamic_cast<const indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) {
     auto nonconst = make_clone();
     for (auto v : indexed->indices) {
@@ -1122,7 +1121,7 @@ bool indexed_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx
   /*
    * Case: contains composite
    */
-  composite_indexstruct<I,d>* composite = dynamic_cast<composite_indexstruct<I,d>*>(idx.get());
+  auto composite = dynamic_cast<const composite_indexstruct<I,d>*>(idx.get());
   if (composite!=nullptr) {
     //    auto nonconst = make_clone();
     for (auto s : composite->get_structs())
@@ -1421,12 +1420,12 @@ coordinate<I,d> composite_indexstruct<I,d>::get_ith_element( const I i ) const {
   \todo is there a way to optimize the indexed case?
 */
 template<typename I,int d>
-bool composite_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& idx ) const {
+bool composite_indexstruct<I,d>::contains( const shared_ptr<const indexstruct<I,d>>& idx ) const {
   /*
    * Case: contains strided. 
    * test by chopping off pieces
    */
-  strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
+  auto strided = dynamic_cast<const strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) {
     auto skip = idx->make_clone();
     for ( auto s : structs ) {
@@ -1441,7 +1440,7 @@ bool composite_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& i
    * Case: contains indexed. 
    * test by chopping off pieces
    */
-  indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
+  auto indexed = dynamic_cast<const indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) {
     auto skip = idx->make_clone();
     for ( auto s : structs ) {
@@ -1456,7 +1455,7 @@ bool composite_indexstruct<I,d>::contains( const shared_ptr<indexstruct<I,d>>& i
    * Case: contains composite. 
    * test by chopping off pieces
    */
-  composite_indexstruct<I,d>* composite = dynamic_cast<composite_indexstruct<I,d>*>(idx.get());
+  auto composite = dynamic_cast<const composite_indexstruct<I,d>*>(idx.get());
   if (composite!=nullptr) {
     for ( auto s : composite->get_structs() ) {
       if (!contains(s))
@@ -1607,9 +1606,9 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::struct_union
 
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::intersect
-    ( shared_ptr<indexstruct<I,d>> idx ) {
+    ( const shared_ptr<const indexstruct<I,d>> idx ) const {
   // rule out the hard case
-  composite_indexstruct<I,d>* composite = dynamic_cast<composite_indexstruct<I,d>*>(idx.get());
+  auto composite = dynamic_cast<const composite_indexstruct<I,d>*>(idx.get());
   if (composite!=nullptr)
     throw(std::string("Can not intersect composite-composite"));
 

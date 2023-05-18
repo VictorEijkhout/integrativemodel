@@ -287,6 +287,74 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
   }
 }
 
+TEST_CASE( "NUMA addressing" ) {
+  auto my_pnum = the_env.procid();
+  auto my_pcrd = 0;
+  INFO( "proc: " << my_pnum );
+  {
+    INFO( "1D" );
+    const int points_per_proc = ipower(10,1);
+    index_int total_points = points_per_proc*the_env.nprocs();
+    coordinate<index_int,1> omega( total_points );
+    mpi_decomposition<1> procs( the_env );
+    mpi_distribution<1> omega_p( omega,procs );
+
+    for ( int p=0; p<the_env.nprocs(); p++ ) {
+      auto pcoord = procs.coordinate_from_linear(p);
+      if (p==my_pnum) {      
+	REQUIRE_NOTHROW( omega_p.location_of_first_index(pcoord) );
+	REQUIRE( omega_p.location_of_first_index(pcoord)==0 );
+      } else {
+	REQUIRE_THROWS( omega_p.location_of_first_index(pcoord) );
+      }
+    }
+  }
+  {
+    INFO( "2D" );
+    mpi_decomposition<2> procs( the_env );
+    INFO( "Decomposition: " << procs.as_string() );
+
+    coordinate<index_int,2> omega( procs.domain_layout()*16 /* total_points */ );
+    index_int total_points = omega.span();
+    mpi_distribution<2> omega_p( omega,procs );
+
+    for ( int p=0; p<the_env.nprocs(); p++ ) {
+      auto pcoord = procs.coordinate_from_linear(p);
+      if (p==my_pnum) {      
+	REQUIRE_NOTHROW( omega_p.location_of_first_index(pcoord) );
+	REQUIRE( omega_p.location_of_first_index(pcoord)==0 );
+      } else {
+	REQUIRE_THROWS( omega_p.location_of_first_index(pcoord) );
+      }
+    }
+  }
+}
+
+/*
+ * Distribution intersection
+ */
+TEST_CASE( "shift right" ) {
+  {
+    INFO( "1D" );
+    mpi_decomposition<1> procs( the_env );
+    coordinate<index_int,1> omega( procs.domain_layout()*16 );
+    index_int total_points = omega.span();
+    domain<1> dom(omega);
+    mpi_distribution<1> dist( omega,procs );
+
+    ioperator<index_int,1> right1(">>1");
+    auto shifted = dist.operate( right1 );
+
+    auto p_domain = shifted.local_domain();
+    for ( int q=0; q<the_env.nprocs(); q++ ) {
+      auto q_domain = dist.local_domain(q);
+      REQUIRE_NOTHROW( p_domain.intersect(q_domain) );
+      auto pq_intersection  = p_domain.intersect(q_domain);
+    }
+  }
+}
+
+
 #if 0
 
 TEST_CASE( "Operated distributions with modulo","[mpi][distribution][modulo][24]" ) {
