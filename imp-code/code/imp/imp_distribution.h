@@ -81,5 +81,9 @@ public:
   std::function < index_int( const coordinate<int,d> &p) >
   location_of_first_index {
     [] ( const coordinate<int,d> &p) -> index_int {
-      throw(std::string("not implemented: location_of_first_index")); } };
+      throw(std::string("not implemented: distribution::location_of_first_index")); } };
+  std::function< distribution<d> ( const ioperator<index_int,d>& ) >
+  operate {
+    [] ( const ioperator<index_int,d>& ) -> distribution<d> {
+      throw(std::string("not implemented: distribution::operate")); } };
 };

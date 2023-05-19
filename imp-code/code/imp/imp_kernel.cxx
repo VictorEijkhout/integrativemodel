@@ -15,21 +15,38 @@
 #include <cassert>
 #include <cmath>
 
+using std::pair;
 using std::vector;
 using std::shared_ptr;
+using std::function;
 using fmt::format;
 
-#include <functional>
-using std::function;
+/*
+ * Dependencies
+ */
+template<int d>
+void dependency<d>::analyze() {
+  auto operated = obj.operate( op );
+  beta = object<d>( operated );
+};
 
+/*
+ * Kernels
+ */
 template<int d>
 kernel<d>::kernel( shared_ptr<object<d>> out )
   : output(out) {;
 };
 
 template<int d>
-void kernel<d>::add_dependency( std::shared_ptr<object<d>> input ) {
-  inputs.push_back(input);
+void kernel<d>::add_dependency( std::shared_ptr<object<d>> input,ioperator<index_int,d> op ) {
+  inputs.push_back( dependency<d>(input,op) );
+};
+
+template<int d>
+void kernel<d>::analyze_dependencies() {
+  for ( auto& dep : inputs )
+    dep.analyze();
 };
 
 template<int d>

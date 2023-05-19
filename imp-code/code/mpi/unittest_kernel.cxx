@@ -60,13 +60,15 @@ TEST_CASE( "shift right","[3]" ) {
     index_int total_points = omega.span();
     domain<1> dom(omega);
     mpi_distribution<1> dist( omega,procs );
+    // input and output object on the same distribution
     auto out = shared_ptr<object<1>>( make_shared<mpi_object<1>>( dist ) );
+    auto in  = shared_ptr<object<1>>( make_shared<mpi_object<1>>( dist ) );
 
     ioperator<index_int,1> right1(">>1");
-    auto shifted_right = dist.operate( right1 );
-    auto in = shared_ptr<object<1>>( make_shared<mpi_object<1>>( shifted_right ) );
+    // auto shifted_right = dist.operate( right1 );
+    // auto in = shared_ptr<object<1>>( make_shared<mpi_object<1>>( shifted_right ) );
     mpi_kernel shift_left(out);
-    REQUIRE_NOTHROW( shift_left.add_dependency(in) );
+    REQUIRE_NOTHROW( shift_left.add_dependency(in,right1) );
     //    REQUIRE_NOTHROW( shift_left.inspect() );
   }
 }

@@ -342,14 +342,22 @@ TEST_CASE( "shift right" ) {
     domain<1> dom(omega);
     mpi_distribution<1> dist( omega,procs );
 
+    // shift distribution to the right
     ioperator<index_int,1> right1(">>1");
     auto shifted = dist.operate( right1 );
 
+    // p is a domain we depend on
+    int p = the_env.procid();
     auto p_domain = shifted.local_domain();
     for ( int q=0; q<the_env.nprocs(); q++ ) {
+      INFO( p << " intersection " << q );
       auto q_domain = dist.local_domain(q);
       REQUIRE_NOTHROW( p_domain.intersect(q_domain) );
       auto pq_intersection  = p_domain.intersect(q_domain);
+      if ( q==p or q==p+1 )
+	REQUIRE( not pq_intersection.is_empty() );
+      else 
+	REQUIRE( pq_intersection.is_empty() );
     }
   }
 }

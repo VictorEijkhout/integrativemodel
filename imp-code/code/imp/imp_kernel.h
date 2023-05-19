@@ -12,10 +12,25 @@
 
 #pragma once
 
+#include "imp_coord.h" // for the ioperator
 #include "imp_object.h"
 #include "imp_functions.h"
 #include <memory>
+#include <optional>
+#include <tuple>
 #include <vector>
+
+template<int d>
+class dependency {
+private:
+  std::shared_ptr<object<d>> obj;
+  ioperator<index_int,d> op;
+  std::optional< object<d> > beta{};
+public:
+  dependency( std::shared_ptr<object<d>> obj,ioperator<index_int,d> op )
+    : obj(obj),op(op) {};
+  void analyze();
+};
 
 template<int d>
 class kernel {
@@ -28,9 +43,10 @@ public:
    * Dependencies
    */
 private:
-  std::vector<std::shared_ptr<object<d>>> inputs;
+  std::vector< dependency<d> > inputs; // std::shared_ptr<object<d>>
 public:
-  void add_dependency( std::shared_ptr<object<d>> input );
+  void add_dependency( std::shared_ptr<object<d>> input,ioperator<index_int,d> op );
+  void analyze_dependencies();
   /*
    * local function
    */

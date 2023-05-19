@@ -46,6 +46,15 @@ mpi_distribution<d>::mpi_distribution
 	return 0;
       else throw( "Can only ask location_of_first_index on local proc" );
     }; 
+  this->operate =
+    [decomp=this->my_decomposition,typ=this->my_distribution_type,
+     dom=distribution<d>::global_domain()]
+    ( const ioperator<index_int,d>& op ) {
+      domain<d> the_domain( dom );
+      domain<d> new_domain( the_domain.operate(op) );
+      return mpi_distribution<d>( new_domain,decomp,typ);
+	// this->my_decomposition,this->my_distribution_type);
+    };
 };
 
 //! Function to produce a single scalar, replicated over all processes
@@ -60,13 +69,13 @@ mpi_distribution<d> replicated_scalar_distribution( const mpi_decomposition<d>& 
  * This overrides the base method
  * \todo In fact, does this need the base method? Should that one be virtual?
  */
-template<int d>
-mpi_distribution<d> mpi_distribution<d>::operate( const ioperator<index_int,d>& op ) const {
-  domain<d> the_domain( this->global_domain() );
-  domain<d> new_domain( the_domain.operate(op) );
-  return mpi_distribution<d>
-    ( new_domain,this->my_decomposition,this->my_distribution_type);
-};
+// template<int d>
+// mpi_distribution<d> mpi_distribution<d>::operate( const ioperator<index_int,d>& op ) const {
+//   domain<d> the_domain( this->global_domain() );
+//   domain<d> new_domain( the_domain.operate(op) );
+//   return mpi_distribution<d>
+//     ( new_domain,this->my_decomposition,this->my_distribution_type);
+// };
 
 /*
  * Instantiations
