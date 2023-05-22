@@ -14,7 +14,7 @@ info ::
 
 include ../imp/Make.common
 
-PROGRAMS = construct1 inttype findit vecarray
+PROGRAMS = construct1 inner inttype findit vecarray
 
 CPPSTANDARD = 17
 % : %.cxx
