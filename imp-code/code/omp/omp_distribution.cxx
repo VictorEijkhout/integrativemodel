@@ -20,20 +20,24 @@ omp_distribution<d>::omp_distribution
     ( const domain<d>& dom, const decomposition<d>& procs,
       distribution_type type )
       : distribution<d>(dom,procs,type) {
-  using I = index_int;
-  coordinate<I,d> first = dom.first_index(),last = dom.last_actual_index();
-  this->_local_domain = domain<d>( contiguous_indexstruct<I,d>( first,last ) );
   /*
    * Polymorphism
    */
   this->location_of_first_index =
-    [=] ( const coordinate<int,d> &pcoord) -> index_int
-    { 
-      auto enc = d->get_enclosing_structure();
-      coordinate<index_int,d>
-	first = d->first_index_r(pcoord);
-      index_int loc = first.linear_location_in(enc);
+    [enc=this->global_domain(),this]
+    ( const coordinate<int,d> &pcoord) -> index_int {
+      const auto& local = this->local_domain(pcoord);
+      const auto& first = local.first_index();
+      index_int loc = static_cast< indexstructure<index_int,d> >(enc).location_of(first);
       return loc;
+    };
+  this->operate =
+    [decomp=this->my_decomposition,typ=this->my_distribution_type,
+     dom=distribution<d>::global_domain()]
+    ( const ioperator<index_int,d>& op ) -> distribution<d> {
+      domain<d> the_domain( dom );
+      domain<d> new_domain( the_domain.operate(op) );
+      return omp_distribution<d>( new_domain,decomp,typ);
     };
 };
 
@@ -44,18 +48,18 @@ omp_distribution<d> replicated_scalar_distribution( const omp_decomposition<d>& 
     ( domain<d>( coordinate<index_int,d>(1) ),dist,distribution_type::replicated );
 };
 
-/*!
- * New OMP distribution by operating
- * This overrides the base method
- * \todo In fact, does this need the base method? Should that one be virtual?
- */
-template<int d>
-omp_distribution<d> omp_distribution<d>::operate( const ioperator<index_int,d>& op ) const {
-  domain<d> the_domain( this->global_domain() );
-  domain<d> new_domain( the_domain.operate(op) );
-  return omp_distribution<d>
-    ( new_domain,this->my_decomposition,this->my_distribution_type);
-};
+// /*!
+//  * New OMP distribution by operating
+//  * This overrides the base method
+//  * \todo In fact, does this need the base method? Should that one be virtual?
+//  */
+// template<int d>
+// omp_distribution<d> omp_distribution<d>::operate( const ioperator<index_int,d>& op ) const {
+//   domain<d> the_domain( this->global_domain() );
+//   domain<d> new_domain( the_domain.operate(op) );
+//   return omp_distribution<d>
+//     ( new_domain,this->my_decomposition,this->my_distribution_type);
+// };
 
 
 /*

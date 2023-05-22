@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** indexstruct and ioperator package implementation
  ****

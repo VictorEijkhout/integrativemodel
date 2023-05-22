@@ -26,16 +26,6 @@ mpi_distribution<d>::mpi_distribution
       distribution_type type )
       : distribution<d>(dom,procs,type) {
   using I = index_int;
-  for (int p=0; p<procs.global_volume(); p++) {
-    const coordinate<int,d> this_proc = procs.coordinate_from_linear(p);
-    coordinate<I,d> first,last;
-    for ( int id=0; id<d; id++) {
-      auto pd = this_proc.at(id);
-      first.at(id) = this->patches.at(id).at(pd).first_index().at(0);
-      last .at(id) = this->patches.at(id).at(pd). last_index().at(0) - 1;
-    }
-    this->_local_domains.push_back( domain<d>( contiguous_indexstruct<I,d>( first,last ) ) );
-  }
   /*
    * Polymorphism
    */
@@ -49,11 +39,10 @@ mpi_distribution<d>::mpi_distribution
   this->operate =
     [decomp=this->my_decomposition,typ=this->my_distribution_type,
      dom=distribution<d>::global_domain()]
-    ( const ioperator<index_int,d>& op ) {
+    ( const ioperator<index_int,d>& op ) -> distribution<d> {
       domain<d> the_domain( dom );
       domain<d> new_domain( the_domain.operate(op) );
       return mpi_distribution<d>( new_domain,decomp,typ);
-	// this->my_decomposition,this->my_distribution_type);
     };
 };
 

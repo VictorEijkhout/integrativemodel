@@ -20,8 +20,6 @@ class mpi_distribution : public distribution<d> {
 public:
   mpi_distribution( const domain<d>&, const decomposition<d>&,
 		    distribution_type=distribution_type::orthogonal );
-  // new distribution by operating
-  //  mpi_distribution<d> operate( const ioperator<index_int,d>& ) const;
 };
 
 template<int d>

@@ -42,18 +42,18 @@ TEST_CASE( "creation","[omp][distribution][01]" ) {
   }
 }
 
-TEST_CASE( "local domains","[omp][distribution][02]" ) {
+TEST_CASE( "global domains","[omp][distribution][02]" ) {
   SECTION( "1D" ) {
     const index_int elts_per_proc = pow(10,1);
     const index_int elts_global = elts_per_proc*the_env.nprocs();
     coordinate<index_int,1> omega( elts_global );
     omp_decomposition<1> procs( the_env );
     omp_distribution<1> omega_p( omega,procs );
-    REQUIRE_NOTHROW( omega_p.local_domain() );
-    indexstructure<index_int,1> local_domain = omega_p.local_domain();
-    REQUIRE( local_domain.is_known() );
-    REQUIRE_NOTHROW( local_domain.volume() );
-    REQUIRE( local_domain.volume()==elts_global );
+    REQUIRE_NOTHROW( omega_p.global_domain() );
+    indexstructure<index_int,1> global_domain = omega_p.global_domain();
+    REQUIRE( global_domain.is_known() );
+    REQUIRE_NOTHROW( global_domain.volume() );
+    REQUIRE( global_domain.volume()==elts_global );
   }
   SECTION( "2D" ) {
     INFO( "2D" );
@@ -65,18 +65,54 @@ TEST_CASE( "local domains","[omp][distribution][02]" ) {
     INFO( "omega=" << omega.as_string() );
     omp_decomposition<2> procs( the_env );
     omp_distribution<2> omega_p( omega,procs );
-    REQUIRE_NOTHROW( omega_p.local_domain() );
-    indexstructure<index_int,2> local_domain = omega_p.local_domain();
-    REQUIRE_NOTHROW( local_domain.volume() );
+    REQUIRE_NOTHROW( omega_p.global_domain() );
+    indexstructure<index_int,2> global_domain = omega_p.global_domain();
+    REQUIRE_NOTHROW( global_domain.volume() );
     // MPI type test:
-    index_int check_total_points = the_env.allreduce_ii( local_domain.volume() );
+    index_int check_total_points = the_env.allreduce_ii( global_domain.volume() );
     REQUIRE( check_total_points==total_points );
     // OMP only test
-    REQUIRE( local_domain.volume()==total_points );
+    REQUIRE( global_domain.volume()==total_points );
   }
 }
 
-TEST_CASE( "replicated distributions","[mpi][distribution][replication][04]" ) {
+// OpenMP has no single local domain.
+
+// TEST_CASE( "local domains","[omp][distribution][03]" ) {
+//   SECTION( "1D" ) {
+//     const index_int elts_per_proc = pow(10,1);
+//     const index_int elts_global = elts_per_proc*the_env.nprocs();
+//     coordinate<index_int,1> omega( elts_global );
+//     omp_decomposition<1> procs( the_env );
+//     omp_distribution<1> omega_p( omega,procs );
+//     REQUIRE_NOTHROW( omega_p.local_domain() );
+//     indexstructure<index_int,1> local_domain = omega_p.local_domain();
+//     REQUIRE( local_domain.is_known() );
+//     REQUIRE_NOTHROW( local_domain.volume() );
+//     REQUIRE( local_domain.volume()==elts_global );
+//   }
+//   SECTION( "2D" ) {
+//     INFO( "2D" );
+//     const int points_per_proc = pow(10,2);
+//     index_int total_points = points_per_proc*the_env.nprocs();
+//     INFO( "points/proc=" << points_per_proc << ", total=" << total_points );
+//     auto omega_point = endpoint<index_int,2>( points_per_proc*the_env.nprocs() );
+//     coordinate<index_int,2> omega( omega_point );
+//     INFO( "omega=" << omega.as_string() );
+//     omp_decomposition<2> procs( the_env );
+//     omp_distribution<2> omega_p( omega,procs );
+//     REQUIRE_NOTHROW( omega_p.local_domain() );
+//     indexstructure<index_int,2> local_domain = omega_p.local_domain();
+//     REQUIRE_NOTHROW( local_domain.volume() );
+//     // MPI type test:
+//     index_int check_total_points = the_env.allreduce_ii( local_domain.volume() );
+//     REQUIRE( check_total_points==total_points );
+//     // OMP only test
+//     REQUIRE( local_domain.volume()==total_points );
+//   }
+// }
+
+TEST_CASE( "replicated distributions","[mpi][distribution][replication][11]" ) {
   {
     INFO( "1D" );
     const int points_per_proc = ipower(10,1);
@@ -85,9 +121,9 @@ TEST_CASE( "replicated distributions","[mpi][distribution][replication][04]" ) {
     omp_decomposition<1> procs( the_env );
     REQUIRE_NOTHROW( omp_distribution<1>( omega,procs,distribution_type::replicated ) );
     omp_distribution<1> repl1( omega,procs,distribution_type::replicated );
-    REQUIRE_NOTHROW( repl1.local_domain() );
-    indexstructure<index_int,1> local_domain = repl1.local_domain();
-    REQUIRE( local_domain.volume()==total_points );
+    REQUIRE_NOTHROW( repl1.global_domain() );
+    indexstructure<index_int,1> global_domain = repl1.global_domain();
+    REQUIRE( global_domain.volume()==total_points );
   }
   {
     INFO( "2D" );
@@ -97,30 +133,30 @@ TEST_CASE( "replicated distributions","[mpi][distribution][replication][04]" ) {
     omp_decomposition<2> procs( the_env );
     REQUIRE_NOTHROW( omp_distribution<2>( omega,procs,distribution_type::replicated ) );
     omp_distribution<2> repl2( omega,procs,distribution_type::replicated );
-    REQUIRE_NOTHROW( repl2.local_domain() );
-    indexstructure<index_int,2> local_domain = repl2.local_domain();
-    REQUIRE( local_domain.volume()==total_points );
+    REQUIRE_NOTHROW( repl2.global_domain() );
+    indexstructure<index_int,2> global_domain = repl2.global_domain();
+    REQUIRE( global_domain.volume()==total_points );
   }
 }
 
-TEST_CASE( "replicated scalars","[mpi][distribution][replication][05]" ) {
+TEST_CASE( "replicated scalars","[mpi][distribution][replication][12]" ) {
   {
     INFO( "1D" );
     omp_decomposition<1> procs( the_env );
     REQUIRE_NOTHROW( replicated_scalar_distribution<1>( procs ) );
     auto repl1     = replicated_scalar_distribution<1>( procs );
-    REQUIRE_NOTHROW( repl1.local_domain() );
-    indexstructure<index_int,1> local_domain = repl1.local_domain();
-    REQUIRE( local_domain.volume()==1 );
+    REQUIRE_NOTHROW( repl1.global_domain() );
+    indexstructure<index_int,1> global_domain = repl1.global_domain();
+    REQUIRE( global_domain.volume()==1 );
   }
   {
     INFO( "2D" );
     omp_decomposition<2> procs( the_env );
     REQUIRE_NOTHROW( replicated_scalar_distribution<2>( procs ) );
     auto repl2     = replicated_scalar_distribution<2>( procs );
-    REQUIRE_NOTHROW( repl2.local_domain() );
-    indexstructure<index_int,2> local_domain = repl2.local_domain();
-    REQUIRE( local_domain.volume()==1 );
+    REQUIRE_NOTHROW( repl2.global_domain() );
+    indexstructure<index_int,2> global_domain = repl2.global_domain();
+    REQUIRE( global_domain.volume()==1 );
   }
 }
 
@@ -154,11 +190,11 @@ TEST_CASE( "distribution shifting" ) {
     INFO( "shifted global : " << new_global.as_string() );
     REQUIRE( new_global.volume()==total_points );
 
-    INFO( "original local : " << dist.local_domain().as_string() );
-    REQUIRE_NOTHROW( new_dist.local_domain() );
-    auto new_local = new_dist.local_domain();
-    INFO( "shifted local  : " << new_local.as_string() );
-    REQUIRE( new_local.volume()==dist.local_domain().volume() );
+    // INFO( "original local : " << dist.local_domain().as_string() );
+    // REQUIRE_NOTHROW( new_dist.local_domain() );
+    // auto new_local = new_dist.local_domain();
+    // INFO( "shifted local  : " << new_local.as_string() );
+    // REQUIRE( new_local.volume()==dist.local_domain().volume() );
   }
   {
     INFO( "2D" );
@@ -185,11 +221,11 @@ TEST_CASE( "distribution shifting" ) {
     INFO( "shifted global : " << new_global.as_string() );
     REQUIRE( new_global.volume()==total_points );
 
-    INFO( "original local : " << dist.local_domain().as_string() );
-    REQUIRE_NOTHROW( new_dist.local_domain() );
-    auto new_local = new_dist.local_domain();
-    INFO( "shifted local  : " << new_local.as_string() );
-    REQUIRE( new_local.volume()==dist.local_domain().volume() );
+    // INFO( "original local : " << dist.local_domain().as_string() );
+    // REQUIRE_NOTHROW( new_dist.local_domain() );
+    // auto new_local = new_dist.local_domain();
+    // INFO( "shifted local  : " << new_local.as_string() );
+    // REQUIRE( new_local.volume()==dist.local_domain().volume() );
   }
 }
 
@@ -213,11 +249,11 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
     INFO( "divided global : " << new_global.as_string() );
     REQUIRE( new_global.volume()==total_points/2 );
 
-    INFO( "original local : " << dist.local_domain().as_string() );
-    REQUIRE_NOTHROW( new_dist.local_domain() );
-    auto new_local = new_dist.local_domain();
-    INFO( "divided local  : " << new_local.as_string() );
-    REQUIRE( new_local.volume()==total_points/2 );
+    // INFO( "original local : " << dist.local_domain().as_string() );
+    // REQUIRE_NOTHROW( new_dist.local_domain() );
+    // auto new_local = new_dist.local_domain();
+    // INFO( "divided local  : " << new_local.as_string() );
+    // REQUIRE( new_local.volume()==total_points/2 );
   }
   {
     INFO( "2D" );
@@ -239,12 +275,12 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
     INFO( "divided global : " << new_global.as_string() );
     REQUIRE( new_global.volume()==total_points/4 );
 
-    INFO( "original local : " << dist.local_domain().as_string() );
-    REQUIRE_NOTHROW( new_dist.local_domain() );
-    auto new_local = new_dist.local_domain();
-    INFO( "divided local  : " << new_local.as_string() );
-    index_int check_total_points = the_env.allreduce_ii( new_local.volume() );
-    REQUIRE( check_total_points==total_points/4 );
+    // INFO( "original local : " << dist.local_domain().as_string() );
+    // REQUIRE_NOTHROW( new_dist.local_domain() );
+    // auto new_local = new_dist.local_domain();
+    // INFO( "divided local  : " << new_local.as_string() );
+    // index_int check_total_points = the_env.allreduce_ii( new_local.volume() );
+    // REQUIRE( check_total_points==total_points/4 );
   }
 }
 

@@ -94,6 +94,9 @@ public:
   
   virtual std::shared_ptr<indexstruct<I,d>> make_strided(bool=false) const;
   virtual I find( coordinate<I,d> ) const { throw(std::string("Can not be found")); };
+  //! \todo rename the `find' function?
+  I location_of( const coordinate<I,d>& first ) const {
+    return find(first); };
   I location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
     return find(inner->first_index()); };
   //! Test for element containment; this can not be const because of optimizations.
@@ -697,8 +700,8 @@ public:
   indexstructure( composite_indexstruct<I,d> c )
     : indexstructure<I,d>
         ( std::shared_ptr<indexstruct<I,d>>( new composite_indexstruct<I,d>(c) ) )  {
-    fmt::print("composite type=<{}> strct composite: <{}> this composite: <{}>\n",
-	       strct->type_as_string(),strct->is_composite(),is_composite());
+    // fmt::print("composite type=<{}> strct composite: <{}> this composite: <{}>\n",
+    // 	       strct->type_as_string(),strct->is_composite(),is_composite());
   };
   //! Constructor from polymorphic pointer to indexstruct: store pointer.
   indexstructure( std::shared_ptr<indexstruct<I,d>> idx ) { strct = idx; };
@@ -744,6 +747,8 @@ public:
     return strct->equals(idx.strct); };
   
   I find( coordinate<I,d> idx )  const { return strct->find(idx); };
+  //! \todo rename the `find' function?
+  I location_of( const coordinate<I,d>& idx ) const { return strct->find(idx); };
   I find( I idx ) const requires (d==1) {
     return strct->find( coordinate<I,1>(idx) );
   };

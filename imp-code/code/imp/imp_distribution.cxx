@@ -54,8 +54,6 @@ distribution<d>::distribution
       /* */                                       domain_size_reconstruct *= ends.at(id).back();
       procs_d.at(id) = pd;                        procs_reconstruct *= procs_d.at(id);
     }
-    //assert                                      ( domain_size_reconstruct==dom.volume() );
-    //assert                                      ( procs_reconstruct==procs.global_volume() );
   } else if (type==distribution_type::replicated) {
     // replicated: a single block for each proc (actually this is also orthogonal)
     const auto& first = dom.first_index();
@@ -83,12 +81,16 @@ distribution<d>::distribution
 	return segments;
       } ( procs_d.at(id),starts.at(id),ends.at(id) );
   }
-  /*
-   * Polynmorphism
-   */
-  this->location_of_first_index =
-    [] ( const coordinate<int,d> &p) -> index_int {
-      throw( string("imp_base.h local_of_first_index")); };
+  for (int p=0; p<procs.global_volume(); p++) {
+    const coordinate<int,d> this_proc = procs.coordinate_from_linear(p);
+    coordinate<I,d> first,last;
+    for ( int id=0; id<d; id++) {
+      auto pd = this_proc.at(id);
+      first.at(id) = this->patches.at(id).at(pd).first_index().at(0);
+      last .at(id) = this->patches.at(id).at(pd). last_index().at(0) - 1;
+    }
+    this->_local_domains.push_back( domain<d>( contiguous_indexstruct<I,d>( first,last ) ) );
+  }
 };
 
 /*!
@@ -116,19 +118,22 @@ void distribution<d>::assert_replicated() const {
     throw("distribution needs to be replicated");
 };
 
-/*! Distributions own a local domain on each process
- * For MPI that is strictly local, for OpenMP the whole domain,
- * so the local domain is set in the inherited constructors.
-*/
+/*!
+ * The local domain as function of process coordinate.
+ */
+template<int d>
+const domain<d>& distribution<d>::local_domain( const coordinate<int,d>& p ) const {
+  int p_num = my_decomposition.linearize(p);
+  return _local_domains.at(p_num);
+};
+/*!
+ * If there is a `this' proc, return its local domain.
+ * This will only work for MPI; it will throw for OpenMP
+ */
 template<int d>
 const domain<d>& distribution<d>::local_domain() const {
   const auto& local_p = my_decomposition.this_proc();
-  int local_p_num = my_decomposition.linearize(local_p);
-  return _local_domains.at(local_p_num);
-};
-template<int d>
-const domain<d>& distribution<d>::local_domain(int p_num) const {
-  return _local_domains.at(p_num);
+  return local_domain(local_p);
 };
 
 /*! Distributions are built on a global domain,
