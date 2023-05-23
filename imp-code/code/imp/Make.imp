@@ -17,10 +17,10 @@ ${IMPCODEDIR}/indexstruct.o : ${IMPCODEDIR}/indexstruct.cxx ${IMPCODEDIR}/indexs
 	@cd ${IMPCODEDIR} && make --no-print-directory indexstruct.o
 
 ${IMPCODEDIR}/imp_env.o : ${IMPCODEDIR}/imp_env.cxx ${IMPCODEDIR}/imp_env.h
-	cd ${IMPCODEDIR} && make imp_env.o
+	cd ${IMPCODEDIR} && make --no-print-directory imp_env.o
 
 ${IMPCODEDIR}/imp_coord.o : ${IMPCODEDIR}/imp_coord.cxx ${IMPCODEDIR}/imp_coord.h
-	cd ${IMPCODEDIR} && make imp_coord.o
+	cd ${IMPCODEDIR} && make --no-print-directory imp_coord.o
 
 ${IMPCODEDIR}/imp_decomp.o : ${IMPCODEDIR}/imp_decomp.cxx ${IMPCODEDIR}/imp_decomp.h
 	@cd ${IMPCODEDIR} && make --no-print-directory imp_decomp.o

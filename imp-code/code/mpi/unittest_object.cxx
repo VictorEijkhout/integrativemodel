@@ -111,7 +111,7 @@ TEST_CASE( "addition","[mpi][object][03]" ) {
     REQUIRE_NOTHROW( xp.set_constant(2.5) );
     REQUIRE_NOTHROW( yp.set_constant(2.5) );
     REQUIRE_NOTHROW( xp += yp );
-    double *xdata;
+    vector<double> xdata;
     REQUIRE_NOTHROW( xdata = xp.data() );
     REQUIRE( xdata[0]==5. );
   }
@@ -129,7 +129,7 @@ TEST_CASE( "addition","[mpi][object][03]" ) {
     REQUIRE_NOTHROW( xp.set_constant(2.5) );
     REQUIRE_NOTHROW( yp.set_constant(2.5) );
     REQUIRE_NOTHROW( xp += yp );
-    double *xdata;
+    vector<double> xdata;
     REQUIRE_NOTHROW( xdata = xp.data() );
     REQUIRE( xdata[0]==5. );
   }
@@ -154,7 +154,7 @@ TEST_CASE( "norm","[mpi][object][04]" ) {
     
     REQUIRE_THROWS( norm(xp,xp,the_env) );
     REQUIRE_NOTHROW( norm(norm_value,xp,the_env) );
-    double *norm_data;
+    vector<double> norm_data;
     REQUIRE_NOTHROW( norm_data = norm_value.data() );
     REQUIRE( norm_data[0]==static_cast<double>(total_points) );
   }
@@ -176,7 +176,7 @@ TEST_CASE( "norm","[mpi][object][04]" ) {
     
     REQUIRE_THROWS( norm(xp,xp,the_env) );
     REQUIRE_NOTHROW( norm(norm_value,xp,the_env) );
-    double *norm_data;
+    vector<double> norm_data;
     REQUIRE_NOTHROW( norm_data = norm_value.data() );
     REQUIRE( norm_data[0]==static_cast<double>(total_points) );
   }
@@ -203,7 +203,7 @@ TEST_CASE( "inner product","[mpi][object][05]" ) {
     REQUIRE_THROWS( inner_product(xp,xp,yp,the_env) );
     REQUIRE_THROWS( inner_product(norm_value,xp,norm_value,the_env) );
     REQUIRE_NOTHROW( inner_product(norm_value,xp,yp,the_env) );
-    double *norm_data;
+    vector<double> norm_data;
     REQUIRE_NOTHROW( norm_data = norm_value.data() );
     REQUIRE( norm_data[0]==2.*static_cast<double>(total_points) );
   }

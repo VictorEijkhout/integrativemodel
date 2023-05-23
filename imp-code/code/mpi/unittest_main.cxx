@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -43,6 +43,8 @@ int main(int argc,char **argv) {
   try {
     result = Catch::Session().run( argc, argv );
   } catch (std::string c) {
+    fmt::print("Unittesting aborted: <<{}>>",c);
+  } catch ( const char* c ) {
     fmt::print("Unittesting aborted: <<{}>>",c);
   } catch (...) {
     fmt::print("Unittesting aborted.");

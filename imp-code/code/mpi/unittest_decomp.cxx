@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2022
+ **** copyright Victor Eijkhout 2014-2023
  ****
  **** Unit tests for the MPI product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -40,55 +40,55 @@ TEST_CASE( "decomposition constructors" ) {
   }
 }
 
-TEST_CASE( "decompositions","[mpi][decomposition][01]" ) {
-  //  auto &the_env = mpi_environment::instance();
-  auto mytid = the_env.procid();
-  auto ntids = the_env.nprocs();
-  INFO( "mytid=" << mytid );
-  SECTION( "1D" ) {
-    const int d=1;
+TEST_CASE( "decomposition iteration" ) {
+  {
     INFO( "1D" );
-    REQUIRE_NOTHROW( mpi_decomposition<d>(the_env) );
-    mpi_decomposition<d> decomp(the_env);
-    int count = 0;
-    for ( auto dom : decomp ) {
+    mpi_decomposition<1> procs( the_env );
+    int count{0};
+    REQUIRE_NOTHROW( procs.begin() );
+    REQUIRE_NOTHROW( procs.end() );
+    for ( auto p : procs ) {
       int lindom;
-      INFO( format("domain {} = {}",count,dom.as_string()) );
-      REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
+      INFO( format("domain {} = {}",count,p.as_string()) );
+      REQUIRE_NOTHROW( lindom = procs.linear_location_of(p) );
       INFO( "is linearly: " << lindom );
-      CHECK( lindom==mytid+count );
+      CHECK( lindom==count );
       count++;
     }
-    REQUIRE( count==1 );
+    REQUIRE( count==the_env.nprocs() );
   }
-  SECTION( "2D" ) {
-    const int d=2;
+  {
     INFO( "2D" );
-    REQUIRE_NOTHROW( mpi_decomposition<d>(the_env) );
-    mpi_decomposition<d> decomp(the_env);
-    int count = 0;
-    for ( auto dom : decomp ) {
-      int lindom = decomp.linear_location_of(dom); // dom.at(0);
-      INFO( "domain=" << lindom );
-      CHECK( lindom==mytid+count );
+    mpi_decomposition<2> procs( the_env );
+    int count{0};
+    REQUIRE_NOTHROW( procs.begin() );
+    REQUIRE_NOTHROW( procs.end() );
+    for ( auto p : procs ) {
+      int lindom;
+      INFO( format("domain {} = {}",count,p.as_string()) );
+      REQUIRE_NOTHROW( lindom = procs.linear_location_of(p) );
+      INFO( "is linearly: " << lindom );
+      CHECK( lindom==count );
       count++;
     }
-    REQUIRE( count==1 );
-  };
-  SECTION( "3D" ) {
-    const int d=3;
+    REQUIRE( count==the_env.nprocs() );
+  }
+  {
     INFO( "3D" );
-    REQUIRE_NOTHROW( mpi_decomposition<d>(the_env) );
-    mpi_decomposition<d> decomp(the_env);
-    int count = 0;
-    for ( auto dom : decomp ) {
-      int lindom = decomp.linear_location_of(dom); // dom.at(0);
-      INFO( "domain=" << lindom );
-      CHECK( lindom==mytid+count );
+    mpi_decomposition<3> procs( the_env );
+    int count{0};
+    REQUIRE_NOTHROW( procs.begin() );
+    REQUIRE_NOTHROW( procs.end() );
+    for ( auto p : procs ) {
+      int lindom;
+      INFO( format("domain {} = {}",count,p.as_string()) );
+      REQUIRE_NOTHROW( lindom = procs.linear_location_of(p) );
+      INFO( "is linearly: " << lindom );
+      CHECK( lindom==count );
       count++;
     }
-    REQUIRE( count==1 );
-  };
+    REQUIRE( count==the_env.nprocs() );
+  }
 }
 
 TEST_CASE( "coordinate subdivision" ) {
@@ -128,3 +128,4 @@ TEST_CASE( "coordinate subdivision" ) {
     }
   };
 }
+

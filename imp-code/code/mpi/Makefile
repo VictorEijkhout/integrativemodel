@@ -61,6 +61,7 @@ unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
 	${CXX_LINKER} ${CXXFLAGS} -o $@ \
 	    unittest_main.o $@.o ${COORD_OBJS} \
 	    ${TEST_LIBS}
+unittest_coord.o : unittest_coord.h ${IMPCODEDIR}/imp_coord.h
 
 #
 # architecture and decomposition
@@ -73,7 +74,7 @@ unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	${CXX_LINKER} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
 	    unittest_main.o $@.o ${DECOMP_OBJS} \
 	    ${TEST_LIBS}
-mpi_decomp.o : mpi_decomp.h ${IMPCODEDIR}/imp_decomp.h
+unittest_decomp.o mpi_decomp.o : mpi_decomp.h ${IMPCODEDIR}/imp_decomp.h
 
 #
 # distribution
@@ -86,7 +87,7 @@ unittest_distribution : unittest_main.o unittest_distribution.o ${DISTR_OBJS}
 	${CXX_LINKER} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
 	    unittest_main.o $@.o ${DISTR_OBJS} \
 	    ${TEST_LIBS}
-mpi_distribution.o : mpi_distribution.h ${IMPCODEDIR}/imp_distribution.h
+unittest_distribution.o mpi_distribution.o : mpi_distribution.h ${IMPCODEDIR}/imp_distribution.h
 
 #
 # object
@@ -99,7 +100,7 @@ unittest_object : unittest_main.o unittest_object.o ${OBJECT_OBJS}
 	${CXX_LINKER} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
 	    unittest_main.o $@.o ${OBJECT_OBJS} \
 	    ${TEST_LIBS}
-mpi_object.o : mpi_object.h ${IMPCODEDIR}/imp_object.h
+unittest_object.o mpi_object.o : mpi_object.h ${IMPCODEDIR}/imp_object.h
 
 #
 # kernel
@@ -112,7 +113,7 @@ unittest_kernel : unittest_main.o unittest_kernel.o ${KERNEL_OBJS}
 	${CXX_LINKER} ${CXXFLAGS} -o $@ ${MPIFLAGS} \
 	    unittest_main.o $@.o ${KERNEL_OBJS} \
 	    ${TEST_LIBS}
-mpi_kernel.o : mpi_kernel.h ${IMPCODEDIR}/imp_kernel.h
+unittest_kernel.o mpi_kernel.o : mpi_kernel.h ${IMPCODEDIR}/imp_kernel.h
 
 info ::
 	@echo "make newtests : do new unit tests"
