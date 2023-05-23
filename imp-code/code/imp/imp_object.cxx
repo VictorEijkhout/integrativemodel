@@ -23,7 +23,7 @@ using fmt::format;
 template<int d>
 object<d>::object( const distribution<d>& dist )
   : distribution<d>(dist)
-  , _data( vector<double>( dist.local_domain().volume() ) ) {
+  , _data( vector<double>( dist.global_domain().volume() ) ) {
 };
 
 //! Return a star-pointer to the numerical data, mutable

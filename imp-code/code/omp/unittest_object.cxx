@@ -39,7 +39,7 @@ TEST_CASE( "creation","[omp][object][01]" ) {
 
     // create the object
     REQUIRE_NOTHROW( omp_object<1>( omega_p ) );
-    omp_object xp( omega_p ), yp( omega_p );
+    omp_object<1> xp( omega_p ), yp( omega_p );
     REQUIRE( xp.compatible_with(yp) );
   }
   {
@@ -72,8 +72,9 @@ TEST_CASE( "local domain","[omp][object][02]" ) {
     omp_object xp( omega_p ), yp( omega_p );
 
     // sanity test on local domain
-    REQUIRE_NOTHROW( xp.local_domain() );
-    auto xp_local = xp.local_domain();
+    REQUIRE_THROWS( xp.local_domain() );
+    REQUIRE_NOTHROW( xp.global_domain() );
+    auto xp_local = xp.global_domain();
     REQUIRE( xp_local.volume()==total_points );
   }
   {
@@ -89,8 +90,9 @@ TEST_CASE( "local domain","[omp][object][02]" ) {
     omp_object xp( omega_p ), yp( omega_p );
 
     // sanity test on local domain, in 2D the distribution need not be equal
-    REQUIRE_NOTHROW( xp.local_domain() );
-    auto xp_local = xp.local_domain();
+    REQUIRE_THROWS( xp.local_domain() );
+    REQUIRE_NOTHROW( xp.global_domain() );
+    auto xp_local = xp.global_domain();
     index_int check_total_points;
     REQUIRE_NOTHROW( check_total_points = the_env.allreduce_ii( xp_local.volume() ) );
     REQUIRE( xp_local.volume()==total_points );
@@ -112,7 +114,7 @@ TEST_CASE( "addition","[omp][object][03]" ) {
     REQUIRE_NOTHROW( xp.set_constant(2.5) );
     REQUIRE_NOTHROW( yp.set_constant(2.5) );
     REQUIRE_NOTHROW( xp += yp );
-    double *xdata;
+    vector<double> xdata;
     REQUIRE_NOTHROW( xdata = xp.data() );
     REQUIRE( xdata[0]==5. );
   }
@@ -130,7 +132,7 @@ TEST_CASE( "addition","[omp][object][03]" ) {
     REQUIRE_NOTHROW( xp.set_constant(2.5) );
     REQUIRE_NOTHROW( yp.set_constant(2.5) );
     REQUIRE_NOTHROW( xp += yp );
-    double *xdata;
+    vector<double> xdata;
     REQUIRE_NOTHROW( xdata = xp.data() );
     REQUIRE( xdata[0]==5. );
   }
@@ -155,7 +157,7 @@ TEST_CASE( "norm","[object][04]" ) {
     
     REQUIRE_THROWS( norm(xp,xp,the_env) );
     REQUIRE_NOTHROW( norm(norm_value,xp,the_env) );
-    double *norm_data;
+    vector<double> norm_data;
     REQUIRE_NOTHROW( norm_data = norm_value.data() );
     REQUIRE( norm_data[0]==static_cast<double>(total_points) );
   }
@@ -177,7 +179,7 @@ TEST_CASE( "norm","[object][04]" ) {
     
     REQUIRE_THROWS( norm(xp,xp,the_env) );
     REQUIRE_NOTHROW( norm(norm_value,xp,the_env) );
-    double *norm_data;
+    vector<double> norm_data;
     REQUIRE_NOTHROW( norm_data = norm_value.data() );
     REQUIRE( norm_data[0]==static_cast<double>(total_points) );
   }
@@ -204,7 +206,7 @@ TEST_CASE( "inner product","[omp][object][05]" ) {
     REQUIRE_THROWS( inner_product(xp,xp,yp,the_env) );
     REQUIRE_THROWS( inner_product(norm_value,xp,norm_value,the_env) );
     REQUIRE_NOTHROW( inner_product(norm_value,xp,yp,the_env) );
-    double *norm_data;
+    vector<double> norm_data;
     REQUIRE_NOTHROW( norm_data = norm_value.data() );
     REQUIRE( norm_data[0]==2.*static_cast<double>(total_points) );
   }

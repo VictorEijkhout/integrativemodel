@@ -17,6 +17,7 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch2/catch_all.hpp"
 #include "fmt/format.h"
+using fmt::print;
 
 #define STATIC_VARS_HERE
 #include "imp_static_vars.h"
@@ -27,19 +28,37 @@
 
 void unittest_omp_setup(int argc,char **argv) {
 
-  omp_environment::instance().init(argc,argv);
+  try {
+    omp_environment::instance().init(argc,argv);
+  } catch ( char const* e ) {
+    print("Failed to create OpenMP instance aborted with: {}\n",e);
+  } catch (...) {
+    printf("Failed to create OpenMP instance\n");
+  }
+
 
   return;
 }
 
 int main(int argc,char **argv) {
 
-  unittest_omp_setup(argc,argv);
+  try {
+    unittest_omp_setup(argc,argv);
 
-  for (int a=0; a<argc; a++)
-    if (!strcmp(argv[a],"--imp")) { argc = a; break; }
+    for (int a=0; a<argc; a++)
+      if (!strcmp(argv[a],"--imp")) { argc = a; break; }
 
-  int result = Catch::Session().run( argc, argv );
+    int result;
+    try {
+      print("Catch session started...\n");
+      result = Catch::Session().run( argc, argv );
+    } catch ( char const* e ) {
+      print("Session aborted with: {}\n",e);
+    } catch (...) {
+      print("Session aborted\n");
+    }
 
-  return result;
+    return result;
+  } catch (...) { print("Main aborted\n"); };
 }
+

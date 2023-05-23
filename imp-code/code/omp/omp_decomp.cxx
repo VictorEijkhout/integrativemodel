@@ -26,7 +26,7 @@ omp_decomposition<d>::omp_decomposition
     ( const coordinate<int,d> &grid )
       : decomposition<d>(grid) {
   for ( int procid=0; procid<grid.span(); procid++ ) {
-    local_procs.push_back
+    decomposition<d>::local_procs.push_back
       ( decomposition<d>::domain_layout().location_of_linear(procid) );
   }
 };
