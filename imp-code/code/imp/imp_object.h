@@ -21,11 +21,18 @@ private:
   std::vector<double> _data;
 public:
   object( const distribution<d>& );
+  const distribution<d>& get_distribution() const {
+    return *this; };
+  object<d> operate( const ioperator<index_int,d>& ) const;
+  // data
   std::vector<double>& data();
   const std::vector<double>& data() const;
   double* raw_data();
   double const * raw_data() const;
 
+  /*
+   * Operations
+   */
   void set_constant( double x );
   object<d>& operator+=( const object<d>& );
   virtual double local_norm() const;

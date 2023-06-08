@@ -26,8 +26,19 @@ using fmt::format;
  */
 template<int d>
 void dependency<d>::analyze() {
-  auto operated = obj.operate( op );
-  beta = object<d>( operated );
+  const auto& input_dist = input_object->get_distribution();
+  beta = input_dist.operate( op );
+  for ( const auto& p : input_dist.local_procs() ) {
+    const auto& p_domain = input_object.local_domain(p);
+    for ( const auto& q : input_dist.global_procs() ) {
+      // calculate pq intersection
+      const auto& q_domain = input_object.local_domain(q);
+      auto pq_intersection  = p_domain.intersect(q_domain);
+      if ( not pq_intersection.is_empty() ) {
+	print( "Dependency: {} <- {}\n",p,q );
+      }
+    }
+  }
 };
 
 /*
@@ -44,7 +55,7 @@ void kernel<d>::add_dependency( std::shared_ptr<object<d>> input,ioperator<index
 };
 
 template<int d>
-void kernel<d>::analyze_dependencies() {
+void kernel<d>::analyze() {
   for ( auto& dep : inputs )
     dep.analyze();
 };
@@ -53,10 +64,6 @@ template<int d>
 void kernel<d>::set_localexecutefn( std::function< kernel_function_proto(d) > f ) {
   localexecutefn = f;
 };
-
-  // //! Set the task-local context; in the product mode this is overriden.
-  // virtual void set_localexecutectx( void *ctx ) {
-  //   localexecutectx = ctx; };
 
 template<int d>
 void kernel<d> ::setconstant( double v ) {

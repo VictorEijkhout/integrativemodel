@@ -23,12 +23,12 @@
 template<int d>
 class dependency {
 private:
-  std::shared_ptr<object<d>> obj;
+  std::shared_ptr<object<d>> input_object;
   ioperator<index_int,d> op;
-  std::optional< object<d> > beta{};
+  std::optional< distribution<d> > beta{};
 public:
-  dependency( std::shared_ptr<object<d>> obj,ioperator<index_int,d> op )
-    : obj(obj),op(op) {};
+  dependency( std::shared_ptr<object<d>> input_object,ioperator<index_int,d> op )
+    : input_object(input_object),op(op) {};
   void analyze();
 };
 
@@ -46,7 +46,7 @@ private:
   std::vector< dependency<d> > inputs; // std::shared_ptr<object<d>>
 public:
   void add_dependency( std::shared_ptr<object<d>> input,ioperator<index_int,d> op );
-  void analyze_dependencies();
+  void analyze();
   /*
    * local function
    */

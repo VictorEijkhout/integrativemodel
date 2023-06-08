@@ -16,6 +16,15 @@
 using std::vector, std::array;
 using fmt::format;
 
+#include <ranges>
+// to<> not yet in gcc12
+//#include <range/v3/all.hpp>
+#ifdef RANGES_V3_ALL_HPP
+namespace rng = ranges;
+#else
+namespace rng = std::ranges;
+#endif
+
 /*!
  * D-dimensional object.
  * Allocate data with size of local_domain
@@ -25,6 +34,10 @@ object<d>::object( const distribution<d>& dist )
   : distribution<d>(dist)
   , _data( vector<double>( dist.global_domain().volume() ) ) {
 };
+
+/*
+ * Data manipulation
+ */
 
 //! Return a star-pointer to the numerical data, mutable
 template<int d>
@@ -49,6 +62,22 @@ template<int d>
 const vector<double>& object<d>::data() const {
   return _data;
 };
+
+/*!
+ * Construct an operated distribution.
+ * \todo the data copy is wrong if the op is anything but a shift
+ */
+template<int d>
+object<d> object<d>::operate( const ioperator<index_int,d>& op ) const {
+  auto operated = object<d>( get_distribution().operate(op) );
+  rng::copy( _data.begin(),_data.end(),
+	     operated._data.begin() );
+  return operated;
+};
+
+/*
+ * Operations
+ */
 
 /*! Set the whole vector to a constant
  * This has no error checking on the constant being

@@ -69,6 +69,6 @@ TEST_CASE( "shift right","[3]" ) {
     // auto in = shared_ptr<object<1>>( make_shared<mpi_object<1>>( shifted_right ) );
     mpi_kernel shift_left(out);
     REQUIRE_NOTHROW( shift_left.add_dependency(in,right1) );
-    //    REQUIRE_NOTHROW( shift_left.inspect() );
+    REQUIRE_NOTHROW( shift_left.analyze() );
   }
 }

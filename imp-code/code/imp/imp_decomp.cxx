@@ -43,13 +43,13 @@ decomposition<d>::decomposition( const environment& env )
  */
 template<int d>
 decomposition<d>::decomposition( const coordinate<int,d> grid )
-  : _domain_layout(grid) {
+  : _process_grid(grid) {
 };
 
 //! How many processes in dimension `d'?
 template<int d>
 int decomposition<d>::size_of_dimension(int nd) const {
-  return _domain_layout.at(nd);
+  return _process_grid.at(nd);
 };
 
 //! Start points in dimension `d' of a domain, represented by a coordinate<d>
@@ -69,22 +69,7 @@ int decomposition<d>::local_volume() const {
 
 //! Number of global domains
 template<int d>
-int decomposition<d>::global_volume() const { return _domain_layout.span(); };
-
-#if 0
-template<int d>
-const coordinate<int,d> &decomposition<d>::first_local_domain() const {
-  if (mdomains.size()==0)
-    throw(format("Decomposition has no domains"));
-  return mdomains.at(0);
-};
-template<int d>
-const coordinate<int,d> &decomposition<d>::last_local_domain() const {
-  if (mdomains.size()==0)
-    throw(format("Decomposition has no domains"));
-  return mdomains.at(mdomains.size()-1);
-};
-#endif
+int decomposition<d>::global_volume() const { return _process_grid.span(); };
 
 //! Get the local number where this domain is stored. Domains are multi-dimensionally numbered.
 template<int d>
@@ -95,24 +80,12 @@ int decomposition<d>::domain_local_number( const coordinate<int,d> &dcoord ) con
   throw(fmt::format("Domain has no localization"));
 };
 
-template<int d>
-void decomposition<d>::copy_embedded_decomposition( decomposition<d> &other ) {
-  embedded_decomposition = other.embedded_decomposition;
-};
-
-template<int d>
-const decomposition<d> &decomposition<d>::get_embedded_decomposition() const {
-  if (embedded_decomposition==nullptr)
-    throw(string("Null embedded decomposition"));
-  return *(embedded_decomposition.get());
-};
-
 /*
  * Coordinate conversion stuff
  */
 template<int d>
 int decomposition<d>::linearize( const coordinate<int,d> &p ) const {
-  return _domain_layout.linear_location_of(p);
+  return _process_grid.linear_location_of(p);
 };
 
 /*!
@@ -123,26 +96,17 @@ template<int d>
 coordinate<int,d> decomposition<d>::coordinate_from_linear(int p) const {
   coordinate<int,d> pp;
   for (int id=d-1; id>=0; id--) {
-    int dsize = _domain_layout.at(id);
+    int dsize = _process_grid.at(id);
     if (dsize==0)
-      throw(format("weird layout <<{}>>",_domain_layout.as_string()));
+      throw(format("weird layout <<{}>>",_process_grid.as_string()));
     pp.at(id) = p%dsize; p = p/dsize;
   };
   return pp;
 };
 
-// template<int d>
-// const coordinate<int,d> &decomposition<d>::get_origin_processor() const {
-//   return closecorner;
-// };
-// template<int d>
-// const coordinate<int,d> &decomposition<d>::get_farpoint_processor() const {
-//   return farcorner;
-// };
-
 template<int d>
 int decomposition<d>::linear_location_of( const coordinate<int,d>& c ) const {
-  return _domain_layout.linear_location_of(c);
+  return _process_grid.linear_location_of(c);
 };
 
 /*

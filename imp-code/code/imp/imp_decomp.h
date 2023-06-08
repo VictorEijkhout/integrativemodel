@@ -47,14 +47,12 @@ public:
   decomposition( const environment& env );
 private:
   //! A vector of the sizes in all the dimensions
-  coordinate<int,d> _domain_layout;
-  //  coordinate<int,d> closecorner,farcorner;
+  coordinate<int,d> _process_grid;
+public:
+  //! Getting the process grid itself is strictly a utility function
+  const coordinate<int,d> &process_grid() const { return _process_grid; };
 public:
   std::vector<index_int> split_points_d( const coordinate<index_int,d>& c,int id ) const;
-  //  void set_corners();
-  const coordinate<int,d> &domain_layout() const { return _domain_layout; };
-  const coordinate<int,d> &get_origin_processor() const;
-  const coordinate<int,d> &get_farpoint_processor() const;
   int linear_location_of( const coordinate<int,d>& ) const;
 
   std::function< coordinate<int,d>() > this_proc{
@@ -73,13 +71,9 @@ public:
 public:
   int local_volume() const;
   int global_volume() const;
-  // //! Return the domains object, for 1d only
-  // const std::vector< coordinate<int,d> > get_domains() const { return *this; };
   //! Get a domain by local number; see \ref get_local_domain_number for global for translation
   std::function<  coordinate<int,d>() > local_domain{
     [] () -> coordinate<int,d> { throw("no local domain function defined"); } };
-  const coordinate<int,d> &first_local_domain() const;
-  const coordinate<int,d> &last_local_domain() const;
   //! The local number of domains.
   int local_ndomains() const { return local_procs.size(); };
   int domain_local_number( const coordinate<int,d>& ) const;
@@ -87,19 +81,6 @@ public:
   virtual std::string as_string() const;
 
   std::function< std::shared_ptr<distribution<d>>(index_int) > new_block_distribution;
-
-protected:
-  bool range_linear{true},range_twoside{false};
-public:
-  void set_range_twoside() { 
-    range_linear = false; range_twoside = true;
-  };
-
-protected:
-  std::shared_ptr<decomposition> embedded_decomposition{nullptr};
-  void copy_embedded_decomposition( decomposition &other );
-public:
-  const decomposition &get_embedded_decomposition() const;
 
   /*
    * Ranging

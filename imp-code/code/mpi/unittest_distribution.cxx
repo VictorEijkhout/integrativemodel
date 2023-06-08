@@ -69,7 +69,7 @@ TEST_CASE( "global domains","[mpi][distribution][02]" ) {
     mpi_decomposition<2> procs( the_env );
     INFO( "Decomposition: " << procs.as_string() );
 
-    coordinate<index_int,2> omega( procs.domain_layout()*16 /* total_points */ );
+    coordinate<index_int,2> omega( procs.process_grid()*16 /* total_points */ );
     index_int total_points = omega.span();
     mpi_distribution<2> omega_p( omega,procs );
     INFO( "domain: " << omega_p.global_domain().as_string() );
@@ -173,7 +173,7 @@ TEST_CASE( "distribution shifting" ) {
     // processors
     mpi_decomposition<1> procs( the_env );
     // global domain
-    coordinate<index_int,1> omega( procs.domain_layout()*16 );
+    coordinate<index_int,1> omega( procs.process_grid()*16 );
     index_int total_points = omega.span();
     domain<1> dom(omega);
     // distributed domain
@@ -204,7 +204,7 @@ TEST_CASE( "distribution shifting" ) {
     // processors
     mpi_decomposition<2> procs( the_env );
     // global domain
-    coordinate<index_int,2> omega( procs.domain_layout()*16 );
+    coordinate<index_int,2> omega( procs.process_grid()*16 );
     index_int total_points = omega.span();
     domain<2> dom(omega);
     // distributed domain
@@ -263,7 +263,7 @@ TEST_CASE( "divided distributions","[mpi][distribution][operation][06]" ) {
     mpi_decomposition<2> procs( the_env );
     INFO( "Decomposition: " << the_env.as_string() );
 
-    coordinate<index_int,2> omega( procs.domain_layout()*16 /* total_points */ );
+    coordinate<index_int,2> omega( procs.process_grid()*16 /* total_points */ );
     index_int total_points = omega.span();
     mpi_distribution<2> dist( omega,procs );
     INFO( "original domain: " << dist.global_domain().as_string() );
@@ -314,7 +314,7 @@ TEST_CASE( "NUMA addressing" ) {
     mpi_decomposition<2> procs( the_env );
     INFO( "Decomposition: " << procs.as_string() );
 
-    coordinate<index_int,2> omega( procs.domain_layout()*16 /* total_points */ );
+    coordinate<index_int,2> omega( procs.process_grid()*16 /* total_points */ );
     index_int total_points = omega.span();
     mpi_distribution<2> omega_p( omega,procs );
 
@@ -337,7 +337,7 @@ TEST_CASE( "shift right" ) {
   {
     INFO( "1D" );
     mpi_decomposition<1> procs( the_env );
-    coordinate<index_int,1> omega( procs.domain_layout()*16 );
+    coordinate<index_int,1> omega( procs.process_grid()*16 );
     index_int total_points = omega.span();
     domain<1> dom(omega);
     mpi_distribution<1> dist( omega,procs );

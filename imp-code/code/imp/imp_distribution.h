@@ -76,6 +76,7 @@ public:
   const domain<d>& local_domain() const;
   const domain<d>& local_domain(const coordinate<int,d>& p) const;
   const domain<d>& global_domain() const;
+
   /*
    * Polymorphism
    */
