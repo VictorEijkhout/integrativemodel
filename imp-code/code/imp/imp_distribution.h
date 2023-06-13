@@ -42,7 +42,8 @@ public:
 //! Different types of distributions
 enum class distribution_type : int { orthogonal,replicated };
 
-/*! Distribution class.
+/*! Distribution class: a domain over a process grid.
+ *
  * For now only implementation:
  * d-dimensional distribution as orthogonal product of 1-d block distributions
  */
@@ -75,6 +76,7 @@ protected:
 public:
   const domain<d>& local_domain() const;
   const domain<d>& local_domain(const coordinate<int,d>& p) const;
+  const std::vector<domain<d>>& local_domains() const;
   const domain<d>& global_domain() const;
 
   /*

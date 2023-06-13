@@ -56,7 +56,7 @@ TEST_CASE( "shift right","[3]" ) {
   {
     INFO( "1D" );
     mpi_decomposition<1> procs( the_env );
-    coordinate<index_int,1> omega( procs.domain_layout()*16 );
+    coordinate<index_int,1> omega( procs.process_grid()*16 );
     index_int total_points = omega.span();
     domain<1> dom(omega);
     mpi_distribution<1> dist( omega,procs );

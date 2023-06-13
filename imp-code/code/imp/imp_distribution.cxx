@@ -136,6 +136,15 @@ const domain<d>& distribution<d>::local_domain() const {
   return local_domain(local_p);
 };
 
+/*!
+ * The set of all local domains.
+ * For MPI that's just one, for OpenMP all.
+ */
+template<int d>
+const vector<domain<d>>& distribution<d>::local_domains() const {
+  return _local_domains;
+};
+
 /*! Distributions are built on a global domain,
  * this is set in the base constructor.
  * \todo should we inherit from the `domain' class?
