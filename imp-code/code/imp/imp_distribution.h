@@ -62,6 +62,7 @@ protected:
 public:
   distribution( const domain<d>&, const decomposition<d>&,
 		distribution_type=distribution_type::orthogonal );
+  const decomposition<d> get_decomposition() const;
   void assert_compatible_with( const distribution<d>& other ) const;
   bool compatible_with( const distribution<d>& other ) const;
   void assert_replicated() const;

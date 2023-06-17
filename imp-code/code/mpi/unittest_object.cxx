@@ -41,6 +41,8 @@ TEST_CASE( "creation","[mpi][object][01]" ) {
     REQUIRE_NOTHROW( mpi_object<1>( omega_p ) );
     mpi_object xp( omega_p ), yp( omega_p );
     REQUIRE( xp.compatible_with(yp) );
+    REQUIRE( xp.object_id()==1 );
+    REQUIRE( yp.object_id()==2 );
   }
   {
     INFO( "2D" );
@@ -55,6 +57,8 @@ TEST_CASE( "creation","[mpi][object][01]" ) {
     REQUIRE_NOTHROW( mpi_object<2>( omega_p ) );
     mpi_object xp( omega_p ), yp( omega_p );
     REQUIRE( xp.compatible_with(yp) );
+    REQUIRE( xp.object_id()==1 );
+    REQUIRE( yp.object_id()==2 );
   }
 }
 

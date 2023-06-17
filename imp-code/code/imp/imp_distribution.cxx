@@ -93,6 +93,11 @@ distribution<d>::distribution
   }
 };
 
+template<int d>
+const decomposition<d> distribution<d>::get_decomposition() const {
+  return my_decomposition;
+};
+
 /*!
  * Test identity of two distributions
  * by looking at their unique ID number

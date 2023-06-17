@@ -14,6 +14,7 @@
 
 #include "imp_coord.h" // for the ioperator
 #include "imp_object.h"
+#include "indexstruct.hpp"
 #include "imp_functions.h"
 #include <memory>
 #include <optional>
@@ -21,15 +22,25 @@
 #include <vector>
 
 template<int d>
+struct task_dependency {
+  int o_num;
+  int p_num;
+  indexstructure<index_int,d> data;
+};
+
+template<int d>
 class dependency {
 private:
   std::shared_ptr<object<d>> input_object;
   ioperator<index_int,d> op;
+  //! beta distribution for non-origin kernels
   std::optional< distribution<d> > beta{};
+  std::optional< std::vector<task_dependency<d>> >depends{};
 public:
   dependency( std::shared_ptr<object<d>> input_object,ioperator<index_int,d> op )
     : input_object(input_object),op(op) {};
   void analyze();
+  const std::vector<task_dependency<d>>& get_dependencies() const;
 };
 
 template<int d>
@@ -43,10 +54,11 @@ public:
    * Dependencies
    */
 private:
-  std::vector< dependency<d> > inputs; // std::shared_ptr<object<d>>
+  std::vector< dependency<d> > inputs;
 public:
   void add_dependency( std::shared_ptr<object<d>> input,ioperator<index_int,d> op );
   void analyze();
+  const std::vector<task_dependency<d>>& get_dependencies(int id=0) const;
   /*
    * local function
    */

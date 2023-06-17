@@ -101,6 +101,10 @@ TEST_CASE( "local domains","[mpi][distribution][03]" ) {
     REQUIRE_NOTHROW( omega_p.local_domains() );
     const auto& locals = omega_p.local_domains();
     REQUIRE( locals.size()==1 );
+    // auto this_proc = locals.at(0);
+    // REQUIRE_NOTHROW( omega_p.get_decomposition().linearize(this_proc) );
+    // auto this_pnum = omega_p.get_decomposition().linearize(this_proc);
+    // REQUIRE( this_pnum==the_env.procid() );
     REQUIRE_NOTHROW( omega_p.all_domains() );
     const auto& all = omega_p.all_domains();
     REQUIRE( all.size()==the_env.nprocs() );

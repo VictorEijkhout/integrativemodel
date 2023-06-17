@@ -32,12 +32,19 @@ namespace rng = std::ranges;
 template<int d>
 object<d>::object( const distribution<d>& dist )
   : distribution<d>(dist)
-  , _data( vector<double>( dist.global_domain().volume() ) ) {
+  , _data( vector<double>( dist.global_domain().volume() ) )
+  , _object_number( n_objects++ ) {
 };
 
 /*
  * Data manipulation
  */
+
+//! Unique number for each object
+template<int d>
+int object<d>::object_id() const {
+  return _object_number;
+};
 
 //! Return a star-pointer to the numerical data, mutable
 template<int d>
