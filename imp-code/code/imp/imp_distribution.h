@@ -72,11 +72,12 @@ public:
 protected:
   domain<d> _global_domain;
   // this is set mode-specific
-  std::vector<domain<d>> _local_domains;
+  std::vector<domain<d>> _local_domains,_all_domains;
 public:
   const domain<d>& local_domain() const;
   const domain<d>& local_domain(const coordinate<int,d>& p) const;
   const std::vector<domain<d>>& local_domains() const;
+  const std::vector<domain<d>>& all_domains() const;
   const domain<d>& global_domain() const;
 
   /*

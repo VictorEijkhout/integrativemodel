@@ -11,6 +11,7 @@
 
 #include "mpi_decomp.h"
 #include "mpi_distribution.h"
+#include <cassert>
 
 using std::array;
 using std::string;
@@ -26,10 +27,15 @@ mpi_distribution<d>::mpi_distribution
       distribution_type type )
       : distribution<d>(dom,procs,type) {
   using I = index_int;
+  const coordinate<int,d> this_proc = procs.this_proc();
+  assert( distribution<d>::_all_domains.size()>0 );
+  distribution<d>::_local_domains.push_back
+    ( distribution<d>::_all_domains.at
+      ( distribution<d>::my_decomposition.linearize(this_proc) ) );
+			   
   /*
    * Polymorphism
    */
-  const coordinate<int,d> this_proc = procs.this_proc();
   this->location_of_first_index =
     [=] ( const coordinate<int,d> &p) -> index_int {
       if (p==this_proc)
@@ -52,19 +58,6 @@ mpi_distribution<d> replicated_scalar_distribution( const mpi_decomposition<d>& 
   return mpi_distribution
     ( domain<d>( coordinate<index_int,d>(1) ),dist,distribution_type::replicated );
 };
-
-/*!
- * New MPI distribution by operating
- * This overrides the base method
- * \todo In fact, does this need the base method? Should that one be virtual?
- */
-// template<int d>
-// mpi_distribution<d> mpi_distribution<d>::operate( const ioperator<index_int,d>& op ) const {
-//   domain<d> the_domain( this->global_domain() );
-//   domain<d> new_domain( the_domain.operate(op) );
-//   return mpi_distribution<d>
-//     ( new_domain,this->my_decomposition,this->my_distribution_type);
-// };
 
 /*
  * Instantiations

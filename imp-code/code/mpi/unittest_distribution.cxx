@@ -92,10 +92,18 @@ TEST_CASE( "local domains","[mpi][distribution][03]" ) {
     coordinate<index_int,1> omega( total_points );
     mpi_decomposition<1> procs( the_env );
     mpi_distribution<1> omega_p( omega,procs );
+
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,1> local_domain = omega_p.local_domain();
     index_int check_total_points = the_env.allreduce_ii( local_domain.volume() );
     REQUIRE( check_total_points==total_points );
+
+    REQUIRE_NOTHROW( omega_p.local_domains() );
+    const auto& locals = omega_p.local_domains();
+    REQUIRE( locals.size()==1 );
+    REQUIRE_NOTHROW( omega_p.all_domains() );
+    const auto& all = omega_p.all_domains();
+    REQUIRE( all.size()==the_env.nprocs() );
   }
   {
     INFO( "2D" );
@@ -108,10 +116,18 @@ TEST_CASE( "local domains","[mpi][distribution][03]" ) {
     mpi_decomposition<2> procs( the_env );
     INFO( "procs=" << procs.as_string() );
     mpi_distribution<2> omega_p( omega,procs );
+
     REQUIRE_NOTHROW( omega_p.local_domain() );
     indexstructure<index_int,2> local_domain = omega_p.local_domain();
     index_int check_total_points = the_env.allreduce_ii( local_domain.volume() );
     REQUIRE( check_total_points==total_points );
+
+    REQUIRE_NOTHROW( omega_p.local_domains() );
+    const auto& locals = omega_p.local_domains();
+    REQUIRE( locals.size()==1 );
+    REQUIRE_NOTHROW( omega_p.all_domains() );
+    const auto& all = omega_p.all_domains();
+    REQUIRE( all.size()==the_env.nprocs() );
   }
 }
 

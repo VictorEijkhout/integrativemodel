@@ -28,11 +28,9 @@ template<int d>
 void dependency<d>::analyze() {
   const auto& input_dist = input_object->get_distribution();
   beta = input_dist.operate( op );
-  for ( const auto& p : input_dist.local_procs() ) {
-    const auto& local_beta_domain = beta.local_domain(p);
-    for ( const auto& q : input_dist.global_procs() ) {
+  for ( const auto& p_domain : beta.local_domains() ) {
+    for ( const auto& q_domain : input_dist.all_domains() ) {
       // calculate pq intersection
-      const auto& q_domain = input_object.local_domain(q);
       auto pq_intersection  = p_domain.intersect(q_domain);
       if ( not pq_intersection.is_empty() ) {
 	print( "Dependency: {} <- {}\n",p,q );

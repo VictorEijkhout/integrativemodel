@@ -89,7 +89,7 @@ distribution<d>::distribution
       first.at(id) = this->patches.at(id).at(pd).first_index().at(0);
       last .at(id) = this->patches.at(id).at(pd). last_index().at(0) - 1;
     }
-    this->_local_domains.push_back( domain<d>( contiguous_indexstruct<I,d>( first,last ) ) );
+    this->_all_domains.push_back( domain<d>( contiguous_indexstruct<I,d>( first,last ) ) );
   }
 };
 
@@ -124,7 +124,8 @@ void distribution<d>::assert_replicated() const {
 template<int d>
 const domain<d>& distribution<d>::local_domain( const coordinate<int,d>& p ) const {
   int p_num = my_decomposition.linearize(p);
-  return _local_domains.at(p_num);
+  assert( _all_domains.size()>0 );
+  return _all_domains.at(p_num);
 };
 /*!
  * If there is a `this' proc, return its local domain.
@@ -143,6 +144,14 @@ const domain<d>& distribution<d>::local_domain() const {
 template<int d>
 const vector<domain<d>>& distribution<d>::local_domains() const {
   return _local_domains;
+};
+
+/*!
+ * The set of all domains.
+ */
+template<int d>
+const vector<domain<d>>& distribution<d>::all_domains() const {
+  return _all_domains;
 };
 
 /*! Distributions are built on a global domain,
