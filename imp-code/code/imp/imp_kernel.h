@@ -16,6 +16,7 @@
 #include "imp_object.h"
 #include "indexstruct.hpp"
 #include "imp_functions.h"
+#include <functional>
 #include <memory>
 #include <optional>
 #include <tuple>
@@ -39,14 +40,21 @@ private:
 public:
   dependency( std::shared_ptr<object<d>> input_object,ioperator<index_int,d> op )
     : input_object(input_object),op(op) {};
+  const auto& get_input() const { return input_object; };
   void analyze();
   const std::vector<task_dependency<d>>& get_dependencies() const;
 };
 
+/*!
+ * A kernel is a distributed operation
+ * taking multiple inputs and giving one output object.
+ *
+ * The input objects are declared as dependencies.
+ */
 template<int d>
 class kernel {
 private:
-  std::shared_ptr<object<d>> output;
+  std::shared_ptr<object<d>> outvector;
 public:
   kernel( std::shared_ptr<object<d>> out );
   
@@ -54,24 +62,22 @@ public:
    * Dependencies
    */
 private:
-  std::vector< dependency<d> > inputs;
+  std::vector< dependency<d> > dependencies;
 public:
   void add_dependency( std::shared_ptr<object<d>> input,ioperator<index_int,d> op );
   void analyze();
   const std::vector<task_dependency<d>>& get_dependencies(int id=0) const;
+
   /*
-   * local function
+   * Execution stuff
    */
 protected:
   std::function< kernel_function_proto(d) > localexecutefn;
   void *localexecutectx{nullptr};
 public:
   void set_localexecutefn( std::function< kernel_function_proto(d) > f );
-
-  /*
-   * specific types
-   * THIS IS UGLY because hard to extend
-   */
-public:
-  void setconstant( double v );
+  void execute();
 };
+
+template<int d>
+kernel<d> setconstant( std::shared_ptr<object<d>> out, double v );

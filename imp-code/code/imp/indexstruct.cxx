@@ -301,7 +301,7 @@ bool strided_indexstruct<I,d>::contains_element( const coordinate<I,d>& idx ) co
 };
 
 template<typename I,int d>
-I strided_indexstruct<I,d>::find( coordinate<I,d> idx ) const {
+coordinate<I,d> strided_indexstruct<I,d>::location_of( const coordinate<I,d>& idx ) const {
   if (!contains_element(idx))
     throw(format("Index {} to find is out of range <<{}>>",
 		 idx[0],this->as_string()));
@@ -685,9 +685,6 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::relativize_to
   if (indexed!=nullptr) {
     auto relext = shared_ptr<indexstruct<I,d>>( make_shared<indexed_indexstruct<I,d>>() );
     throw("disabled case");
-    // for (auto i : *this) {
-    //   relext->add_in_element( idx->find(i) );
-    // }
     return relext;
   }
 
@@ -1232,7 +1229,6 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::relativize_to
     int count = 0;
     for (auto v : indices)
       throw("this completely doesn't make sense");
-      // relative = relative->add_element( indexed->find(v) );
     return relative;
   }
 
@@ -1245,7 +1241,6 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::relativize_to
     int count = 0;
     for (auto v : indices)
       throw("I doubt that this makes sense");
-      //relative = relative->add_element( composite->find(v) );
     return relative;
   }
   
@@ -1479,7 +1474,7 @@ bool composite_indexstruct<I,d>::contains_element( const coordinate<I,d>& idx ) 
 };
 
 template<typename I,int d>
-I composite_indexstruct<I,d>::find( coordinate<I,d> idx ) const {
+I composite_indexstruct<I,d>::linear_location_of( const coordinate<I,d>& idx ) const {
   auto first = structs[0]->first_index();
   I accumulate{0};
   for ( auto s : structs ) {
@@ -1487,7 +1482,7 @@ I composite_indexstruct<I,d>::find( coordinate<I,d> idx ) const {
       throw(fmt::format("Composite not sorted: {}",as_string()));
     first = structs[0]->first_index();
     if (s->contains_element(idx)) {
-      return accumulate+s->find(idx);
+      return accumulate+s->linear_location_of(idx);
     } else
       accumulate += s->volume();
   }

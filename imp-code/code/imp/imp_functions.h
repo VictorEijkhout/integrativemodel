@@ -33,23 +33,19 @@
 
 #include "utils.h"
 
-template<typename I,int d>
+template<typename I,int d> 
 class coordinate;
 template<int d>
 class object;
-// template<typename I,int d>
-// class sparse_matrix;
 
 template<typename I,int d>
 index_int INDEXanyD(coordinate<I,d> &i,coordinate<I,d> &off,coordinate<I,d> &siz);
 
-#define kernel_function_args(d) int step,coordinate<int,d> &p,std::vector<std::shared_ptr<object<d>>> &invectors,std::shared_ptr<object<d>> outvector
-#define kernel_function_types(d) int,coordinate<int,d>&,std::vector<std::shared_ptr<object<d>>>&,std::shared_ptr<object<d>>
+#define kernel_function_args(d) int step,const coordinate<int,d> &p,std::vector<std::shared_ptr<object<d>>> &invectors,std::shared_ptr<object<d>> outvector
+#define kernel_function_types(d) int,const coordinate<int,d>&,std::vector<std::shared_ptr<object<d>>>&,std::shared_ptr<object<d>>
 #define kernel_function_proto(d) void( kernel_function_args(d) )
 
 #define kernel_function_call(d) step,p,invectors,outvector
-
-//using kernel_function1 =  void(*)(int,coordinate<int,1>&,std::vector<std::shared_ptr<object<1>>>&,std::shared_ptr<object<1>>,double*);
 
 template<int d>
 void vecsetconstant( kernel_function_types(d), double);

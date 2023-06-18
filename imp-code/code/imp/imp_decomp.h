@@ -37,7 +37,7 @@ class distribution;
 template<int d>
 class decomposition {
 protected:
-  std::vector<coordinate<int,d>> local_procs;
+  std::vector<coordinate<int,d>> _local_procs;
 public:
   //! No default constructor
   decomposition()=delete;
@@ -45,6 +45,8 @@ public:
   decomposition( const coordinate<int,d> nd );
   //! Constructor from environment: uses the endpoint coordinate of the env
   decomposition( const environment& env );
+  const std::vector<coordinate<int,d>>& local_procs() const {
+    return _local_procs; };
 private:
   //! A vector of the sizes in all the dimensions
   coordinate<int,d> _process_grid;
@@ -55,6 +57,7 @@ public:
   std::vector<index_int> split_points_d( const coordinate<index_int,d>& c,int id ) const;
   int linear_location_of( const coordinate<int,d>& ) const;
 
+  //! For MPI, get unique local process; all others, throw exception.
   std::function< coordinate<int,d>() > this_proc{
     [] () -> coordinate<int,d> { throw( "Function this_proc not defined" ); } };
 
@@ -74,8 +77,8 @@ public:
   //! Get a domain by local number; see \ref get_local_domain_number for global for translation
   std::function<  coordinate<int,d>() > local_domain{
     [] () -> coordinate<int,d> { throw("no local domain function defined"); } };
-  //! The local number of domains.
-  int local_ndomains() const { return local_procs.size(); };
+  // //! The local number of domains.
+  // int local_ndomains() const { return local_procs.size(); };
   int domain_local_number( const coordinate<int,d>& ) const;
 
   virtual std::string as_string() const;

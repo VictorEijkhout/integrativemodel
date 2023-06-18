@@ -28,13 +28,6 @@ implib : ${IMP_OBJS}
 	${CXX_COMPILER} -o libimp.dylib \
 	    -dynamiclib -Wl,-undefined -Wl,dynamic_lookup \
 	    ${IMP_OBJS}
-%.o : %.cxx
-	@echo "Generic compilation of $<" \
-	 && cmdline="${CXX_COMPILER} --std=c++20 ${CXXFLAGS} ${TEST_INCLUDES} -c $<" \
-	 && if [ "${ECHO}" = "1" ] ; then \
-	      echo "cmdline=$$cmdline" ; fi \
-	 && eval $$cmdline
-
 imp_entity.o : imp_entity.h
 imp_env.o : imp_env.h
 imp_coord.o : imp_coord.h

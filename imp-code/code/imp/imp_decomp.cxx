@@ -64,7 +64,7 @@ vector<index_int> decomposition<d>::split_points_d
 //! Number of local domains: 1 for MPI, all for OpenMP
 template<int d>
 int decomposition<d>::local_volume() const {
-  return local_procs.size();
+  return local_procs().size();
 };
 
 //! Number of global domains

@@ -37,29 +37,3 @@ ${IMPCODEDIR}/imp_kernel.o : ${IMPCODEDIR}/imp_kernel.cxx ${IMPCODEDIR}/imp_kern
 ${IMPCODEDIR}/imp_functions.o : ${IMPCODEDIR}/imp_functions.cxx ${IMPCODEDIR}/imp_functions.h
 	@cd ${IMPCODEDIR} && make --no-print-directory imp_functions.o
 
-# ${IMPCODEDIR}/indexstruct.o ${IMPCODEDIR}/imp_functions.o : \
-#     ${IMPCODEDIR}/imp_functions.cxx \
-#     ${IMPCODEDIR}/utils.cxx ${IMPCODEDIR}/utils.h \
-#     ${IMPCODEDIR}/indexstruct.cxx ${IMPCODEDIR}/indexstruct.hpp
-# 	@cd ${IMPCODEDIR} ; \
-# 	    make indexstruct.o imp_functions.o \
-# 	        OPTLEVEL=${OPTLEVEL}
-# ${IMPCODEDIR}/imp_functions.o : ${IMPCODEDIR}/impfunc_struct_index.cxx
-
-# ${IMPCODEDIR}/utils.o : ${IMPCODEDIR}/utils.h
-# 	@cd ${IMPCODEDIR} ; \
-# 	    make utils.o OPTLEVEL=${OPTLEVEL}
-
-# ${OMPCODEDIR}/omp_functions.o : \
-#     ${OMPCODEDIR}/omp_ops.h \
-#     ${OMPCODEDIR}/omp_functions.cxx
-# 	cd ${OMPCODEDIR}; make omp_functions.o OPTLEVEL=${OPTLEVEL}
-# ${MPICODEDIR}/mpi_functions.o : \
-#     ${MPICODEDIR}/mpi_base.cxx ${MPICODEDIR}/mpi_base.h ${MPICODEDIR}/mpi_ops.h \
-#     ${MPICODEDIR}/mpi_functions.cxx
-# 	cd ${MPICODEDIR}; make mpi_functions.o OPTLEVEL=${OPTLEVEL}
-# ${PRODUCTCODEDIR}/product_base.o : \
-#     ${PRODUCTCODEDIR}/product_base.cxx ${PRODUCTCODEDIR}/product_base.h \
-#     ${PRODUCTCODEDIR}/product_ops.h
-# 	cd ${PRODUCTCODEDIR}; make product_base.o OPTLEVEL=${OPTLEVEL}
-

@@ -41,15 +41,17 @@ TEST_CASE( "creation","[1]" ) {
 
 TEST_CASE( "constant","[2]" ) {
   // make an object
+  const int d=1;
   const int points_per_proc = ipower(5,1);
   index_int total_points = points_per_proc*the_env.nprocs();
-  coordinate<index_int,1> omega( total_points );
-  mpi_decomposition<1> procs( the_env );
-  mpi_distribution<1> dist( omega,procs );
-  auto x = shared_ptr<object<1>>( make_shared<mpi_object<1>>( dist ) );
+  coordinate<index_int,d> omega( total_points );
+  mpi_decomposition<d> procs( the_env );
+  mpi_distribution<d> dist( omega,procs );
+  auto x = shared_ptr<object<d>>( make_shared<mpi_object<d>>( dist ) );
 
-  mpi_kernel c(x);
-  REQUIRE_NOTHROW( c.setconstant(5.2) );
+  REQUIRE_NOTHROW( setconstant<d>(x,1.41) );
+  auto c = setconstant<d>(x,1.41);
+  REQUIRE_NOTHROW( c.execute() );
 }
 
 TEST_CASE( "shift right","[3]" ) {

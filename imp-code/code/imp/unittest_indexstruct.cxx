@@ -66,9 +66,10 @@ TEST_CASE( "contiguous indexstruct, construction","[indexstruct][1]" ) {
     CHECK( ( ( i1.last_index()==6 ) ) );
     CHECK( i1.volume()==6 );
     CHECK( i1.stride()==one );
-    CHECK( i1.find(0)==0 );
-    CHECK( i1.find(5)==5 );
-    REQUIRE_THROWS( i1.find(6) );
+    REQUIRE_NOTHROW( i1.linear_location_of(0) );
+    CHECK( i1.linear_location_of(0)==0 );
+    CHECK( i1.linear_location_of(5)==5 );
+    REQUIRE_THROWS( i1.linear_location_of(6) );
   }
   SECTION( "Pimpl" ) {
     indexstructure<index_int,1> ii(i1);
@@ -78,9 +79,9 @@ TEST_CASE( "contiguous indexstruct, construction","[indexstruct][1]" ) {
     CHECK( ( ( ii.last_actual_index()==5 ) ) );
     CHECK( ii.volume()==6 );
     CHECK( ii.stride()==one );
-    CHECK( ii.find(0)==0 );
-    CHECK( ii.find(5)==5 );
-    REQUIRE_THROWS( ii.find(6) );
+    CHECK( ii.linear_location_of(0)==0 );
+    CHECK( ii.linear_location_of(5)==5 );
+    REQUIRE_THROWS( ii.linear_location_of(6) );
   }
 }
 
@@ -142,7 +143,7 @@ TEST_CASE( "more contiguous" ) {
   CHECK( ( i1.last_actual_index()==7 ) );
   coordinate<index_int,1> one; one.set(1);
   CHECK( i1.stride()==one );
-  REQUIRE_THROWS( i1.find(0) );
+  REQUIRE_THROWS( i1.linear_location_of(0) );
 }
 
 TEST_CASE( "strided" ) {
@@ -155,12 +156,12 @@ TEST_CASE( "strided" ) {
   CHECK( i1.volume()==3 );
   coordinate<index_int,1> one; one.set(1);
   CHECK( i1.stride()==one*2 );
-  CHECK( i1.find(2)==0 );
-  REQUIRE_THROWS( i1.find(3) );
-  CHECK( i1.find(4)==1 );
-  CHECK( i1.find(6)==2 );
-  REQUIRE_THROWS( i1.find(7) );
-  REQUIRE_THROWS( i1.find(8) );
+  CHECK( i1.linear_location_of(2)==0 );
+  REQUIRE_THROWS( i1.linear_location_of(3) );
+  CHECK( i1.linear_location_of(4)==1 );
+  CHECK( i1.linear_location_of(6)==2 );
+  REQUIRE_THROWS( i1.linear_location_of(7) );
+  REQUIRE_THROWS( i1.linear_location_of(8) );
 }
 
 
@@ -251,19 +252,19 @@ TEST_CASE( "FIND" ) {
     indexstructure i1( contiguous_indexstruct<index_int,1>(8,12) );
     indexstructure i2( strided_indexstruct<index_int,1>(10,12,2) );
     index_int loc;
-    REQUIRE_NOTHROW( loc = i1.location_of(i2) );
+    REQUIRE_NOTHROW( loc = i1.linear_location_of(i2) );
     CHECK( loc==2 );
-    REQUIRE_THROWS( loc = i2.location_of(i1) );
+    REQUIRE_THROWS( loc = i2.linear_location_of(i1) );
   }
   SECTION( "find in strided" ) {
     indexstructure i1( strided_indexstruct<index_int,1>(8,12,2) );
     indexstructure i2( strided_indexstruct<index_int,1>(10,12,2) );
     indexstructure i3( strided_indexstruct<index_int,1>(11,12,2) );
     index_int loc;
-    REQUIRE_NOTHROW( loc = i1.location_of(i2) );
+    REQUIRE_NOTHROW( loc = i1.linear_location_of(i2) );
     CHECK( loc==1 );
-    REQUIRE_THROWS( loc = i1.location_of(i3) );
-    REQUIRE_THROWS( loc = i2.location_of(i1) );
+    REQUIRE_THROWS( loc = i1.linear_location_of(i3) );
+    REQUIRE_THROWS( loc = i2.linear_location_of(i1) );
   }
 }
 
@@ -420,10 +421,10 @@ TEST_CASE( "striding and operations" ) {
     CHECK( !i1.contains_element(6) );
     CHECK( i1.contains_element(7) );
 
-    CHECK( i1.find(1)==0 );
-    CHECK( i1.find(7)==3 );
-    REQUIRE_THROWS( i1.find(0) );
-    REQUIRE_THROWS( i1.find(8) );
+    CHECK( i1.linear_location_of(1)==0 );
+    CHECK( i1.linear_location_of(7)==3 );
+    REQUIRE_THROWS( i1.linear_location_of(0) );
+    REQUIRE_THROWS( i1.linear_location_of(8) );
     CHECK_THROWS( i1.get_ith_element(5) );
     CHECK_NOTHROW( i1.get_ith_element(4) );
     CHECK( i1.get_ith_element(3)==7 );
@@ -456,18 +457,18 @@ TEST_CASE( "find in indexed" ) {
   indexstructure i3{ strided_indexstruct<index_int,1>(7,8,2) };
 
   index_int loc;
-  REQUIRE_NOTHROW( loc = i1.location_of(i2) );
+  REQUIRE_NOTHROW( loc = i1.linear_location_of(i2) );
   CHECK( loc==1 );
-  REQUIRE_NOTHROW( loc = i1.location_of(i3) );
+  REQUIRE_NOTHROW( loc = i1.linear_location_of(i3) );
   CHECK( loc==3 );
   indexstructure ii(i1);
   //REQUIRE_NOTHROW( ii = indexstructure(i1) );
-  REQUIRE_NOTHROW( loc = ii.location_of(i2) );
+  REQUIRE_NOTHROW( loc = ii.linear_location_of(i2) );
   CHECK( loc==1 );
   indexstructure ii2(i2);
-  REQUIRE_NOTHROW( loc = ii.location_of(ii2) );
+  REQUIRE_NOTHROW( loc = ii.linear_location_of(ii2) );
   CHECK( loc==1 );
-  REQUIRE_NOTHROW( loc = ii.location_of(indexstructure(i3)) );
+  REQUIRE_NOTHROW( loc = ii.linear_location_of(indexstructure(i3)) );
   CHECK( loc==3 );
 }
 
@@ -1645,7 +1646,7 @@ TEST_CASE( "create multidimensional by component","[multi][indexstruct<index_int
   mt = shared_ptr<multi_indexstruct<index_int,1>>( new multi_indexstruct<index_int,1>(2) );
   mt.set_component(0,contiguous_indexstruct<index_int,1>(4,9)) );
   mt.set_component(1,contiguous_indexstruct<index_int,1>(40,40)) );
-  REQUIRE_NOTHROW( val = mi.location_of(mt) );
+  REQUIRE_NOTHROW( val = mi.linear_location_of(mt) );
   CHECK( val.at(0)==2 );
   CHECK( val.at(1)==10 );
 }

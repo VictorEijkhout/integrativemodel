@@ -12,18 +12,21 @@
  ****
  ****************************************************************/
 
-#include <stdlib.h>
-#include <math.h>
+// #include <stdlib.h>
+// #include <math.h>
 
 #include "catch2/catch_all.hpp"
 
 #include "mpi_distribution.h"
-
-using fmt::format, fmt::print;
-
+// includes from the distribution header
 using std::make_shared, std::shared_ptr;
 using std::string;
 using std::vector;
+using fmt::format, fmt::print;
+
+// just for this test
+#include <optional>
+using std::optional;
 
 auto &the_env = mpi_environment::instance();
 
@@ -87,24 +90,35 @@ TEST_CASE( "local domains","[mpi][distribution][03]" ) {
   INFO( "proc: " << the_env.procid() );
   {
     INFO( "1D" );
+    const int procid = the_env.procid();
     const int points_per_proc = ipower(10,1);
     index_int total_points = points_per_proc*the_env.nprocs();
     coordinate<index_int,1> omega( total_points );
     mpi_decomposition<1> procs( the_env );
     mpi_distribution<1> omega_p( omega,procs );
 
-    REQUIRE_NOTHROW( omega_p.local_domain() );
-    indexstructure<index_int,1> local_domain = omega_p.local_domain();
+    optional< indexstructure<index_int,1> > opt_local_domain;
+    SECTION( "MPI local" ) {
+      REQUIRE_NOTHROW( omega_p.local_domain() );
+      opt_local_domain = omega_p.local_domain();
+    }
+    SECTION( "MPI indexing by local" ) {
+      const auto& proc_coord = procs.this_proc();
+      INFO( format( "domain from local proc {}",proc_coord.as_string() ) );
+      opt_local_domain = omega_p.local_domain(proc_coord);
+    }
+    indexstructure<index_int,1> local_domain( opt_local_domain.value() );
+    REQUIRE( local_domain.first_index()[0]==procid*points_per_proc );
+    REQUIRE_NOTHROW( omega_p.global_domain().location_of( local_domain ) );
+    auto offsets = omega_p.global_domain().location_of( local_domain );
+    REQUIRE( offsets[0]==procid*points_per_proc );
+
     index_int check_total_points = the_env.allreduce_ii( local_domain.volume() );
     REQUIRE( check_total_points==total_points );
 
     REQUIRE_NOTHROW( omega_p.local_domains() );
     const auto& locals = omega_p.local_domains();
     REQUIRE( locals.size()==1 );
-    // auto this_proc = locals.at(0);
-    // REQUIRE_NOTHROW( omega_p.get_decomposition().linearize(this_proc) );
-    // auto this_pnum = omega_p.get_decomposition().linearize(this_proc);
-    // REQUIRE( this_pnum==the_env.procid() );
     REQUIRE_NOTHROW( omega_p.all_domains() );
     const auto& all = omega_p.all_domains();
     REQUIRE( all.size()==the_env.nprocs() );

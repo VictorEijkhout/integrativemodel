@@ -79,10 +79,10 @@ public:
   virtual coordinate<I,d> first_index() const {
     report_unimplemented("first_index");
     return constant_coordinate<I,d>(0); };
-  virtual coordinate<I,d> last_index()  const{
+  virtual coordinate<I,d> last_index()  const {
     report_unimplemented("last_index"); 
     return constant_coordinate<I,d>(0); };
-  virtual coordinate<I,d> last_actual_index()  const{
+  virtual coordinate<I,d> last_actual_index()  const {
     report_unimplemented("last_actual_index");
     return constant_coordinate<I,d>(0); };
   virtual I volume() const {
@@ -93,12 +93,25 @@ public:
   virtual bool equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const;
   
   virtual std::shared_ptr<indexstruct<I,d>> make_strided(bool=false) const;
-  virtual I find( coordinate<I,d> ) const { throw(std::string("Can not be found")); };
-  //! \todo rename the `find' function?
-  I location_of( const coordinate<I,d>& first ) const {
-    return find(first); };
-  I location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
-    return find(inner->first_index()); };
+
+  //! Find location of coordinate as coordinate
+  virtual coordinate<I,d> location_of( const coordinate<I,d>& first ) const {
+    report_unimplemented("location_of");
+    return constant_coordinate<I,d>(0); };
+  //! Find location of indexstruct as coordinate
+  coordinate<I,d> location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
+    return location_of(inner->first_index()); };
+  //! Find scalar location of coordinate
+  virtual I linear_location_of( const coordinate<I,d>& first ) const {
+    return location_of(first).span(); };
+  //! Find scalar location of indexstruct through finding its first index
+  virtual I linear_location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
+    return linear_location_of(inner->first_index()); };
+  //! Find linear location of scalar is only defined in 1D
+  virtual I linear_location_of( I first ) const {
+    if (d==1) throw("no linear location of scalar for d>1");
+    return location_of(constant_coordinate<I,d>(first)).span(); };
+
   //! Test for element containment; this can not be const because of optimizations.
   virtual bool contains_element( const coordinate<I,d>& idx ) const { return false; };
   virtual bool can_incorporate( coordinate<I,d> v ) const {
@@ -303,7 +316,7 @@ public:
   virtual const coordinate<I,d>& stride() const override { return stride_amount; };
   virtual bool is_strided() const override { return true; };
   virtual std::string type_as_string() const override { return std::string("strided"); };
-  virtual I find( coordinate<I,d> idx ) const override;
+  virtual coordinate<I,d> location_of( const coordinate<I,d>& first ) const override;
   virtual bool contains_element( const coordinate<I,d>& idx ) const override;
   virtual coordinate<I,d> get_ith_element( const I i ) const override;
   virtual bool can_incorporate( coordinate<I,d> v ) const override {
@@ -411,11 +424,11 @@ public:
     if (indices.size()==0) throw(std::string("Can not ask last_actual for empty indexed"));
     return indices.back(); };
   I volume() const override { return indices.size(); };
-  virtual I find( coordinate<I,d> idx ) const override {
+
+  virtual I linear_location_of( const coordinate<I,d>& idx ) const override {
     for (int i=0; i<indices.size(); i++)
-      if (indices[i]==idx) return i;
-    // for (auto loc=this->begin_at_value(idx); loc!=this->end(); ++loc)
-    //   if (*loc==idx) return loc.search_loc();
+      if (indices[i]==idx)
+	return i;
     throw(std::string("Index to find is out of range"));
   };
   virtual bool contains_element( const coordinate<I,d>& idx ) const override {
@@ -488,7 +501,7 @@ public:
 
   virtual bool contains_element( const coordinate<I,d>& idx ) const override;
   virtual bool contains( const std::shared_ptr<const indexstruct<I,d>>& idx ) const override;
-  virtual I find( coordinate<I,d> idx ) const override ;
+  virtual I linear_location_of( const coordinate<I,d>& idx ) const override;
   virtual coordinate<I,d> get_ith_element( const I i ) const override;
   virtual std::shared_ptr<indexstruct<I,d>> struct_union( std::shared_ptr<indexstruct<I,d>> ,bool=false ) override;
   virtual std::shared_ptr<indexstruct<I,d>> intersect( const std::shared_ptr<const indexstruct<I,d>> idx ) const override;
@@ -746,18 +759,21 @@ public:
   virtual bool equals( const indexstructure& idx ) const {
     return strct->equals(idx.strct); };
   
-  I find( coordinate<I,d> idx )  const { return strct->find(idx); };
-  //! \todo rename the `find' function?
-  I location_of( const coordinate<I,d>& idx ) const { return strct->find(idx); };
-  I find( I idx ) const requires (d==1) {
-    return strct->find( coordinate<I,1>(idx) );
-  };
+  coordinate<I,d> location_of( const coordinate<I,d>& idx ) const {
+    return strct->location_of(idx); };
+  coordinate<I,d> location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
+    return location_of(inner->first_index()); };
+  coordinate<I,d> location_of( const indexstructure<I,d>& inner ) const {
+    return location_of(inner.strct); };
+  I linear_location_of( const coordinate<I,d>& idx ) const {
+    return location_of(idx).span(); };
+  I linear_location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
+    return linear_location_of(inner->first_index()); };
+  I linear_location_of( const indexstructure<I,d>& inner ) const {
+    return linear_location_of(inner.strct); };
+  I linear_location_of( I idx ) const requires (d==1) {
+    return strct->linear_location_of( coordinate<I,1>(idx) ); };
 
-  I location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
-    return strct->location_of(inner); };
-  I location_of( indexstructure &inner ) const {    return strct->location_of(inner.strct); };
-  I location_of( indexstructure &&inner ) {
-    return strct->location_of(inner.strct); };
   virtual bool contains_element( const coordinate<I,d>& idx ) const {
     return strct->contains_element(idx); };
   bool contains_element_in_range( const coordinate<I,d>& idx) const;

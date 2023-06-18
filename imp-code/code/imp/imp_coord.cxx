@@ -361,7 +361,18 @@ I coordinate<I,d>::linear_location_in( const coordinate<I,d>& layout ) const {
 /*! Linear location in this span of another coordinate */
 template<typename I,int d>
 I coordinate<I,d>::linear_location_of( const coordinate<I,d>& inside ) const {
-  return inside.linear_location_in( *this );
+  const auto& outer = *this;
+  for ( int id=0 ; id<d; id++) {
+    if ( inside.coordinates[id]<0 or inside.coordinates[id]>=outer.coordinates[id] )
+      throw( format("coordinate {} not contained in: {}",as_string(),outer.as_string()) );
+  }
+  I s = inside.coordinates.at(0);
+  for (int id=1; id<d; id++) {
+    auto outer_dim = outer.coordinates[id];
+    s = s*outer_dim + inside.coordinates[id];
+  }
+  return s;
+  //  return inside.linear_location_in( *this );
 };
 /*! Coordinate from linear location */
 template<typename I,int d>

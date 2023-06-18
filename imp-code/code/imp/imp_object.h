@@ -18,11 +18,11 @@
 template<int d>
 class object : public distribution<d> {
 private:
-  std::vector<double> _data;
   int _object_number{-1};
   static inline int n_objects{0};
 public:
   object( const distribution<d>& );
+  int object_id() const;
   const distribution<d>& get_distribution() const {
     return *this; };
   object<d> operate( const ioperator<index_int,d>& ) const;
@@ -30,7 +30,9 @@ public:
   /*
    * data
    */
-  int object_id() const;
+private:
+  std::vector<double> _data;
+public:
   std::vector<double>& data();
   const std::vector<double>& data() const;
   double* raw_data();

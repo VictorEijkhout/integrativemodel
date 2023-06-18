@@ -38,7 +38,7 @@ mpi_decomposition<d>::mpi_decomposition
   _procno = procid;
   // record our process coordinate, twice
   auto my_proc_coord = decomposition<d>::process_grid().location_of_linear(procid);
-  decomposition<d>::local_procs.push_back( my_proc_coord );
+  decomposition<d>::_local_procs.push_back( my_proc_coord );
   this->this_proc = [my_proc_coord] () -> coordinate<int,d> {
     return my_proc_coord; };
 };

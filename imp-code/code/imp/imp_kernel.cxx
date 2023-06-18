@@ -67,7 +67,7 @@ const vector<task_dependency<d>>& dependency<d>::get_dependencies() const {
  */
 template<int d>
 kernel<d>::kernel( shared_ptr<object<d>> out )
-  : output(out) {;
+  : outvector(out) {;
 };
 
 /*!
@@ -75,7 +75,7 @@ kernel<d>::kernel( shared_ptr<object<d>> out )
  */
 template<int d>
 void kernel<d>::add_dependency( std::shared_ptr<object<d>> input,ioperator<index_int,d> op ) {
-  inputs.push_back( dependency<d>(input,op) );
+  dependencies.push_back( dependency<d>(input,op) );
 };
 
 /*!
@@ -84,7 +84,7 @@ void kernel<d>::add_dependency( std::shared_ptr<object<d>> input,ioperator<index
  */
 template<int d>
 void kernel<d>::analyze() {
-  for ( auto& dep : inputs )
+  for ( auto& dep : dependencies )
     dep.analyze();
 };
 
@@ -93,8 +93,8 @@ void kernel<d>::analyze() {
  */
 template<int d>
 const vector<task_dependency<d>>& kernel<d>::get_dependencies(int id) const {
-  if ( id>=0 and id<inputs.size() )
-    return inputs.at(id).get_dependencies();
+  if ( id>=0 and id<dependencies.size() )
+    return dependencies.at(id).get_dependencies();
   else
     throw( "invalid dependency id" );
 };
@@ -105,11 +105,29 @@ void kernel<d>::set_localexecutefn( std::function< kernel_function_proto(d) > f 
 };
 
 template<int d>
-void kernel<d> ::setconstant( double v ) {
-  set_localexecutefn
-    ( function< kernel_function_proto(d) >{
+void kernel<d>::execute() {
+  int step  = 0;
+  vector< shared_ptr<object<d>> > invectors;
+  for ( const auto& dep : dependencies )
+    invectors.push_back( dep.get_input() );
+  for ( const auto& p : outvector->get_decomposition().local_procs() ) {
+    localexecutefn( kernel_function_call(d) );
+  }
+};
+
+/*
+ * Specific kernels
+ */
+template<int d>
+kernel<d> setconstant( std::shared_ptr<object<d>> out, double v ) {
+  kernel<d> sc(out);
+  sc.set_localexecutefn
+    ( std::function< kernel_function_proto(d) >{
       [v] ( kernel_function_args(d) ) -> void {
-	vecsetconstant( kernel_function_call(d),v ); } } );
+	vecsetconstant( kernel_function_call(d),v ); }
+      }
+    );
+  return sc;
 };
 
 /*
@@ -127,3 +145,6 @@ template class kernel<1>;
 template class kernel<2>;
 template class kernel<3>;
 
+template kernel<1> setconstant( shared_ptr<object<1>> out, double v );
+template kernel<2> setconstant( shared_ptr<object<2>> out, double v );
+template kernel<3> setconstant( shared_ptr<object<3>> out, double v );
