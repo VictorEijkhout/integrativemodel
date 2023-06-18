@@ -19,8 +19,8 @@ OPTLEVEL = 0
 ####
 #### catch
 ####
-CATCH2_COMPILE_OPTIONS = -I${LMOD_CATCH2_INC} 
-CATCH2_LINK_OPTIONS = -L${LMOD_CATCH2_LIB} -lCatch2Main -lCatch2
+CATCH2_COMPILE_OPTIONS = -I${TACC_CATCH2_INC} 
+CATCH2_LINK_OPTIONS = -L${TACC_CATCH2_LIB} -lCatch2Main -lCatch2
 
 ####
 #### Eigen
@@ -35,14 +35,14 @@ EFENCE_LIB = /opt/local/lib/libefence.a
 ####
 #### fmtlib
 ####
-CPPFORMAT_INC = ${LMOD_FMTLIB_INC}
-CPPFORMAT_LIB = ${LMOD_FMTLIB_LIB}
+CPPFORMAT_INC = ${TACC_FMTLIB_INC}
+CPPFORMAT_LIB = ${TACC_FMTLIB_LIB}
 LIBFORMAT = libfmt.a
 
 ####
 #### GSL
 ####
-GSL_INC = ${LMOD_GSL_INC}
+GSL_INC = ${TACC_GSL_INC}
 
 COVERITYBIN = ${HOME}/Installation/coverity/bin
 
@@ -50,15 +50,15 @@ MPLDIR = ${HOME}/Installation/mpl/mpl
 
 LIBCXX_intel = 
 LIBCXX_gcc   = -lc++
-LIBCXX = ${LIBCXX_${LMOD_FAMILY_COMPILER}}
+LIBCXX = ${LIBCXX_${TACC_FAMILY_COMPILER}}
 
 ####
 #### OpenMP
 ####
 INCOMP_clang = -I/opt/local/include/libomp
 LIBOMP_clang =  -L/opt/local/lib/libomp -lomp
-INCOMP = ${INCOMP_${LMOD_FAMILY_COMPILER}}
-LIBOMP = ${LIBOMP_${LMOD_FAMILY_COMPILER}}
+INCOMP = ${INCOMP_${TACC_FAMILY_COMPILER}}
+LIBOMP = ${LIBOMP_${TACC_FAMILY_COMPILER}}
 
 TEST_INCLUDES = \
     -I${IMPCODEDIR} \
