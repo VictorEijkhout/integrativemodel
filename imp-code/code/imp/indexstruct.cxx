@@ -57,7 +57,9 @@ int indexstruct<I,d>::type_as_int() const {
 
 template<typename I,int d>
 void indexstruct<I,d>::report_unimplemented( string s ) const {
-  string e = fmt::format("Trying to use query <<{}>> on undefined indexstruct",s);
+  string e =
+    fmt::format("Trying to use undefined query <<{}>> for type {}",
+		s,type_as_string());
   cout << e+"\n";
   throw(e);
 };
@@ -1202,6 +1204,29 @@ bool indexed_indexstruct<I,d>::equals( const shared_ptr<indexstruct<I,d>>& idx )
   // UGLY: just using shared_from_this gives you a const shared_ptr
   auto nonconst = make_clone(); // this->shared_from_this() ????
   return this->contains(idx) && idx->contains(nonconst);
+};
+
+template<typename I,int d>
+coordinate<I,d> indexed_indexstruct<I,d>::first_index() const {
+  if (indices.size()==0) throw(std::string("Can not ask first for empty indexed"));
+  return indices.at(0); };
+template<typename I,int d>
+coordinate<I,d> indexed_indexstruct<I,d>::last_actual_index() const {
+  if (indices.size()==0) throw(std::string("Can not ask last_actual for empty indexed"));
+  return indices.back(); };
+template<typename I,int d>
+I indexed_indexstruct<I,d>::linear_location_of( const coordinate<I,d>& idx ) const {
+  for (int i=0; i<indices.size(); i++)
+    if (indices[i]==idx)
+      return i;
+  throw(std::string("Index to find is out of range"));
+};
+template<typename I,int d>
+bool indexed_indexstruct<I,d>::contains_element( const coordinate<I,d>& idx ) const {
+  if (indices.size()==0) return false;
+  for (int i=0; i<indices.size(); i++)
+    if (indices[i]==idx) return true;
+  return false;
 };
 
 template<typename I,int d>

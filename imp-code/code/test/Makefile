@@ -23,7 +23,8 @@ CPPSTANDARD = 17
 	g++ -o $@ -std=c++${CPPSTANDARD} $^
 .SECONDEXPANSION:
 ${CATCHES} : $$@.cxx
-	g++ -g -o$@ -std=c++20 $^ \
+	g++ -O0 -g    -std=c++20 -Wno-sign-compare -fpermissive \
+	    -o$@ $^ \
 	    -I${TACC_CATCH2_INC} \
 	    -L${TACC_CATCH2_LIB} -lCatch2Main -lCatch2
 

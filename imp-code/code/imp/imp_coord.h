@@ -27,16 +27,20 @@ template<typename I,int d>
 class coordinate {
 public :
   coordinate();
+  coordinate( I i ) {
+    for ( auto& c : coordinates )
+      c = i;
+  };
   coordinate( std::array<I,d> );
-  //! Simplified case for 1D
-  coordinate( I i ) requires (d==1)
-    : coordinate( std::array<I,1>{i} ) {};
-  //! Simplified case for 2D
-  coordinate( I i ) requires (d==2)
-    : coordinate( std::array<I,2>{i,i} ) {};
-  //! Simplified case for 3D
-  coordinate( I i ) requires (d==3)
-    : coordinate( std::array<I,3>{i,i,i} ) {};
+  // //! Simplified case for 1D
+  // coordinate( I i ) requires (d==1)
+  //   : coordinate( std::array<I,1>{i} ) {};
+  // //! Simplified case for 2D
+  // coordinate( I i ) requires (d==2)
+  //   : coordinate( std::array<I,2>{i,i} ) {};
+  // //! Simplified case for 3D
+  // coordinate( I i ) requires (d==3)
+  //   : coordinate( std::array<I,3>{i,i,i} ) {};
 
   //! Copy constructor from other int type
   template<typename J>

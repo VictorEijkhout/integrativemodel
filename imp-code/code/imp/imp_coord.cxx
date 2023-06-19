@@ -65,14 +65,16 @@ coordinate<I,d> endpoint(I s) {
   for (int id=0; id<d; id++)
     endpoint.at(id) = 1;
   endpoint[0] = s;
-  if (d==1) return endpoint;
+  if (d==1)
+    return coordinate<I,d>(endpoint);
   if (d==2) {
     for ( I div = sqrt(s),rem = s/max<I>(div,1); ; div++,rem=s/max<I>(div,1)) {
       //print("try {} x {} = {}\n",div,rem,s);
       endpoint[0] = div; endpoint[1] = rem;
       if (div*rem==s) break;
     }
-    return endpoint;
+    return coordinate<I,d>(endpoint);
+
   }
   for (I prime=2; ; ) {
     auto s = endpoint.front();

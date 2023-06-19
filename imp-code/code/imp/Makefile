@@ -43,6 +43,11 @@ unittest_indexstruct : unittest_indexstruct.o unittest_main.o indexstruct.o imp_
 	    -o $@ $^ \
 	    ${TEST_LIBS}
 unittest_indexstruct.o indexstruct.o : indexstruct.hpp
+unittest_test : unittest_test.o unittest_main.o indexstruct.o imp_coord.o
+	${CXX_LINKER} ${CXXFLAGS} ${CXXUNITFLAGS} \
+	    -o $@ $^ \
+	    ${TEST_LIBS}
+unittest_test.o : indexstruct.hpp
 
 include ../imp/Make.regress
 REGRESSIONTESTS = unittest_indexstruct

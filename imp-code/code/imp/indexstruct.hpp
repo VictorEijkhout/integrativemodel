@@ -109,7 +109,7 @@ public:
     return linear_location_of(inner->first_index()); };
   //! Find linear location of scalar is only defined in 1D
   virtual I linear_location_of( I first ) const {
-    if (d==1) throw("no linear location of scalar for d>1");
+    if (d>1) throw("no linear location of scalar for d>1");
     return location_of(constant_coordinate<I,d>(first)).span(); };
 
   //! Test for element containment; this can not be const because of optimizations.
@@ -415,29 +415,16 @@ public:
   /*
    * Statistics
    */
-  coordinate<I,d> first_index() const override {
-    if (indices.size()==0) throw(std::string("Can not ask first for empty indexed"));
-    return indices.at(0); };
-  // coordinate<I,d> last_index() needs to stay undefined for indexed
+  coordinate<I,d> first_index() const override;
+  // NOTE: coordinate<I,d> last_index() needs to stay undefined for indexed
   //! actually last contained index
-  coordinate<I,d> last_actual_index() const override {
-    if (indices.size()==0) throw(std::string("Can not ask last_actual for empty indexed"));
-    return indices.back(); };
+  coordinate<I,d> last_actual_index() const override;
   I volume() const override { return indices.size(); };
 
-  virtual I linear_location_of( const coordinate<I,d>& idx ) const override {
-    for (int i=0; i<indices.size(); i++)
-      if (indices[i]==idx)
-	return i;
-    throw(std::string("Index to find is out of range"));
-  };
-  virtual bool contains_element( const coordinate<I,d>& idx ) const override {
-    if (indices.size()==0) return false;
-    for (int i=0; i<indices.size(); i++)
-      if (indices[i]==idx) return true;
-    return false;
-  };
+  virtual I linear_location_of( const coordinate<I,d>& idx ) const override;
+  virtual bool contains_element( const coordinate<I,d>& idx ) const override;
   virtual coordinate<I,d> get_ith_element( const I i ) const override;
+
   virtual std::shared_ptr<indexstruct<I,d>> make_strided(bool=false) const override;
   virtual bool is_strided_between_indices(I,I,I&,bool=false) const override;
   virtual bool contains( const std::shared_ptr<const indexstruct<I,d>>& idx ) const override;
@@ -765,14 +752,19 @@ public:
     return location_of(inner->first_index()); };
   coordinate<I,d> location_of( const indexstructure<I,d>& inner ) const {
     return location_of(inner.strct); };
+
+  //! Linear location by first getting location vector, than computing its span
   I linear_location_of( const coordinate<I,d>& idx ) const {
     return location_of(idx).span(); };
-  I linear_location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
-    return linear_location_of(inner->first_index()); };
+  //! Linear location of indexstructure through location of its embedded indexstruct
   I linear_location_of( const indexstructure<I,d>& inner ) const {
     return linear_location_of(inner.strct); };
+  //! Linear location of an indexstruct is the linear location of its first index
+  I linear_location_of( std::shared_ptr<indexstruct<I,d>> inner ) const {
+    return linear_location_of(inner->first_index()); };
+  //! Linear location of an int only defined for d==1
   I linear_location_of( I idx ) const requires (d==1) {
-    return strct->linear_location_of( coordinate<I,1>(idx) ); };
+    return strct->linear_location_of( constant_coordinate<I,1>(idx) ); };
 
   virtual bool contains_element( const coordinate<I,d>& idx ) const {
     return strct->contains_element(idx); };
