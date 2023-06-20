@@ -61,7 +61,7 @@ unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
 	${CXX_LINKER} ${CXXFLAGS} -o $@ \
 	    unittest_main.o $@.o ${COORD_OBJS} \
 	    ${TEST_LIBS}
-unittest_coord.o : unittest_coord.h ${IMPCODEDIR}/imp_coord.h
+unittest_coord.o : ${IMPCODEDIR}/imp_coord.h
 
 #
 # architecture and decomposition

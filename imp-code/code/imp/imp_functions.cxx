@@ -31,8 +31,6 @@ using fmt::print;
 template<int d>
 void vecsetconstant( kernel_function_args(d), double value )
 {
-  auto& outdata = outvector->data();
-
   // index_int
   //   len  = outvector->local_domain()->volume();
   // index_int
@@ -47,9 +45,11 @@ void vecsetconstant( kernel_function_args(d), double value )
   // description of the indices on which we work
   const auto& pstruct = outvector->local_domain(p);
   const coordinate<index_int,d>
-    &pfirst = pstruct->first_index(),
-    &plast = pstruct->last_index(),
+    &pfirst = pstruct.first_index(),
+    &plast  = pstruct.last_index(),
     out_offsets = outvector->global_domain().location_of(pfirst);
+  const auto& indata = invectors.at(0)->data();
+  auto& outdata = outvector->data();
 
   if constexpr (d==1) {
     for (index_int i=pfirst[0]; i<=plast[0]; i++) {
