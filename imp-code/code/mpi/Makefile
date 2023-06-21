@@ -118,13 +118,15 @@ unittest_kernel.o mpi_kernel.o : mpi_kernel.h ${IMPCODEDIR}/imp_kernel.h
 info ::
 	@echo "make newtests : do new unit tests"
 	@echo "    [ NP=... (default: ${NP}) ]"
+	@echo "    [ MPIRUN=... (default ${MPIRUN} ) ]"
 .PHONY: newtests
 NP = 4
+MPIRUN  = mpiexec
 newtests :
 	for t in ${NEW_TESTS} ; do \
 	    make $$t \
 	     && echo && echo "Unittesting: $$t" && echo \
-	     && mpiexec -n ${NP} $$t \
+	     && ${MPIRUN} -n ${NP} $$t \
 	; done
 
 #
