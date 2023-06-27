@@ -80,4 +80,6 @@ public:
 };
 
 template<int d>
-kernel<d> setconstant( std::shared_ptr<object<d>> out, double v );
+kernel<d> constant_object( std::shared_ptr<object<d>> out, double v );
+template<int d>
+kernel<d> copy_object( std::shared_ptr<object<d>> out, std::shared_ptr<object<d>> in );

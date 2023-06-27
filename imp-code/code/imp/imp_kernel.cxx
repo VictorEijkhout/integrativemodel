@@ -119,12 +119,24 @@ void kernel<d>::execute() {
  * Specific kernels
  */
 template<int d>
-kernel<d> setconstant( std::shared_ptr<object<d>> out, double v ) {
+kernel<d> constant_object( shared_ptr<object<d>> out, double v ) {
   kernel<d> sc(out);
   sc.set_localexecutefn
-    ( std::function< kernel_function_proto(d) >{
+    ( function< kernel_function_proto(d) >{
       [v] ( kernel_function_args(d) ) -> void {
 	vecsetconstant( kernel_function_call(d),v ); }
+      }
+    );
+  return sc;
+};
+
+template<int d>
+kernel<d> copy_object( std::shared_ptr<object<d>> out, std::shared_ptr<object<d>> in ) {
+  kernel<d> sc(out);
+  sc.set_localexecutefn
+    ( function< kernel_function_proto(d) >{
+      [v] ( kernel_function_args(d) ) -> void {
+	veccopy( kernel_function_call(d) ); }
       }
     );
   return sc;
