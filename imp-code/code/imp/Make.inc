@@ -42,7 +42,7 @@ LIBFORMAT = libfmt.a
 ####
 #### GSL
 ####
-GSL_INC = ${TACC_GSL_INC}
+GSL_INC = ${TACC_MSGSL_INC}
 
 COVERITYBIN = ${HOME}/Installation/coverity/bin
 
