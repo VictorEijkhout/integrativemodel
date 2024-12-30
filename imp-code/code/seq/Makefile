@@ -20,10 +20,7 @@ include ../imp/Make.inc
 include ../imp/Make.common
 include ../imp/Make.imp
 
-CXX_COMPILER = ${TACC_CXX}
-# --coverage 
-CXX_LINKER   = ${TACC_CXX}
-# --coverage 
+MODE = seq
 
 ####
 #### Unit tests
@@ -38,17 +35,23 @@ unittest_main.o : \
     seq_env.h ${IMPCODEDIR}/imp_env.h \
     seq_static_vars.h ${IMPCODEDIR}/imp_static_vars.h
 NEW_TESTS = 
+RPATH = ${TACC_CATCH2_LIB} ${TACC_FMTLIB_LIB}
 
 #
 # environment
 #
-NEW_TESTS := unittest_env
+NEW_TESTS += unittest_env
 ENV_OBJS := seq_env.o ${IMPCODEDIR}/imp_env.o ${IMPCODEDIR}/utils.o
 unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
-	@echo "Linking $@"
-	${CXX_LINKER} ${CXXFLAGS} -o $@ \
+	@echo "Linking $@" \
+	 && if [ ! -z "${RPATH}" ] ; then \
+	      for r in ${RPATH} ; do \
+	          rpath="$$rpath -Wl,-rpath,$${r}" \
+	      ; done \
+	    ; fi \
+	 && ${CXX_LINKER} ${CXXFLAGS} -o $@ \
 	    unittest_main.o $@.o ${ENV_OBJS} \
-	    ${TEST_LIBS}
+	    $${rpath} ${TEST_LIBS}
 seq_env.o : seq_env.h ${IMPCODEDIR}/imp_env.h
 
 #
@@ -185,5 +188,6 @@ applications :
 	  done
 
 clean ::
+	@echo " .. cleaning ${MODE} apps and tests" 
 	@/bin/rm -f unittest ${UNITTESTS} ${NEW_TESTS}
 	@cd seq_apps ; make clean

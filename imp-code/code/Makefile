@@ -69,7 +69,7 @@ info ::
 # not: benchmarking test
 clean ::
 	@/bin/rm -f *~
-	@for d in imp mpi omp product test ; do \
+	@for d in seq imp mpi omp product test ; do \
 	  ( cd $$d ; pwd ; \
 	    if [ -f Makefile ] ; then make clean ; fi ; \
 	    if [ -d $${d}_apps ] ; then \

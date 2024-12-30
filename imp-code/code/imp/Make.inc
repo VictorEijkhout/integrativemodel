@@ -20,9 +20,7 @@ OPTLEVEL = 0
 #### catch
 ####
 CATCH2_COMPILE_OPTIONS = $$( pkg-config --cflags catch2 )
-## -I${TACC_CATCH2_INC} 
 CATCH2_LINK_OPTIONS    = $$( pkg-config --libs catch2 )
-## -L${TACC_CATCH2_LIB} -lCatch2Main -lCatch2
 
 ####
 #### Eigen
@@ -38,17 +36,7 @@ EFENCE_LIB = /opt/local/lib/libefence.a
 #### fmtlib
 ####
 FMT_COMPILE_OPTIONS = $$( pkg-config --cflags fmt )
-## ${TACC_FMTLIB_INC}
 FMT_LINK_OPTIONS = $$( pkg-config --libs fmt )
-## ${TACC_FMTLIB_LIB}
-## LIBFORMAT = libfmt.a
-
-####
-#### GSL
-####
-GSL_INC = ${TACC_MSGSL_INC}
-
-COVERITYBIN = ${HOME}/Installation/coverity/bin
 
 MPLDIR = ${HOME}/Installation/mpl/mpl
 
@@ -66,7 +54,7 @@ INCOMP = ${INCOMP_${TACC_FAMILY_COMPILER}}
 LIBOMP = ${LIBOMP_${TACC_FAMILY_COMPILER}}
 
 TEST_INCLUDES = \
-    -DG -I${TACC_GSL_INC} \
+    -DG -I${TACC_MSGSL_INC} \
     -I../imp \
     ${CATCH2_COMPILE_OPTIONS} \
     ${FMT_COMPILE_OPTIONS}

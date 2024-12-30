@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2023
+ **** copyright Victor Eijkhout 2014-2024
  ****
  **** imp_env.h: environment
  ****
@@ -192,13 +192,11 @@ public:
   void print_line( std::string );
   void open_bracket(); void close_bracket();
   //void print_object_line( char *s );
-  virtual void print_to_file( std::string );
-  virtual void print_to_file( const char* );
-  virtual void print_to_file( int, std::string );
-  virtual void print_to_file( int, const char* );
+  virtual void print_to_file( const std::string& );
+  virtual void print_to_file( int, const std::string& );
   //  virtual void print() { this->print_to_file( this->as_string() ); };
-  virtual void print_single(std::string s) { print_to_file(s); };
-  virtual void print_all(std::string s) { print_to_file(s); };
+  virtual void print_single( const std::string& s) { print_to_file(s); };
+  virtual void print_all( const std::string& s) { print_to_file(s); };
 
   /*
    * Entities

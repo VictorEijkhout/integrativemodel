@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2023
+ **** copyright Victor Eijkhout 2014-2024
  ****
  **** imp_env.cxx : environment management
  ****
@@ -319,32 +319,18 @@ void environment::print_line( string c ) {
 void environment::open_bracket() { this->print_line( (char*)"<<" ); };
 void environment::close_bracket() { this->print_line( (char*)">>" ); };
 
-void environment::print_to_file( string s ) {
+void environment::print_to_file( const string& s ) {
   if (!get_is_printing_environment()) return;
   // stdout or the file
   FILE *f = stdout; if (ir_outputfile!=NULL) f = ir_outputfile;
   fprintf(f,"%s%s\n",indentation->data(),s.c_str());
 };
 
-void environment::print_to_file( const char *s ) {
-  if (!get_is_printing_environment()) return;
-  // stdout or the file
-  FILE *f = stdout; if (ir_outputfile!=NULL) f = ir_outputfile;
-  fprintf(f,"%s%s\n",indentation->data(),s);
-};
-
-void environment::print_to_file( int p,string s ) {
+void environment::print_to_file( int p,const string& s ) {
   if (!get_is_printing_environment()) return;
   // stdout or the file
   FILE *f = stdout; if (ir_outputfile!=NULL) f = ir_outputfile;
   fprintf(f,"[p%d] %s%s\n",p,indentation->data(),s.c_str());
-};
-
-void environment::print_to_file( int p,const char *s ) {
-  if (!get_is_printing_environment()) return;
-  // stdout or the file
-  FILE *f = stdout; if (ir_outputfile!=NULL) f = ir_outputfile;
-  fprintf(f,"[p%d] %s%s\n",p,indentation->data(),s);
 };
 
 //! Open a new output file, and close old one if needed.
