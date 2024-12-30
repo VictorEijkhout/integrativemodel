@@ -31,42 +31,23 @@ using fmt::print;
 template<int d>
 void vecsetconstant( kernel_function_args(d), double value )
 {
-  // index_int
-  //   len  = outvector->local_domain()->volume();
-  // index_int
-  //   tar0 = outvector->location_of_first_index(p);
-
-  // index_int first_index = outdistro->first_index_r(p).coord(0);
-  // print("[%d] writing {} elements in object with size {}\n",
-  // 	p.as_string(),len,outdata.size());
-  // print("[%d] writing {} elements @ {} wich has size {}\n",
-  // 	p.as_string(),len,(long)(outdata.data()),outdata.size());
-
   // description of the indices on which we work
   const auto& pstruct = outvector->local_domain(p);
   const coordinate<index_int,d>
     &pfirst = pstruct.first_index(),
     &plast  = pstruct.last_index(),
     out_offsets = outvector->global_domain().location_of(pfirst);
-  const auto& indata = invectors.at(0)->data();
+  //  const auto& indata = invectors.at(0)->data();
   auto& outdata = outvector->data();
 
   if constexpr (d==1) {
     for (index_int i=pfirst[0]; i<=plast[0]; i++) {
       index_int I = INDEX1D(i,out_offsets,out_nsize);
       //print("[{}] copy global index {}@{}:{}\n",p->as_string(),i,I,indata[I]);
-      outdata.at(I) = indata.at(I);
+      outdata.at(I) = value;
     }
   } else throw( "Only d=1 supported for now" );
 
-  // for ( auto& e : outdata )
-  //   e = value;
-
-  // for (index_int i=0; i<len; i++) {
-  //   outdata.at(tar0+i) = value;
-  // }  
-
-  //  *flopcount += 0.;
 }
 
 #if 0

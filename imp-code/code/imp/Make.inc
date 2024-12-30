@@ -19,8 +19,10 @@ OPTLEVEL = 0
 ####
 #### catch
 ####
-CATCH2_COMPILE_OPTIONS = -I${TACC_CATCH2_INC} 
-CATCH2_LINK_OPTIONS = -L${TACC_CATCH2_LIB} -lCatch2Main -lCatch2
+CATCH2_COMPILE_OPTIONS = $$( pkg-config --cflags catch2 )
+## -I${TACC_CATCH2_INC} 
+CATCH2_LINK_OPTIONS    = $$( pkg-config --libs catch2 )
+## -L${TACC_CATCH2_LIB} -lCatch2Main -lCatch2
 
 ####
 #### Eigen
@@ -35,9 +37,11 @@ EFENCE_LIB = /opt/local/lib/libefence.a
 ####
 #### fmtlib
 ####
-CPPFORMAT_INC = ${TACC_FMTLIB_INC}
-CPPFORMAT_LIB = ${TACC_FMTLIB_LIB}
-LIBFORMAT = libfmt.a
+FMT_COMPILE_OPTIONS = $$( pkg-config --cflags fmt )
+## ${TACC_FMTLIB_INC}
+FMT_LINK_OPTIONS = $$( pkg-config --libs fmt )
+## ${TACC_FMTLIB_LIB}
+## LIBFORMAT = libfmt.a
 
 ####
 #### GSL
@@ -49,7 +53,8 @@ COVERITYBIN = ${HOME}/Installation/coverity/bin
 MPLDIR = ${HOME}/Installation/mpl/mpl
 
 LIBCXX_intel = 
-LIBCXX_gcc   = -lc++
+LIBCXX_gcc   = 
+## -lc++
 LIBCXX = ${LIBCXX_${TACC_FAMILY_COMPILER}}
 
 ####
@@ -61,12 +66,15 @@ INCOMP = ${INCOMP_${TACC_FAMILY_COMPILER}}
 LIBOMP = ${LIBOMP_${TACC_FAMILY_COMPILER}}
 
 TEST_INCLUDES = \
-    -I${IMPCODEDIR} \
+    -DG -I${TACC_GSL_INC} \
+    -I../imp \
     ${CATCH2_COMPILE_OPTIONS} \
-    -I${EIGEN_INC} -I${GSL_INC} -I${CPPFORMAT_INC}
+    ${FMT_COMPILE_OPTIONS}
+##     -I${EIGEN_INC} 
+## for now removing: -I${GSL_INC} 
 TEST_LIBS = \
-    ${CPPFORMAT_LIB}/${LIBFORMAT} \
     ${CATCH2_LINK_OPTIONS} \
+    ${FMT_LINK_OPTIONS} \
     ${LIBCXX}
 
 IMPCODEDIR = ../imp
