@@ -60,10 +60,15 @@ seq_env.o : seq_env.h ${IMPCODEDIR}/imp_env.h
 NEW_TESTS += unittest_coord
 COORD_OBJS = ${IMPCODEDIR}/imp_coord.o ${ENV_OBJS}
 unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
-	@echo "Linking $@"
-	${CXX_LINKER} ${CXXFLAGS} -o $@ \
+	@echo "Linking $@" \
+	 && if [ ! -z "${RPATH}" ] ; then \
+	      for r in ${RPATH} ; do \
+	          rpath="$$rpath -Wl,-rpath,$${r}" \
+	      ; done \
+	    ; fi \
+	&& ${CXX_LINKER} ${CXXFLAGS} -o $@ \
 	    unittest_main.o $@.o ${COORD_OBJS} \
-	    ${TEST_LIBS}
+	    $${rpath} ${TEST_LIBS}
 unittest_coord.o : ${IMPCODEDIR}/imp_coord.h
 
 #
@@ -190,4 +195,4 @@ applications :
 clean ::
 	@echo " .. cleaning ${MODE} apps and tests" 
 	@/bin/rm -f unittest ${UNITTESTS} ${NEW_TESTS}
-	@cd seq_apps ; make clean
+	@cd seq_apps && make clean

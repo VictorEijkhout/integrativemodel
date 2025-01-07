@@ -4,7 +4,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2023
+ **** copyright Victor Eijkhout 2014-2025
  ****
  **** imp_coord.h: Header file for coordinate stuff
  ****
@@ -27,11 +27,12 @@ template<typename I,int d>
 class coordinate {
 public :
   coordinate();
-  coordinate( I i ) {
-    for ( auto& c : coordinates )
-      c = i;
-  };
+  // all components constant `i'
+  coordinate( I i );
+  // from explicit coordinate
   coordinate( std::array<I,d> );
+  // from environment proc count
+  coordinate( const environment& e );
   // //! Simplified case for 1D
   // coordinate( I i ) requires (d==1)
   //   : coordinate( std::array<I,1>{i} ) {};

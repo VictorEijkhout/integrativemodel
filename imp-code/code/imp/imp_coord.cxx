@@ -4,7 +4,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2023
+ **** copyright Victor Eijkhout 2014-2025
  ****
  **** imp_coord.cxx: Implementation file for coordinate stuff
  ****
@@ -127,8 +127,19 @@ coordinate<I,d>::coordinate() {
     coordinates.at(id) = -1;
 };
 
-/*! Make a coordinate identically equal some scalar.
+/*! Coordinate from total span
 */
+template<typename I,int d>
+coordinate<I,d>::coordinate( I i )
+  : coordinate<I,d>( endpoint<I,d>(i) ) {};
+
+/*! Coordinate from environment, using proc count
+*/
+template<typename I,int d>
+coordinate<I,d>::coordinate( const environment& e )
+  : coordinate<I,d>::coordinate(e.nprocs()) {};
+
+//! Make a coordinate identically equal some scalar.
 template<typename I,int d>
 coordinate<I,d>& coordinate<I,d>::set( I s ) {
   for (int id=0; id<d; id++)
@@ -136,6 +147,9 @@ coordinate<I,d>& coordinate<I,d>::set( I s ) {
   return *this;
 };
 
+/*! Coordinate from explicit array.
+  \todo can this go?
+*/
 template<typename I,int d>
 coordinate<I,d>::coordinate( std::array<I,d> c)
   : coordinates( c ) {
@@ -344,30 +358,36 @@ bool coordinate<I,d>::operator>( I other ) const {
  * Linearization
  */
 
-/*! Linear location of this coordinate in a span */
+/*! Linear location of this coordinate in a span
+  \todo fix the ambiguous use of `format'
+ */
 template<typename I,int d>
 I coordinate<I,d>::linear_location_in( const coordinate<I,d>& layout ) const {
   int id=0;
-  if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
-    throw( format("coordinate {} not contained in: {}",as_string(),layout.as_string()) );
+  // if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
+  //   throw( format("coordinate {} not contained in: {}",as_string(),layout.as_string()) );
   int s = coordinates.at(id);
 
   for (int id=1; id<d; id++) {
     auto layout_dim = layout.coordinates[id];
-    if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
-      throw( format("coordinate {} not contained in: {}",as_string(),layout.as_string()) );
+    // if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
+    //   throw( format("coordinate {} not contained in: {}",as_string(),layout.as_string()) );
     s = s*layout_dim + coordinates[id];
   }
   return s;
 };
-/*! Linear location in this span of another coordinate */
+
+/*! Linear location in this span of another coordinate
+  \todo fix the ambiguous use of `format'
+*/
 template<typename I,int d>
 I coordinate<I,d>::linear_location_of( const coordinate<I,d>& inside ) const {
   const auto& outer = *this;
-  for ( int id=0 ; id<d; id++) {
-    if ( inside.coordinates[id]<0 or inside.coordinates[id]>=outer.coordinates[id] )
-      throw( format("coordinate {} not contained in: {}",as_string(),outer.as_string()) );
-  }
+  // for ( int id=0 ; id<d; id++) {
+  //   if ( inside.coordinates[id]<0 or inside.coordinates[id]>=outer.coordinates[id] ) {
+  //     string c_str = as_string(), o_str = outer.as_string();
+  //     throw( format("coordinate {} not contained in: {}",c_str,o_str) ); }
+  // }
   I s = inside.coordinates.at(0);
   for (int id=1; id<d; id++) {
     auto outer_dim = outer.coordinates[id];
