@@ -71,9 +71,6 @@ clean ::
 	@/bin/rm -rf *~ *.o ddt.o* *.dSYM *.ir out *.stf* ddt.o* \
 	  *.{gcov,gcda,gcno} \
 	  unittest.out *.out[0-9]* a.out
-	@for x in *.cxx ; do \
-	  /bin/rm -f $${x%%.cxx} ; \
-	done
 	@for d in *.dot ; do /bin/rm -f $$d $${d%%.dot}.pdf ; done
 
 diagnosis :
