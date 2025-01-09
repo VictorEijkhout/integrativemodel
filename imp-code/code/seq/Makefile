@@ -36,6 +36,14 @@ unittest_main.o : \
     seq_static_vars.h ${IMPCODEDIR}/imp_static_vars.h
 NEW_TESTS = 
 RPATH = ${TACC_CATCH2_LIB} ${TACC_FMTLIB_LIB}
+.PHONY: rpath
+rpath :
+	@if [ ! -z "${RPATH}" ] ; then \
+	      for r in ${RPATH} ; do \
+	          rpath="$$rpath -Wl,-rpath,$${r}" \
+	      ; done \
+	    ; fi \
+	 && echo $${rpath}
 
 #
 # environment
@@ -44,14 +52,9 @@ NEW_TESTS += unittest_env
 ENV_OBJS := seq_env.o ${IMPCODEDIR}/imp_env.o ${IMPCODEDIR}/utils.o
 unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
 	@echo "Linking $@" \
-	 && if [ ! -z "${RPATH}" ] ; then \
-	      for r in ${RPATH} ; do \
-	          rpath="$$rpath -Wl,-rpath,$${r}" \
-	      ; done \
-	    ; fi \
 	 && ${CXX_LINKER} ${CXXFLAGS} -o $@ \
 	    unittest_main.o $@.o ${ENV_OBJS} \
-	    $${rpath} ${TEST_LIBS}
+	    "$$( make --no-print-directory rpath )" ${TEST_LIBS}
 seq_env.o : seq_env.h ${IMPCODEDIR}/imp_env.h
 
 #
@@ -61,14 +64,9 @@ NEW_TESTS += unittest_coord
 COORD_OBJS = ${IMPCODEDIR}/imp_coord.o ${ENV_OBJS}
 unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
 	@echo "Linking $@" \
-	 && if [ ! -z "${RPATH}" ] ; then \
-	      for r in ${RPATH} ; do \
-	          rpath="$$rpath -Wl,-rpath,$${r}" \
-	      ; done \
-	    ; fi \
 	&& ${CXX_LINKER} ${CXXFLAGS} -o $@ \
 	    unittest_main.o $@.o ${COORD_OBJS} \
-	    $${rpath} ${TEST_LIBS}
+	    "$$( make --no-print-directory rpath )" ${TEST_LIBS}
 unittest_coord.o : ${IMPCODEDIR}/imp_coord.h
 
 #
@@ -81,7 +79,7 @@ unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
 	@echo "Linking $@"
 	${CXX_LINKER} ${CXXFLAGS} -o $@ ${SEQFLAGS} \
 	    unittest_main.o $@.o ${DECOMP_OBJS} \
-	    ${TEST_LIBS}
+	    "$$( make --no-print-directory rpath )" ${TEST_LIBS}
 unittest_decomp.o seq_decomp.o : seq_decomp.h ${IMPCODEDIR}/imp_decomp.h
 
 #
