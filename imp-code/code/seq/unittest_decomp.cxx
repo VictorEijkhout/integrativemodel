@@ -3,10 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2023
- ****
- **** Unit tests for the SEQ product backend of IMP
- **** based on the CATCH framework (https://github.com/philsquared/Catch)
+ **** copyright Victor Eijkhout 2014-2025
  ****
  **** unit tests for SEQ decompositions
  ****
