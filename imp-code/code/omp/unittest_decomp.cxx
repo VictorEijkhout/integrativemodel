@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2023
+ **** copyright Victor Eijkhout 2014-2025
  ****
  **** Unit tests for the OMP product backend of IMP
  **** based on the CATCH framework (https://github.com/philsquared/Catch)
@@ -20,6 +20,7 @@
 #include "omp_env.h"
 #include "omp_decomp.h"
 
+#include <format>
 using fmt::format, fmt::print;
 using std::array, std::vector;
 
@@ -50,7 +51,7 @@ TEST_CASE( "decompositions","[omp][decomposition][01]" ) {
     int count = 0;
     for ( auto dom : decomp ) {
       int lindom; REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
-      INFO( format("domain {} = {}",count,dom.as_string()) );      
+      INFO( std::format("domain {} = {}",count,dom.as_string()) );
       INFO( "is linearly: " << lindom ); CHECK( lindom==count );
       count++;
     }
@@ -64,7 +65,7 @@ TEST_CASE( "decompositions","[omp][decomposition][01]" ) {
     int count = 0;
     for ( auto dom : decomp ) {
       int lindom; REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
-      INFO( format("domain {} = {}",count,dom.as_string()) );      
+      INFO( std::format("domain {} = {}",count,dom.as_string()) );      
       INFO( "is linearly: " << lindom ); CHECK( lindom==count );
       count++;
     }
@@ -78,7 +79,7 @@ TEST_CASE( "decompositions","[omp][decomposition][01]" ) {
     int count = 0;
     for ( auto dom : decomp ) {
       int lindom; REQUIRE_NOTHROW( lindom = decomp.linear_location_of(dom) );
-      INFO( format("domain {} = {}",count,dom.as_string()) );      
+      INFO( std::format("domain {} = {}",count,dom.as_string()) );      
       INFO( "is linearly: " << lindom ); CHECK( lindom==count );
       count++;
     }

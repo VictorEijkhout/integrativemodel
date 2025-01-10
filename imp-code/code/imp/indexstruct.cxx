@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2023
+ **** copyright Victor Eijkhout 2014-2025
  ****
  **** indexstruct and ioperator package implementation
  ****
@@ -15,14 +15,17 @@
 #include <sstream>
 using std::cout, std::stringstream;
 
-#include "fmt/format.h"
-using fmt::format, fmt::print,fmt::memory_buffer, fmt::format_to, fmt::to_string;
+#include <format>
+using std::format, std::format_to, std::formatter;
 
+#include <memory>
 using std::function;
 using std::move;
 using std::make_shared, std::shared_ptr;
 
+#include <string>
 using std::string;
+#include <vector>
 using std::vector;
 
 #include <tuple>
@@ -58,7 +61,7 @@ int indexstruct<I,d>::type_as_int() const {
 template<typename I,int d>
 void indexstruct<I,d>::report_unimplemented( string s ) const {
   string e =
-    fmt::format("Trying to use undefined query <<{}>> for type {}",
+    format("Trying to use undefined query <<{}>> for type {}",
 		s,type_as_string());
   cout << e+"\n";
   throw(e);
@@ -83,7 +86,7 @@ void indexstruct<I,d>::add_in_element( coordinate<I,d> idx ) {
 
 template<typename I,int d>
 bool indexstruct<I,d>::equals( const std::shared_ptr<indexstruct<I,d>>& idx ) const {
-  throw(fmt::format("Equals not implemented for <<{}>> and <<{}>>",
+  throw(format("Equals not implemented for <<{}>> and <<{}>>",
 		    type_as_string(),idx->type_as_string()));
 };
 
@@ -179,21 +182,21 @@ void empty_indexstruct<I,d>::add_in_element( coordinate<I,d> idx ) {
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> empty_indexstruct<I,d>::struct_union
         ( shared_ptr<indexstruct<I,d>> idx,bool trace ) {
-  if (trace) print("union empty returns other\n");
+  if (trace) cout << format("union empty returns other\n");
   return idx;
 };
 
 template<typename I,int d>
 std::string contiguous_indexstruct<I,d>::as_string() const {
   if (d==1)
-    return fmt::format("contiguous: [{}--{}]",this->first[0],this->last[0]);
+    return format("contiguous: [{}--{}]",this->first[0],this->last[0]);
   else if (d==2)
-    return fmt::format("contiguous: [{}--{}] x [{}--{}]",
+    return format("contiguous: [{}--{}] x [{}--{}]",
 		       this->first[0],this->last[0],
 		       this->first[1],this->last[1]
 		       );
   else
-    return fmt::format("contiguous {}D: [{}--{}]",
+    return format("contiguous {}D: [{}--{}]",
 		       d,this->first[0],this->last[0]);
 };
 
@@ -314,7 +317,7 @@ coordinate<I,d> strided_indexstruct<I,d>::location_of( const coordinate<I,d>& id
 template<typename I,int d>
 coordinate<I,d> strided_indexstruct<I,d>::get_ith_element( const I i ) const {
   if (i<0 || i>=volume())
-    throw(fmt::format("Index {} out of range for {}",i,as_string()));
+    throw(format("Index {} out of range for {}",i,as_string()));
   return first+stride_amount*i;
 };
 
@@ -371,7 +374,7 @@ bool strided_indexstruct<I,d>::contains( const shared_ptr<const indexstruct<I,d>
 
 template<typename I,int d>
 std::string strided_indexstruct<I,d>::as_string() const {
-  return fmt::format("strided: [{}-by{}--{}]",
+  return format("strided: [{}-by{}--{}]",
 		     first.as_string(),stride_amount.as_string(),last.as_string());
 };
 
@@ -392,7 +395,7 @@ bool strided_indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
       if (stride()==idx->stride())
 	return first_index()%stride()!=idx->first_index()%stride();
       else
-	throw(fmt::format("unimplemented disjoint for different strides"));
+	throw(format("unimplemented disjoint for different strides"));
     }
     // disjoint from indexed
     indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
@@ -403,7 +406,7 @@ bool strided_indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
       }
     }
     // other cases not covered yet
-    throw(fmt::format("unimplemented disjoint: strided & {}",idx->type_as_string()));
+    throw(format("unimplemented disjoint: strided & {}",idx->type_as_string()));
   }
 };
 
@@ -443,7 +446,7 @@ bool strided_indexstruct<I,d>::has_intersect( const shared_ptr<const indexstruct
   if (indexed!=nullptr) { // strided & indexed
     return indexed->has_intersect(this->shared_from_this());
   }
-  throw(fmt::format("Unimplemented has_intersect <<{}>> and <<{}>>",
+  throw(format("Unimplemented has_intersect <<{}>> and <<{}>>",
 		    this->as_string(),idx->as_string()));
 };
 
@@ -513,7 +516,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::intersect
     return composite->intersect(this->shared_from_this());
   }
 
-  throw(fmt::format("Unimplemented intersect <<{}>> and <<{}>>",
+  throw(format("Unimplemented intersect <<{}>> and <<{}>>",
 		    this->as_string(),idx->as_string()));
 };
 
@@ -624,7 +627,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::minus
       this_index = this->convert_to_indexed();
     indexed_indexstruct<I,d>* test_index = dynamic_cast<indexed_indexstruct<I,d>*>(this_index.get());
     if (test_index==nullptr) // remove this test after a while
-      throw(fmt::format("failed conversion of <<{}>> to indexed",this->as_string()));
+      throw(format("failed conversion of <<{}>> to indexed",this->as_string()));
     return this_index->minus(idx); //(shared_ptr<indexstruct<I,d>>(indexed));
   }
 
@@ -640,7 +643,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::minus
     return rstruct;
   }
 
-  throw(fmt::format("Unimplemented stride minus {}",idx->type_as_string()));
+  throw(format("Unimplemented stride minus {}",idx->type_as_string()));
 };
 
 //snippet stridedrelativize
@@ -648,10 +651,10 @@ template<typename I,int d>
 shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::relativize_to
     ( shared_ptr<indexstruct<I,d>> idx,bool trace ) {
   if (trace)
-    print("attempt to relativize {} to {}\n",this->as_string(),idx->as_string());
+    cout << format("attempt to relativize {} to {}\n",this->as_string(),idx->as_string());
   if (!idx->contains(this->shared_from_this())) {
-    if (trace) print("Not contained; throwing\n");
-    throw(fmt::format("Need containment for relativize {} to {}",
+    if (trace) cout << format("Not contained; throwing\n");
+    throw(format("Need containment for relativize {} to {}",
                       this->as_string(),idx->as_string()));
   }
   if (volume()==1)
@@ -714,7 +717,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::relativize_to
     return rel;
   }
 
-  print("Unimplemented or invalid strided relativize to {}",idx->type_as_string());
+  cout << format("Unimplemented or invalid strided relativize to {}",idx->type_as_string());
   throw(format("Unimplemented or invalid strided relativize to {}",idx->type_as_string()));
 };
 //snippet
@@ -734,10 +737,10 @@ template<typename I,int d>
 shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
         ( shared_ptr<indexstruct<I,d>> idx,bool trace ) {
   if (contains(idx)) {
-    if (trace) print("union with already contained struct\n");
+    if (trace) cout << format("union with already contained struct\n");
     return this->shared_from_this();
   } else if (idx->contains(this->shared_from_this())) {
-    if (trace) print("union with containing struct\n");
+    if (trace) cout << format("union with containing struct\n");
     return idx;
   }
   
@@ -746,7 +749,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
    */
   strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) {
-    if (trace) print("union strided+strided\n");
+    if (trace) cout << format("union strided+strided\n");
     const auto& amt = idx->stride();
     const auto& frst = idx->first_index();
     const auto& lst = idx->last_index();
@@ -777,21 +780,21 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
    */
   indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) {
-    if (trace) print("union strided+indexed\n");
+    if (trace) cout << format("union strided+indexed\n");
     auto extstrided = this->make_clone();
     for (auto v : *indexed) {
       if (extstrided->contains_element(v)) {
-	if (trace) print("already contains element: {}\n",v.as_string()); // formatter broken
+	if (trace) cout << format("already contains element: {}\n",v.as_string()); // formatter broken
 	continue;
       } else if (extstrided->can_incorporate(v)) {
-	if (trace) print("can extend with element: {}\n",v.as_string()); // formatter broken
+	if (trace) cout << format("can extend with element: {}\n",v.as_string()); // formatter broken
 	extstrided = extstrided->add_element(v);
       } else { // an indexed struct can incorporate arbitrary crap
-	if (trace) print("can not incorporate: return as indexed\n");
+	if (trace) cout << format("can not incorporate: return as indexed\n");
 	auto indexplus = indexed->struct_union(this->shared_from_this());
-	if (trace) print("reverse incorporation as indexed: {}\n",indexplus->as_string());
+	if (trace) cout << format("reverse incorporation as indexed: {}\n",indexplus->as_string());
 	indexplus = indexplus->force_simplify(trace);
-	if (trace) print("force simplify: {}\n",indexplus->as_string());
+	if (trace) cout << format("force simplify: {}\n",indexplus->as_string());
 	return indexplus;
       }
     }
@@ -803,11 +806,11 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::struct_union
    */
   composite_indexstruct<I,d>* composite = dynamic_cast<composite_indexstruct<I,d>*>(idx.get());
   if (composite!=nullptr) {
-    if (trace) print("union strided+composite\n");
+    if (trace) cout << format("union strided+composite\n");
     return idx->struct_union(this->shared_from_this());
   }
 
-  throw(fmt::format("Unimplemented union: {} & {}",
+  throw(format("Unimplemented union: {} & {}",
 		    type_as_string(),idx->type_as_string()));
 };
 
@@ -826,7 +829,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::split
     s1 = shared_ptr<indexstruct<I,d>>(make_shared<contiguous_indexstruct<I,d>>(f,ll));
     s2 = shared_ptr<indexstruct<I,d>>(make_shared<contiguous_indexstruct<I,d>>(ll+1,l));
   } else
-    throw(fmt::format("Needs to contain split points"));
+    throw(format("Needs to contain split points"));
   res->push_back( intersect(s1) );
   res->push_back( intersect(s2) );
   return res;
@@ -930,7 +933,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::make_strided(bool trace) 
 
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify(bool trace) const {
-  print( "force simplify {}\n",this->as_string());
+  cout << format( "force simplify {}\n",this->as_string());
   try {
     if (false) {
     } else if (this->volume()==0) {
@@ -943,7 +946,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify(bool trace
     } else {
       auto ret = make_strided(trace);
       if (ret!=nullptr) {
-	if (trace) print("simplify to strided\n");
+	if (trace) cout << format("simplify to strided\n");
 	return ret;
       } else {
 	if (d>1) throw( "force case only for d==1" );
@@ -983,19 +986,19 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify(bool trace
 		auto right_part = this->minus
 		  ( shared_ptr<indexstruct<I,d>>(make_shared<contiguous_indexstruct<I,d>>(first,right)) );
 		right_part = right_part->force_simplify();
-		//print("composing with right: {}\n",right_part->as_string());
+		//cout << format("composing with right: {}\n",right_part->as_string());
 		if (right_part->is_composite()) {
 		  composite_indexstruct<I,d>* new_right =
 		    dynamic_cast<composite_indexstruct<I,d>*>(right_part.get());
 		  if (new_right==nullptr)
-		    throw(fmt::format("could not upcast supposed composite (indexed simplify)"));
+		    throw(format("could not upcast supposed composite (indexed simplify)"));
 		  for ( auto ir : new_right->get_structs() )
 		    comp->push_back(ir);
 		} else
 		  comp->push_back(right_part);
-		//print(" .. gives {}\n",comp->as_string());
+		//cout << format(" .. gives {}\n",comp->as_string());
 	      }
-	      //print("composed as {}\n",comp->as_string());
+	      //cout << format("composed as {}\n",comp->as_string());
 	      return comp;
 	    }
 	  }
@@ -1004,7 +1007,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::force_simplify(bool trace
 	return this->make_clone();
       }
     }
-  } catch (string e) { print("Error: {}",e);
+  } catch (string e) { cout << format("Error: {}",e);
     throw("Could not simplify indexed indexstruct");
   } catch( ... ) {
     throw("Could not simplify indexed indexstruct");
@@ -1017,7 +1020,7 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &s
   auto first = get_ith_element(ileft), last = get_ith_element(iright);
   I n_index = iright-ileft+1;
   if (n_index==1)
-    throw(fmt::format("Single point should have been caught"));
+    throw(format("Single point should have been caught"));
 
   // if this is strided, what would the stride be?
   auto stride_vector = (last-first)/(n_index-1);
@@ -1028,10 +1031,10 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &s
     return false;
 
   // let's see if the bounds are proper for the stride
-  if (trace) print("first={}, last={}, does that fit {} x stride {}\n",
+  if (trace) cout << format("first={}, last={}, does that fit {} x stride {}\n",
 		   first[0],last[0],n_index-1,stride);
   if ( not ( first+(n_index-1)*stride==last) ) {
-    if (trace) print("stride does not fit\n");
+    if (trace) cout << format("stride does not fit\n");
     return false;
   }
 
@@ -1040,7 +1043,7 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &s
     auto elt = get_ith_element(inext);
     auto inplace = (elt-first)%stride;
     if (trace)
-      print("element {}: {} has modulo: {}\n",
+      cout << format("element {}: {} has modulo: {}\n",
 	    inext,elt.as_string(),inplace.as_string());  // formatter broken
     if ( not ( inplace==0 ) ) // coordinate<I,d>(0) ) )
       // strange. why doesn't the != operator work here?
@@ -1052,7 +1055,7 @@ bool indexed_indexstruct<I,d>::is_strided_between_indices( I ileft,I iright,I &s
 template<typename I,int d>
 coordinate<I,d> indexed_indexstruct<I,d>::get_ith_element( const I i ) const {
   if (i<0 || i>=this->volume())
-    throw(fmt::format("Index {} out of range for {}",i,as_string()));
+    throw(format("Index {} out of range for {}",i,as_string()));
   return indices[i];
 };
 
@@ -1128,7 +1131,7 @@ bool indexed_indexstruct<I,d>::contains( const shared_ptr<const indexstruct<I,d>
     return true;
   }
   
-  throw(fmt::format("indexed contains case not implemented: {}",idx->type_as_string()));
+  throw(format("indexed contains case not implemented: {}",idx->type_as_string()));
 };
 
 //! \todo weird clone because of a const problem.
@@ -1194,7 +1197,7 @@ bool indexed_indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
     if (strided!=nullptr) {
       return strided->disjoint(this->shared_from_this());
     } else 
-      throw(fmt::format("unimplemented disjoint: indexed & {}",idx->type_as_string()));
+      throw(format("unimplemented disjoint: indexed & {}",idx->type_as_string()));
   }
 };
 
@@ -1233,7 +1236,7 @@ template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::relativize_to
     ( shared_ptr<indexstruct<I,d>> idx,bool trace ) {
   if (!idx->contains(this->shared_from_this()))
-    throw(fmt::format("Need containment for relativize {} to {}",
+    throw(format("Need containment for relativize {} to {}",
 		      this->as_string(),idx->as_string()));
 
   /*
@@ -1269,17 +1272,17 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::relativize_to
     return relative;
   }
   
-  throw(fmt::format("Unimplemented indexed relativize to {}",idx->type_as_string()));
+  throw(format("Unimplemented indexed relativize to {}",idx->type_as_string()));
 };
 
 template<typename I,int d>
 string indexed_indexstruct<I,d>::as_string() const {
-  memory_buffer w;
+  string  w;
   format_to(std::back_inserter(w),"[");
   for ( const auto& i : indices )
     format_to(std::back_inserter(w),"{}",i.as_string());  // formatter broken
   format_to(std::back_inserter(w),"]");
-  return to_string(w);
+  return w;
 };
 
 //! \todo can we lose that clone?
@@ -1287,10 +1290,10 @@ template<typename I,int d>
 shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::struct_union
         ( shared_ptr<indexstruct<I,d>> idx,bool trace ) {
   if (contains(idx)) {
-    if (trace) print("union with already contained struct\n");
+    if (trace) cout << format("union with already contained struct\n");
     return this->make_clone();
   } else if (idx->contains(this->shared_from_this())) {
-    if (trace) print("union with containing struct\n");
+    if (trace) cout << format("union with containing struct\n");
     return idx->make_clone();
   }
 
@@ -1299,7 +1302,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::struct_union
    */
   strided_indexstruct<I,d>* strided = dynamic_cast<strided_indexstruct<I,d>*>(idx.get());
   if (strided!=nullptr) {
-    if (trace) print("union indexed+strided\n");
+    if (trace) cout << format("union indexed+strided\n");
     if (strided->volume()<SMALLBLOCKSIZE) {
       auto indexed = this->make_clone();
       const auto& s = strided->stride();
@@ -1318,7 +1321,7 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::struct_union
    */
   indexed_indexstruct<I,d>* indexed = dynamic_cast<indexed_indexstruct<I,d>*>(idx.get());
   if (indexed!=nullptr) {
-    if (trace) print("union indexed+indexed\n");
+    if (trace) cout << format("union indexed+indexed\n");
     auto merged = indexed->make_clone();
     for (auto v : indices)
       merged = merged->add_element(v);
@@ -1330,11 +1333,11 @@ shared_ptr<indexstruct<I,d>> indexed_indexstruct<I,d>::struct_union
    */
   composite_indexstruct<I,d>* composite = dynamic_cast<composite_indexstruct<I,d>*>(idx.get());
   if (composite!=nullptr) {
-    if (trace) print("union indexed+composite\n");
+    if (trace) cout << format("union indexed+composite\n");
     return idx->struct_union(this->shared_from_this());
   }
 
-  throw(fmt::format("Unimplemented union: {} & {}",
+  throw(format("Unimplemented union: {} & {}",
 		    type_as_string(),idx->type_as_string()));
 };
 
@@ -1351,7 +1354,7 @@ void composite_indexstruct<I,d>::push_back( shared_ptr<indexstruct<I,d>> idx ) {
   if (structs.size()==0)
     structs.push_back(idx);
   else {
-    //print("{} push {}\n",this->as_string(),idx->as_string());
+    //cout << format("{} push {}\n",this->as_string(),idx->as_string());
     auto s=structs.end(); bool last{true};
     while (s!=structs.begin()) {
       --s;
@@ -1365,7 +1368,7 @@ void composite_indexstruct<I,d>::push_back( shared_ptr<indexstruct<I,d>> idx ) {
 	break;
       }
     }
-    //print("... pushed {}\n",this->as_string());
+    //cout << format("... pushed {}\n",this->as_string());
   }
 };
 
@@ -1413,7 +1416,7 @@ I composite_indexstruct<I,d>::volume() const {
 template<typename I,int d>
 coordinate<I,d> composite_indexstruct<I,d>::get_ith_element( const I i ) const {
   if (i>=volume())
-    throw(fmt::format("Requested index {} out of bounds for {}",i,as_string()));
+    throw(format("Requested index {} out of bounds for {}",i,as_string()));
   if (structs.size()==1)
     return structs.at(0)->get_ith_element(i);
   I ilocal = i;
@@ -1424,7 +1427,7 @@ coordinate<I,d> composite_indexstruct<I,d>::get_ith_element( const I i ) const {
     else {
       auto sf = s->first_index();
       if (sf<start_check)
-	print("WARNING composite not in increasing order: {}\n",as_string());
+	cout << format("WARNING composite not in increasing order: {}\n",as_string());
       start_check = sf;
     }
     if (ilocal>=s->volume())
@@ -1432,7 +1435,7 @@ coordinate<I,d> composite_indexstruct<I,d>::get_ith_element( const I i ) const {
     else
       return s->get_ith_element(ilocal);
   }
-  throw(fmt::format("still need to count down {} for ith element {} in composite {}",
+  throw(format("still need to count down {} for ith element {} in composite {}",
 		    ilocal,i,as_string()));
 };
 
@@ -1484,7 +1487,7 @@ bool composite_indexstruct<I,d>::contains( const shared_ptr<const indexstruct<I,
     return true;;
   }
 
-  throw(fmt::format("Unimplemented case: composite contains {}",idx->type_as_string()));
+  throw(format("Unimplemented case: composite contains {}",idx->type_as_string()));
 };
 
 template<typename I,int d>
@@ -1504,7 +1507,7 @@ I composite_indexstruct<I,d>::linear_location_of( const coordinate<I,d>& idx ) c
   I accumulate{0};
   for ( auto s : structs ) {
     if (s->first_index()<first)
-      throw(fmt::format("Composite not sorted: {}",as_string()));
+      throw(format("Composite not sorted: {}",as_string()));
     first = structs[0]->first_index();
     if (s->contains_element(idx)) {
       return accumulate+s->linear_location_of(idx);
@@ -1521,7 +1524,7 @@ bool composite_indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
   if (range_disjoint==true)
     return true;
   else {
-    throw(fmt::format("unimplemented disjoint: composite & {}",idx->type_as_string()));
+    throw(format("unimplemented disjoint: composite & {}",idx->type_as_string()));
   }
 };
 
@@ -1533,27 +1536,27 @@ bool composite_indexstruct<I,d>::disjoint( shared_ptr<indexstruct<I,d>> idx ) {
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::struct_union
         ( shared_ptr<indexstruct<I,d>> idx,bool trace) {
-  //print("composite union {} + {}\n",as_string(),idx->as_string());
+  //cout << format("composite union {} + {}\n",as_string(),idx->as_string());
 
   // already contained: return
   for (auto s : structs)
     if (s->contains(idx)) {
-      if (trace) print("union composite and already contained\n");
+      if (trace) cout << format("union composite and already contained\n");
       return this->make_clone();
     }
 
   // empty: should use push_back to add first member
   if (structs.size()==0) {
-    throw(fmt::format("Should use push_back to insert first member in composite, not union"));
+    throw(format("Should use push_back to insert first member in composite, not union"));
   }
 
   // try to merge with existing struct of same type
   {
-    //print("  try to merge\n");
+    //cout << format("  try to merge\n");
     bool can{false};
     for (auto s : structs) {
       if (s->can_merge_with_type(idx)) {
-	//print("  can merge with {}\n",s->as_string());
+	//cout << format("  can merge with {}\n",s->as_string());
 	can = true;
       }
     }
@@ -1561,14 +1564,14 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::struct_union
       auto composite = shared_ptr<composite_indexstruct>( make_shared<composite_indexstruct<I,d>>() );
       for (auto s : structs) {
 	if (s->is_composite())
-	  throw(fmt::format
+	  throw(format
 		("How did a composite {} wind up in {}",s->as_string(),this->as_string()));
 	if (s->can_merge_with_type(idx)) {
 	  auto extend =  s->struct_union(idx);
-	  // print("  merged with component {} giving {}\n",
+	  // cout << format("  merged with component {} giving {}\n",
 	  // 	     s->as_string(),extend->as_string());
 	  if (extend->is_composite())
-	    throw(fmt::format("Illegal merge {} into {}",idx->as_string(),s->as_string()));
+	    throw(format("Illegal merge {} into {}",idx->as_string(),s->as_string()));
 	  composite->push_back(extend);
 	} else {
 	  composite->push_back(s->make_clone());
@@ -1580,7 +1583,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::struct_union
 
   // try to merge with existing indexed
   if (idx->volume()==1) {
-    //print("  merge single point {}\n",idx->as_string());
+    //cout << format("  merge single point {}\n",idx->as_string());
     bool was_merged{false};
     auto composite = shared_ptr<composite_indexstruct>( make_shared<composite_indexstruct<I,d>>() );
     for (auto s : structs) {
@@ -1600,7 +1603,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::struct_union
   // merge in: weed out both existing members and the new contribution
   {
     auto composite = shared_ptr<composite_indexstruct>( make_shared<composite_indexstruct<I,d>>() );
-    //print("  weeding out and add_ing\n");
+    //cout << format("  weeding out and add_ing\n");
     for (auto s : structs) {
       auto new_s = s->minus(idx);
       if (new_s->is_empty())
@@ -1608,7 +1611,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::struct_union
       if (new_s->is_composite()) {
 	auto s_comp = dynamic_cast<composite_indexstruct<I,d>*>(new_s.get());
 	if (s_comp==nullptr)
-	  throw(fmt::format("could not upcast new_s"));
+	  throw(format("could not upcast new_s"));
 	for ( auto ss : s_comp->get_structs() )
 	  composite->push_back(ss);
       } else
@@ -1650,7 +1653,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::minus
       if (new_one->is_composite()) {
 	composite_indexstruct<I,d>* new_comp = dynamic_cast<composite_indexstruct<I,d>*>(new_one.get());
       if (new_comp==nullptr)
-	throw(fmt::format("could not upcast supposed composite (minus)"));
+	throw(format("could not upcast supposed composite (minus)"));
 	for ( auto s : new_comp->get_structs() )
 	  rstruct->push_back(s);
       } else
@@ -1668,7 +1671,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::relativize_to
     try {
       rel = rel->struct_union( s->relativize_to(idx) );
     } catch (std::string c) {
-      throw(fmt::format("Composite relativive: {}",c));
+      throw(format("Composite relativive: {}",c));
     }
   }
   return rel;
@@ -1733,14 +1736,14 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::force_simplify(bool tra
 	if (indexed->is_composite()) {
 	  composite_indexstruct<I,d>* icomp = dynamic_cast<composite_indexstruct<I,d>*>(indexed.get());
 	  if (icomp==nullptr)
-	    throw(fmt::format("could not upcast supposed composite (composite simplify)"));
+	    throw(format("could not upcast supposed composite (composite simplify)"));
 	  for ( auto is : icomp->get_structs() )
 	    composite->push_back(is);
 	} else
 	  composite->push_back(indexed);
 	return composite->force_simplify();
       } else if (nind==1) { // see if outer elements can be merged in
-	//print("{} has 1 indexed\n",as_string());
+	//cout << format("{} has 1 indexed\n",as_string());
 	auto indexed = structs.at(an_ind); bool can_merge{false};
 	for (int is=0; is<ns; is++) {
 	  if (is!=an_ind) {
@@ -1750,7 +1753,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::force_simplify(bool tra
 	      can_merge = structs.at(is)->can_incorporate(i);
 	      if (can_merge) goto do_merge;
 	    }
-	    // print("test incorporation {},{} in {}: {},{}\n",
+	    // cout << format("test incorporation {},{} in {}: {},{}\n",
 	    // 	     left,right,istruct->as_string(),can_left,can_right);
 	  }
 	}
@@ -1769,7 +1772,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::force_simplify(bool tra
 	      } else ii++;
 	      if (ii>=indexed->volume()) break;
 	    }
-	    //print("push {}\n",istruct->as_string());
+	    //cout << format("push {}\n",istruct->as_string());
 	    composite->push_back(istruct);
 	  }
 	  composite->push_back(indexed);
@@ -1842,7 +1845,7 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::force_simplify(bool tra
 
     // default return self
     return this->make_clone(); //shared_from_this();
-  } catch (string e) { print("Error: {}",e);
+  } catch (string e) { cout << format("Error: {}",e);
     throw("Could not simplify composite indexstruct");
   } catch( ... ) {
     throw("Could not simplify composite indexstruct");
@@ -1904,14 +1907,14 @@ shared_ptr<indexstruct<I,d>> composite_indexstruct<I,d>::convert_to_indexed() co
 
 template<typename I,int d>
 std::string composite_indexstruct<I,d>::as_string() const {
-  fmt::memory_buffer w;
-  format_to(w.end(),"composite ({} members):",structs.size());
+  std::string w;
+  format_to(std::back_inserter(w),"composite ({} members):",structs.size());
   //for (auto s : structs)
   for (int is=0; is<structs.size(); is++) {
     auto s = structs.at(is);
     format_to(w.end()," {}",s->as_string());
   }
-  return to_string(w);
+  return w;
 };
 
 /****
@@ -1936,8 +1939,8 @@ void indexstructure<I,d>::push_back( indexstructure<I,d> idx ) {
   if (comp!=nullptr) {
     comp->push_back( idx.strct );
   } else {
-    print("Not composite; cannot push back\n");
-    throw(fmt::format("Can not push into non-multi structure"));
+    cout << format("Not composite; cannot push back\n");
+    throw(format("Can not push into non-multi structure"));
   }
 };
 
@@ -1948,8 +1951,8 @@ const vector<shared_ptr<indexstruct<I,d>>> indexstructure<I,d>::get_structs() co
   if (comp!=nullptr) {
     return comp->get_structs();
   } else {
-    print("Not composite; cannot get structs\n");
-    throw(fmt::format("Can not get structs from non-multi structure"));
+    cout << format("Not composite; cannot get structs\n");
+    throw(format("Can not get structs from non-multi structure"));
   }
 };
 
@@ -1997,7 +2000,7 @@ ioperator<I,d>::ioperator( string op ) {
   } else if (op[0]==':') {
     type = iop_type::CONTDIV;
   } else {
-    print("unparsable iop\n");
+    cout << format("unparsable iop\n");
     throw(string("Can not parse operator"));
   }
   if (type==iop_type::MULT || type==iop_type::DIV || type==iop_type::CONTDIV)
@@ -2050,16 +2053,16 @@ string ioperator<I,d>::as_string() const {
     return std::string("Id");
   else if (is_shift_op()) {
     if (by>=0)
-      return fmt::format("+{}",by.as_string());
+      return format("+{}",by.as_string());
     else
-      return fmt::format("-{}",by.as_string());
+      return format("-{}",by.as_string());
   } else if (is_mult_op()) {
     if (is_base_op())
-      return fmt::format("x{}",by.as_string());
+      return format("x{}",by.as_string());
     else
-      return fmt::format("*{}",by.as_string());
+      return format("*{}",by.as_string());
   } else if (is_div_op() || is_contdiv_op())
-    return fmt::format("/{}",by.as_string());
+    return format("/{}",by.as_string());
   else if (is_function_op())
     return std::string("func");
   else
@@ -2156,7 +2159,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
       operated = shared_ptr<indexstruct<I,d>>
 	{ make_shared<strided_indexstruct<I,d>>(f,l,stride()) };
   } else if (op.is_mult_op() || op.is_div_op() || op.is_contdiv_op()) {
-    if (trace) print("mult type op");
+    if (trace) cout << format("mult type op");
     coordinate<I,d>
       new_first  = op.operate(first_index()),
       new_last;
@@ -2172,7 +2175,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
     else {
       new_last = op.operate(last_actual_index());
       if (trace)
-	print(", mult last={} gives {}",
+	cout << format(", mult last={} gives {}",
 	      last_actual_index().as_string(),new_last.as_string()); // formatter broken
     }
     if (new_stride==1)
@@ -2192,7 +2195,7 @@ shared_ptr<indexstruct<I,d>> strided_indexstruct<I,d>::operate( const ioperator<
   } else throw(std::string("Can not operate contiguous/strided struct"));
   if (operated==nullptr)
     throw(std::string("Strided indexstruct operate: missing case"));
-  if (trace) print("\n");
+  if (trace) cout << format("\n");
   return operated;
 };
 
@@ -2253,7 +2256,7 @@ shared_ptr<indexstruct<I,d>> sigma_operator<I,d>::operate( coordinate<I,d> i) co
 };
 
 /*! \todo find occurrences of the lambda_i case. can they be done by storing an ioperator?
-  \todo print("sigma by point operator is dangerous\n");
+  \todo cout << format("sigma by point operator is dangerous\n");
 */
 template<typename I,int d>
 shared_ptr<indexstruct<I,d>> sigma_operator<I,d>::operate( shared_ptr<indexstruct<I,d>> i) const {
@@ -2261,7 +2264,7 @@ shared_ptr<indexstruct<I,d>> sigma_operator<I,d>::operate( shared_ptr<indexstruc
     try {
       return sfunc(*i);
     } catch (std::string c) {
-      throw(fmt::format("Error <<{}>> applying structure sigma",c));
+      throw(format("Error <<{}>> applying structure sigma",c));
     };
   } else if (lambda_p) {
     return shared_ptr<indexstruct<I,d>>
@@ -2269,7 +2272,7 @@ shared_ptr<indexstruct<I,d>> sigma_operator<I,d>::operate( shared_ptr<indexstruc
 	( point_func.operate(i->first_index()),
 	  point_func.operate(i->last_actual_index()) ) };
   } else if (lambda_i) {
-    //print("sigma by point operator is dangerous\n");
+    //cout << format("sigma by point operator is dangerous\n");
     return shared_ptr<indexstruct<I,d>>
       { make_shared<contiguous_indexstruct<I,d>>
 	( func(i->first_index())->first_index(),
@@ -2281,19 +2284,19 @@ shared_ptr<indexstruct<I,d>> sigma_operator<I,d>::operate( shared_ptr<indexstruc
 
 template<typename I,int d>
 string sigma_operator<I,d>::as_string() const {
-  memory_buffer w;
-  format_to(w.end(),"Sigma operator");
+  string w;
+  format_to(std::back_inserter(w),"Sigma operator");
   if (is_point_operator())
     format_to(w.end()," from ioperator \"{}\"",point_func.as_string());
-  return to_string(w);
+  return w;
 };
 
-template struct fmt::formatter<shared_ptr<indexstruct<int,1>>>;
-template struct fmt::formatter<shared_ptr<indexstruct<index_int,1>>>;
-template struct fmt::formatter<shared_ptr<indexstruct<int,2>>>;
-template struct fmt::formatter<shared_ptr<indexstruct<index_int,2>>>;
-template struct fmt::formatter<shared_ptr<indexstruct<int,3>>>;
-template struct fmt::formatter<shared_ptr<indexstruct<index_int,3>>>;
+template struct formatter<shared_ptr<indexstruct<int,1>>>;
+template struct formatter<shared_ptr<indexstruct<index_int,1>>>;
+template struct formatter<shared_ptr<indexstruct<int,2>>>;
+template struct formatter<shared_ptr<indexstruct<index_int,2>>>;
+template struct formatter<shared_ptr<indexstruct<int,3>>>;
+template struct formatter<shared_ptr<indexstruct<index_int,3>>>;
 
 template class contiguous_indexstruct<int,1>;
 template class contiguous_indexstruct<index_int,1>;

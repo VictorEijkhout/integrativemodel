@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2023
+ **** copyright Victor Eijkhout 2014-2025
  ****
  **** omp_decomp.cxx: Implementations of the OMP decompositions classes
  ****
@@ -26,8 +26,8 @@ omp_decomposition<d>::omp_decomposition
     ( const coordinate<int,d> &grid )
       : decomposition<d>(grid) {
   for ( int procid=0; procid<grid.span(); procid++ ) {
-    decomposition<d>::local_procs.push_back
-      ( decomposition<d>::domain_layout().location_of_linear(procid) );
+    decomposition<d>::_local_procs.push_back
+      ( grid.location_of_linear(procid) );
   }
 };
 

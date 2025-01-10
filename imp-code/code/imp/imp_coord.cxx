@@ -27,8 +27,7 @@ using std::max;
 using std::shared_ptr, std::make_shared;
 
 #include <cassert>
-#include <fmt/format.h>
-using fmt::print,fmt::format;
+#include <format>
 
 /*
  * Couple of free functions
@@ -364,14 +363,14 @@ bool coordinate<I,d>::operator>( I other ) const {
 template<typename I,int d>
 I coordinate<I,d>::linear_location_in( const coordinate<I,d>& layout ) const {
   int id=0;
-  // if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
-  //   throw( format("coordinate {} not contained in: {}",as_string(),layout.as_string()) );
+  if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
+    throw( std::format("coordinate {} not contained in: {}",as_string(),layout.as_string()) );
   int s = coordinates.at(id);
 
   for (int id=1; id<d; id++) {
     auto layout_dim = layout.coordinates[id];
-    // if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
-    //   throw( format("coordinate {} not contained in: {}",as_string(),layout.as_string()) );
+    if ( coordinates[id]<0 or coordinates[id]>=layout.coordinates[id] )
+      throw( std::format("coordinate {} not contained in: {}",as_string(),layout.as_string()) );
     s = s*layout_dim + coordinates[id];
   }
   return s;
@@ -386,7 +385,7 @@ I coordinate<I,d>::linear_location_of( const coordinate<I,d>& inside ) const {
   // for ( int id=0 ; id<d; id++) {
   //   if ( inside.coordinates[id]<0 or inside.coordinates[id]>=outer.coordinates[id] ) {
   //     string c_str = as_string(), o_str = outer.as_string();
-  //     throw( format("coordinate {} not contained in: {}",c_str,o_str) ); }
+  //     throw( std::format("coordinate {} not contained in: {}",c_str,o_str) ); }
   // }
   I s = inside.coordinates.at(0);
   for (int id=1; id<d; id++) {
@@ -495,7 +494,7 @@ template<typename I,int d>
 void coordinate_set<I,d>::add( const coordinate<I,d>& p ) {
   if (set.size()>0 &&
       p.dimensionality()!=set.at(0).dimensionality())
-    throw(fmt::format("Can not add vector of dim {}: previous {}",
+    throw(std::format("Can not add vector of dim {}: previous {}",
 		      p.dimensionality(),set.at(0).dimensionality()));
   if (!contains(p))
     set.push_back(p);
@@ -505,18 +504,18 @@ void coordinate_set<I,d>::add( const coordinate<I,d>& p ) {
  * Formatters
  */
 template<typename I,int d>
-struct fmt::formatter<coordinate<I,d>> {
+struct std::formatter<coordinate<I,d>> {
  constexpr
  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
    auto it = ctx.begin(), end = ctx.end();
    if (it != end && *it != '}')
-     throw format_error("invalid format");
+     throw std::format_error("invalid format");
    return it;
   }
   template <typename FormatContext>
   auto format(const coordinate<I,d>& p,
 	      FormatContext& ctx) -> decltype(ctx.out()) {
-    return format_to(ctx.out(),"{}", p.as_string());
+    return std::format_to(ctx.out(),"{}", p.as_string());
   }
 };
 template<typename I, int d>
@@ -585,13 +584,13 @@ template class coordinate_set<index_int,1>;
 template class coordinate_set<index_int,2>;
 template class coordinate_set<index_int,3>;
 
-template struct fmt::formatter<coordinate<int,1>>;
-template struct fmt::formatter<coordinate<int,2>>;
-template struct fmt::formatter<coordinate<int,3>>;
+template struct std::formatter<coordinate<int,1>>;
+template struct std::formatter<coordinate<int,2>>;
+template struct std::formatter<coordinate<int,3>>;
 
-template struct fmt::formatter<coordinate<index_int,1>>;
-template struct fmt::formatter<coordinate<index_int,2>>;
-template struct fmt::formatter<coordinate<index_int,3>>;
+template struct std::formatter<coordinate<index_int,1>>;
+template struct std::formatter<coordinate<index_int,2>>;
+template struct std::formatter<coordinate<index_int,3>>;
 
 template coordinate<int,1> coordmax<int,1>( const coordinate<int,1>&,const coordinate<int,1>& );
 template coordinate<int,2> coordmax<int,2>( const coordinate<int,2>&,const coordinate<int,2>& );

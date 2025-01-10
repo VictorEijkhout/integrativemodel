@@ -44,6 +44,15 @@ rpath :
 	      ; done \
 	    ; fi \
 	 && echo $${rpath}
+.PHONY: link_unittest
+link_unittest :
+	@make --no-print-directory unittest_main.o ${UNITTEST}.o ECHO=${ECHO}
+	@echo "Linking ${UNITTEST}"
+	@cmdline="${CXX_LINKER} ${CXXFLAGS} -o ${UNITTEST} \
+	    unittest_main.o ${UNITTEST}.o ${ENV_OBJS} ${TEST_LIBS}" \
+	 && cmdline="$${cmdline} $$( make --no-print-directory rpath )" \
+	 && if [ ! -z "${ECHO}" ] ; then echo "cmdline=$${cmdline}" ; fi \
+	 && eval $${cmdline}
 
 #
 # environment
@@ -51,10 +60,8 @@ rpath :
 NEW_TESTS += unittest_env
 ENV_OBJS := seq_env.o ${IMPCODEDIR}/imp_env.o ${IMPCODEDIR}/utils.o
 unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
-	@echo "Linking $@" \
-	 && ${CXX_LINKER} ${CXXFLAGS} -o $@ \
-	    unittest_main.o $@.o ${ENV_OBJS} \
-	    "$$( make --no-print-directory rpath )" ${TEST_LIBS}
+	@make --no-print-directory link_unittest \
+	  UNITTEST=$@ OBJS="${ENV_OBJS}" ECHO=${ECHO}
 seq_env.o : seq_env.h ${IMPCODEDIR}/imp_env.h
 
 #
@@ -63,10 +70,8 @@ seq_env.o : seq_env.h ${IMPCODEDIR}/imp_env.h
 NEW_TESTS += unittest_coord
 COORD_OBJS = ${IMPCODEDIR}/imp_coord.o ${ENV_OBJS}
 unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
-	@echo "Linking $@" \
-	&& ${CXX_LINKER} ${CXXFLAGS} -o $@ \
-	    unittest_main.o $@.o ${COORD_OBJS} \
-	    "$$( make --no-print-directory rpath )" ${TEST_LIBS}
+	@make --no-print-directory link_unittest \
+	  UNITTEST=$@ OBJS="${COORD_OBJS}" ECHO=${ECHO}
 unittest_coord.o : ${IMPCODEDIR}/imp_coord.h
 
 #

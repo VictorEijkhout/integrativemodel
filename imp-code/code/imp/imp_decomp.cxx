@@ -3,7 +3,7 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2023
+ **** copyright Victor Eijkhout 2014-2025
  ****
  **** imp_decomp.cxx: Implementations of the decomposition base classes
  ****
@@ -21,7 +21,7 @@ using std::multiplies;
 
 using std::array,std::vector,std::string;
 using std::shared_ptr,std::make_shared;
-using fmt::format,fmt::print;
+#include <format>
 
 /****
  **** Construction
@@ -77,7 +77,7 @@ int decomposition<d>::domain_local_number( const coordinate<int,d> &dcoord ) con
   // for ( int i=0; i<mdomains.size(); i++) {
   //   if (mdomains.at(i)==d) return i;
   // }
-  throw(fmt::format("Domain has no localization"));
+  throw(std::format("Domain has no localization"));
 };
 
 /*
@@ -98,7 +98,7 @@ coordinate<int,d> decomposition<d>::coordinate_from_linear(int p) const {
   for (int id=d-1; id>=0; id--) {
     int dsize = _process_grid.at(id);
     if (dsize==0)
-      throw(format("weird layout <<{}>>",_process_grid.as_string()));
+      throw(std::format("weird layout <<{}>>",_process_grid.as_string()));
     pp.at(id) = p%dsize; p = p/dsize;
   };
   return pp;
