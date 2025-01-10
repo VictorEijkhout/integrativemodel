@@ -54,10 +54,11 @@ rpath :
 	 && echo $${rpath}
 .PHONY: link_unittest
 link_unittest :
-	@make --no-print-directory unittest_main.o ${UNITTEST}.o ECHO=${ECHO}
+	@make --no-print-directory ECHO=${ECHO} \
+	    unittest_main.o ${UNITTEST}.o ${OBJS}
 	@echo "Linking ${UNITTEST}"
 	@cmdline="${CXX_LINKER} ${CXXFLAGS} -o ${UNITTEST} \
-	    unittest_main.o ${UNITTEST}.o ${ENV_OBJS} ${TEST_LIBS}" \
+	    unittest_main.o ${UNITTEST}.o ${OBJS} ${TEST_LIBS}" \
 	 && cmdline="$${cmdline} $$( make --no-print-directory rpath )" \
 	 && if [ ! -z "${ECHO}" ] ; then echo "cmdline=$${cmdline}" ; fi \
 	 && eval $${cmdline}
@@ -80,6 +81,7 @@ COORD_OBJS = ${IMPCODEDIR}/imp_coord.o ${ENV_OBJS}
 unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
 	@make --no-print-directory link_unittest \
 	  UNITTEST=$@ OBJS="${COORD_OBJS}" ECHO=${ECHO}
+unittest_coord.o : ${IMPCODEDIR}/imp_coord.h
 
 #
 # decomposition
