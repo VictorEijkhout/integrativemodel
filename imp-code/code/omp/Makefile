@@ -4,7 +4,7 @@
 #### This makefile is part of the prototype implementation of
 #### the Integrative Model for Parallelism
 ####
-#### copyright Victor Eijkhout 2014-2023
+#### copyright Victor Eijkhout 2014-2025
 ####
 #### Unit tests for the OpenMP backend of IMP
 ####
@@ -43,17 +43,33 @@ unittest_main.o : \
     omp_env.h ${IMPCODEDIR}/imp_env.h \
     omp_static_vars.h ${IMPCODEDIR}/imp_static_vars.h
 NEW_TESTS = 
+RPATH = ${TACC_CATCH2_LIB} ${TACC_FMTLIB_LIB}
+.PHONY: rpath
+rpath :
+	@if [ ! -z "${RPATH}" ] ; then \
+	      for r in ${RPATH} ; do \
+	          rpath="$$rpath -Wl,-rpath,$${r}" \
+	      ; done \
+	    ; fi \
+	 && echo $${rpath}
+.PHONY: link_unittest
+link_unittest :
+	@make --no-print-directory unittest_main.o ${UNITTEST}.o ECHO=${ECHO}
+	@echo "Linking ${UNITTEST}"
+	@cmdline="${CXX_LINKER} ${CXXFLAGS} -o ${UNITTEST} \
+	    unittest_main.o ${UNITTEST}.o ${ENV_OBJS} ${TEST_LIBS}" \
+	 && cmdline="$${cmdline} $$( make --no-print-directory rpath )" \
+	 && if [ ! -z "${ECHO}" ] ; then echo "cmdline=$${cmdline}" ; fi \
+	 && eval $${cmdline}
 
 #
 # environment
 #
 NEW_TESTS := unittest_env
 ENV_OBJS := omp_env.o ${IMPCODEDIR}/imp_env.o ${IMPCODEDIR}/utils.o
-unittest_env : unittest_main.o unittest_env.o ${ENV_OBJS}
-	@echo "Linking $@"
-	${CXX_LINKER} ${CXXFLAGS} -o $@ \
-	    unittest_main.o $@.o ${ENV_OBJS} \
-	    ${TEST_LIBS}
+unittest_env : ${ENV_OBJS}
+	@make --no-print-directory link_unittest \
+	  UNITTEST=$@ OBJS="${ENV_OBJS}" ECHO=${ECHO}
 omp_env.o : omp_env.h ${IMPCODEDIR}/imp_env.h
 
 #
@@ -62,10 +78,8 @@ omp_env.o : omp_env.h ${IMPCODEDIR}/imp_env.h
 NEW_TESTS += unittest_coord
 COORD_OBJS = ${IMPCODEDIR}/imp_coord.o ${ENV_OBJS}
 unittest_coord : unittest_main.o unittest_coord.o ${COORD_OBJS}
-	@echo "Linking $@"
-	${CXX_LINKER} ${CXXFLAGS} -o $@ \
-	    unittest_main.o $@.o ${COORD_OBJS} \
-	    ${TEST_LIBS}
+	@make --no-print-directory link_unittest \
+	  UNITTEST=$@ OBJS="${COORD_OBJS}" ECHO=${ECHO}
 
 #
 # decomposition
@@ -74,10 +88,8 @@ NEW_TESTS += unittest_decomp
 DECOMP_OBJS = omp_decomp.o ${IMPCODEDIR}/imp_decomp.o ${IMPCODEDIR}/indexstruct.o \
 	${COORD_OBJS}
 unittest_decomp : unittest_main.o unittest_decomp.o ${DECOMP_OBJS}
-	@echo "Linking $@"
-	${CXX_LINKER} ${CXXFLAGS} -o $@ \
-	    unittest_main.o $@.o ${DECOMP_OBJS} \
-	    ${TEST_LIBS}
+	@make --no-print-directory link_unittest \
+	  UNITTEST=$@ OBJS="${DECOMP_OBJS}" ECHO=${ECHO}
 omp_decomp.o : omp_decomp.h ${IMPCODEDIR}/imp_decomp.h
 
 #
@@ -87,10 +99,8 @@ NEW_TESTS += unittest_distribution
 DISTR_OBJS = omp_distribution.o ${IMPCODEDIR}/imp_distribution.o \
     ${DECOMP_OBJS}
 unittest_distribution : unittest_main.o unittest_distribution.o ${DISTR_OBJS}
-	@echo "Linking $@"
-	${CXX_LINKER} ${CXXFLAGS} -o $@ \
-	    unittest_main.o $@.o ${DISTR_OBJS} \
-	    ${TEST_LIBS}
+	@make --no-print-directory link_unittest \
+	  UNITTEST=$@ OBJS="${DISTR_OBJS}" ECHO=${ECHO}
 omp_distribution.o : omp_distribution.h ${IMPCODEDIR}/imp_distribution.h
 
 #
@@ -100,10 +110,8 @@ NEW_TESTS += unittest_object
 OBJ_OBJS = omp_object.o ${IMPCODEDIR}/imp_object.o \
     ${DISTR_OBJS}
 unittest_object : unittest_main.o unittest_object.o ${OBJ_OBJS}
-	@echo "Linking $@"
-	${CXX_LINKER} ${CXXFLAGS} -o $@ \
-	    unittest_main.o $@.o ${OBJ_OBJS} \
-	    ${TEST_LIBS}
+	@make --no-print-directory link_unittest \
+	  UNITTEST=$@ OBJS="${OBJ_OBJS}" ECHO=${ECHO}
 omp_object.o : omp_object.h ${IMPCODEDIR}/imp_object.h
 
 info ::
