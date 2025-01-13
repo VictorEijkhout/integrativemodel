@@ -4,9 +4,9 @@
  **** This file is part of the prototype implementation of
  **** the Integrative Model for Parallelism
  ****
- **** copyright Victor Eijkhout 2014-2023
+ **** copyright Victor Eijkhout 2014-2025
  ****
- **** imp_decomp.h: Header file for the decomposition base classes
+ **** imp_distribution.h: base header for distributions
  ****
  ****************************************************************/
 
@@ -85,11 +85,11 @@ public:
    * Polymorphism
    */
   std::function < index_int( const coordinate<int,d> &p) >
-  location_of_first_index {
-    [] ( const coordinate<int,d> &p) -> index_int {
-      throw(std::string("not implemented: distribution::location_of_first_index")); } };
+    location_of_first_index {
+      [] ( const coordinate<int,d> &p) -> index_int {
+	throw(std::string("not implemented: distribution::location_of_first_index")); } };
   std::function< distribution<d> ( const ioperator<index_int,d>& ) >
-  operate {
-    [] ( const ioperator<index_int,d>& ) -> distribution<d> {
-      throw(std::string("not implemented: distribution::operate")); } };
+    operate {
+      [] ( const ioperator<index_int,d>& ) -> distribution<d> {
+	throw(std::string("not implemented: distribution::operate")); } };
 };

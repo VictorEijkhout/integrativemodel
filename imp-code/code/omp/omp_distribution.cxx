@@ -23,6 +23,7 @@ omp_distribution<d>::omp_distribution
   /*
    * Polymorphism
    */
+#if 0
   this->location_of_first_index =
     [enc=this->global_domain(),this]
     ( const coordinate<int,d> &pcoord) -> index_int {
@@ -31,12 +32,14 @@ omp_distribution<d>::omp_distribution
       index_int loc = static_cast< indexstructure<index_int,d> >(enc).location_of(first);
       return loc;
     };
+#endif
   this->operate =
     [decomp=this->my_decomposition,typ=this->my_distribution_type,
      dom=distribution<d>::global_domain()]
     ( const ioperator<index_int,d>& op ) -> distribution<d> {
-      domain<d> the_domain( dom );
-      domain<d> new_domain( the_domain.operate(op) );
+      // domain<d> the_domain( dom );
+      // domain<d> new_domain( the_domain.operate(op) );
+      auto new_domain = dom.operate(op);
       return omp_distribution<d>( new_domain,decomp,typ);
     };
 };

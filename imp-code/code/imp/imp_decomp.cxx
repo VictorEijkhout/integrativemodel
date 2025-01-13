@@ -30,7 +30,7 @@ using std::shared_ptr,std::make_shared;
 /*!
  * Make a d-dimensional process grid based on the environment
  * This delegates to the constructor from a coordinate
- * by computing the far-point of the environment.
+ * by computing the endpoint of the environment.
  */
 template<int d>
 decomposition<d>::decomposition( const environment& env )
