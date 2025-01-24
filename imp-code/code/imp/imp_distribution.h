@@ -30,13 +30,6 @@ public:
   domain( coordinate<index_int,d> c )
     : domain<d>( contiguous_indexstruct<index_int,d>( coordinate<index_int,d>(0),c-1 ) ) {
   };
-  // /*! default constructor,
-  //  * needed for the _local_domain member of the `distribution' class,
-  //  * because that is constructed, not instantiated
-  //  */
-  // domain()
-  //   : indexstructure<index_int,d>() {
-  // };
 };
 
 //! Different types of distributions
